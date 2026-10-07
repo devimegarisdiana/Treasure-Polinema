@@ -13,6 +13,100 @@ tags:
   - name: registrations
     description: TREASURE team registration
 paths:
+  /auth/user:
+    get:
+      operationId: getCurrentAuthUser
+      responses:
+        "200":
+          description: Current session
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AuthUserEnvelope" }
+  /login:
+    get:
+      operationId: beginBrowserLogin
+      responses:
+        "302": { description: Begin secure login }
+  /callback:
+    get:
+      operationId: handleBrowserLoginCallback
+      responses:
+        "302": { description: Complete secure login }
+  /logout:
+    get:
+      operationId: logoutBrowserSession
+      responses:
+        "302": { description: Log out }
+  /mobile-auth/token-exchange:
+    post:
+      operationId: exchangeMobileAuthorizationCode
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/MobileTokenExchangeRequest" }
+      responses:
+        "200":
+          description: Session
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/MobileTokenExchangeSuccess" }
+  /mobile-auth/logout:
+    post:
+      operationId: logoutMobileSession
+      responses:
+        "200":
+          description: Logged out
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/LogoutSuccess" }
+  /storage/uploads/request-url:
+    post:
+      operationId: requestUploadUrl
+      summary: Request an authenticated private registration document upload
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/UploadUrlRequest" }
+      responses:
+        "200":
+          description: Upload URL
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/UploadUrlResponse" }
+        "401":
+          description: Login required
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+        "400":
+          description: Invalid file
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+  /storage/public-objects/{filePath}:
+    get:
+      operationId: getPublicObject
+      parameters:
+        - { name: filePath, in: path, required: true, schema: { type: string } }
+      responses:
+        "200":
+          description: Public asset
+          content:
+            "*/*":
+              schema: { type: string, format: binary }
+  /storage/objects/{objectPath}:
+    get:
+      operationId: getStorageObject
+      parameters:
+        - { name: objectPath, in: path, required: true, schema: { type: string } }
+      responses:
+        "200":
+          description: Owner-only document
+          content:
+            "*/*":
+              schema: { type: string, format: binary }
   /healthz:
     get:
       operationId: healthCheck
@@ -50,6 +144,11 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Login required
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
         "500":
           description: Registration could not be saved
           content:
@@ -67,29 +166,15 @@ components:
         - status
     TeamMemberInput:
       type: object
-      required: [fullName, institution, studyProgram, educationLevel, feeCategory]
+      required: [fullName]
       properties:
         fullName:
           type: string
           minLength: 2
           maxLength: 160
-        institution:
-          type: string
-          minLength: 2
-          maxLength: 200
-        studyProgram:
-          type: string
-          minLength: 2
-          maxLength: 160
-        educationLevel:
-          type: string
-          enum: [diploma, undergraduate]
-        feeCategory:
-          type: string
-          enum: [indonesian, international]
     TeamRegistrationInput:
       type: object
-      required: [submissionKey, teamName, contactEmail, contactPhone, members, consent]
+      required: [submissionKey, contactEmail, contactPhone, alternativePhone, institution, facultyDepartment, countryOfOrigin, competition, hasEdugateTraining, members, studentIdUploadId, paymentUploadId, consent]
       properties:
         submissionKey:
           type: string
@@ -107,6 +192,39 @@ components:
           minLength: 7
           maxLength: 40
           pattern: '^(?=(?:[^0-9]*[0-9]){7,15}[^0-9]*$)[+0-9() .-]+$'
+        alternativePhone:
+          type: string
+          minLength: 7
+          maxLength: 40
+          pattern: '^(?=(?:[^0-9]*[0-9]){7,15}[^0-9]*$)[+0-9() .-]+$'
+        institution:
+          type: string
+          minLength: 2
+          maxLength: 200
+        facultyDepartment:
+          type: string
+          minLength: 2
+          maxLength: 200
+        countryOfOrigin:
+          type: string
+          enum: [Indonesia, Philippines, England, Malaysia, Turkey, Vietnam, Thailand, Taiwan, Saudi Arabia, Other]
+        otherCountry:
+          type: string
+          maxLength: 100
+        competition:
+          type: string
+          enum: [business_simulation, poster_competition, other]
+        otherCompetition:
+          type: string
+          maxLength: 160
+        hasEdugateTraining:
+          type: boolean
+        studentIdUploadId:
+          type: string
+          format: uuid
+        paymentUploadId:
+          type: string
+          format: uuid
         members:
           type: array
           minItems: 1
@@ -133,4 +251,55 @@ components:
       properties:
         error:
           type: string
+    UploadUrlRequest:
+      type: object
+      required: [submissionKey, purpose, name, size, contentType]
+      properties:
+        submissionKey: { type: string, format: uuid }
+        purpose: { type: string, enum: [student_id, payment_proof] }
+        name: { type: string, minLength: 1, maxLength: 200 }
+        size: { type: integer, minimum: 1, maximum: 10485760 }
+        contentType: { type: string, enum: [image/jpeg, image/png, image/webp, application/pdf] }
+    UploadUrlResponse:
+      type: object
+      required: [uploadId, uploadURL]
+      properties:
+        uploadId: { type: string, format: uuid }
+        uploadURL: { type: string, format: uri }
+    AuthUser:
+      type: object
+      required: [id, email, firstName, lastName, profileImageUrl]
+      properties:
+        id: { type: string }
+        email: { type: [string, "null"], format: email }
+        firstName: { type: [string, "null"] }
+        lastName: { type: [string, "null"] }
+        profileImageUrl: { type: [string, "null"] }
+    AuthUserEnvelope:
+      type: object
+      required: [user]
+      properties:
+        user:
+          oneOf:
+            - { $ref: "#/components/schemas/AuthUser" }
+            - { type: "null" }
+    MobileTokenExchangeRequest:
+      type: object
+      required: [code, code_verifier, redirect_uri, state]
+      properties:
+        code: { type: string, minLength: 1 }
+        code_verifier: { type: string, minLength: 1 }
+        redirect_uri: { type: string, minLength: 1, format: uri }
+        state: { type: string, minLength: 1 }
+        nonce: { type: string, minLength: 1 }
+    MobileTokenExchangeSuccess:
+      type: object
+      required: [token]
+      properties:
+        token: { type: string }
+    LogoutSuccess:
+      type: object
+      required: [success]
+      properties:
+        success: { type: boolean, const: true }
 

@@ -6,6 +6,8 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { TeamMemberInput } from './teamMemberInput';
+import type { TeamRegistrationInputCompetition } from './teamRegistrationInputCompetition';
+import type { TeamRegistrationInputCountryOfOrigin } from './teamRegistrationInputCountryOfOrigin';
 
 export interface TeamRegistrationInput {
   submissionKey: string;
@@ -13,7 +15,7 @@ export interface TeamRegistrationInput {
      * @minLength 2
      * @maxLength 120
      */
-  teamName: string;
+  teamName?: string;
   /** @maxLength 254 */
   contactEmail: string;
   /**
@@ -22,6 +24,31 @@ export interface TeamRegistrationInput {
      * @pattern ^(?=(?:[^0-9]*[0-9]){7,15}[^0-9]*$)[+0-9() .-]+$
      */
   contactPhone: string;
+  /**
+     * @minLength 7
+     * @maxLength 40
+     * @pattern ^(?=(?:[^0-9]*[0-9]){7,15}[^0-9]*$)[+0-9() .-]+$
+     */
+  alternativePhone: string;
+  /**
+     * @minLength 2
+     * @maxLength 200
+     */
+  institution: string;
+  /**
+     * @minLength 2
+     * @maxLength 200
+     */
+  facultyDepartment: string;
+  countryOfOrigin: TeamRegistrationInputCountryOfOrigin;
+  /** @maxLength 100 */
+  otherCountry?: string;
+  competition: TeamRegistrationInputCompetition;
+  /** @maxLength 160 */
+  otherCompetition?: string;
+  hasEdugateTraining: boolean;
+  studentIdUploadId: string;
+  paymentUploadId: string;
   /** @minItems 1 */
   members: TeamMemberInput[];
   consent: true;

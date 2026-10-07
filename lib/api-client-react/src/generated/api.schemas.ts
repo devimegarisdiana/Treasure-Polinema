@@ -9,41 +9,38 @@ export interface HealthStatus {
   status: string;
 }
 
-export type TeamMemberInputEducationLevel = typeof TeamMemberInputEducationLevel[keyof typeof TeamMemberInputEducationLevel];
-
-
-export const TeamMemberInputEducationLevel = {
-  diploma: 'diploma',
-  undergraduate: 'undergraduate',
-} as const;
-
-export type TeamMemberInputFeeCategory = typeof TeamMemberInputFeeCategory[keyof typeof TeamMemberInputFeeCategory];
-
-
-export const TeamMemberInputFeeCategory = {
-  indonesian: 'indonesian',
-  international: 'international',
-} as const;
-
 export interface TeamMemberInput {
   /**
      * @minLength 2
      * @maxLength 160
      */
   fullName: string;
-  /**
-     * @minLength 2
-     * @maxLength 200
-     */
-  institution: string;
-  /**
-     * @minLength 2
-     * @maxLength 160
-     */
-  studyProgram: string;
-  educationLevel: TeamMemberInputEducationLevel;
-  feeCategory: TeamMemberInputFeeCategory;
 }
+
+export type TeamRegistrationInputCountryOfOrigin = typeof TeamRegistrationInputCountryOfOrigin[keyof typeof TeamRegistrationInputCountryOfOrigin];
+
+
+export const TeamRegistrationInputCountryOfOrigin = {
+  Indonesia: 'Indonesia',
+  Philippines: 'Philippines',
+  England: 'England',
+  Malaysia: 'Malaysia',
+  Turkey: 'Turkey',
+  Vietnam: 'Vietnam',
+  Thailand: 'Thailand',
+  Taiwan: 'Taiwan',
+  Saudi_Arabia: 'Saudi Arabia',
+  Other: 'Other',
+} as const;
+
+export type TeamRegistrationInputCompetition = typeof TeamRegistrationInputCompetition[keyof typeof TeamRegistrationInputCompetition];
+
+
+export const TeamRegistrationInputCompetition = {
+  business_simulation: 'business_simulation',
+  poster_competition: 'poster_competition',
+  other: 'other',
+} as const;
 
 export interface TeamRegistrationInput {
   submissionKey: string;
@@ -51,7 +48,7 @@ export interface TeamRegistrationInput {
      * @minLength 2
      * @maxLength 120
      */
-  teamName: string;
+  teamName?: string;
   /** @maxLength 254 */
   contactEmail: string;
   /**
@@ -60,6 +57,31 @@ export interface TeamRegistrationInput {
      * @pattern ^(?=(?:[^0-9]*[0-9]){7,15}[^0-9]*$)[+0-9() .-]+$
      */
   contactPhone: string;
+  /**
+     * @minLength 7
+     * @maxLength 40
+     * @pattern ^(?=(?:[^0-9]*[0-9]){7,15}[^0-9]*$)[+0-9() .-]+$
+     */
+  alternativePhone: string;
+  /**
+     * @minLength 2
+     * @maxLength 200
+     */
+  institution: string;
+  /**
+     * @minLength 2
+     * @maxLength 200
+     */
+  facultyDepartment: string;
+  countryOfOrigin: TeamRegistrationInputCountryOfOrigin;
+  /** @maxLength 100 */
+  otherCountry?: string;
+  competition: TeamRegistrationInputCompetition;
+  /** @maxLength 160 */
+  otherCompetition?: string;
+  hasEdugateTraining: boolean;
+  studentIdUploadId: string;
+  paymentUploadId: string;
   /** @minItems 1 */
   members: TeamMemberInput[];
   consent: true;
@@ -75,4 +97,81 @@ export interface TeamRegistrationReceipt {
 export interface ErrorResponse {
   error: string;
 }
+
+export type UploadUrlRequestPurpose = typeof UploadUrlRequestPurpose[keyof typeof UploadUrlRequestPurpose];
+
+
+export const UploadUrlRequestPurpose = {
+  student_id: 'student_id',
+  payment_proof: 'payment_proof',
+} as const;
+
+export type UploadUrlRequestContentType = typeof UploadUrlRequestContentType[keyof typeof UploadUrlRequestContentType];
+
+
+export const UploadUrlRequestContentType = {
+  'image/jpeg': 'image/jpeg',
+  'image/png': 'image/png',
+  'image/webp': 'image/webp',
+  'application/pdf': 'application/pdf',
+} as const;
+
+export interface UploadUrlRequest {
+  submissionKey: string;
+  purpose: UploadUrlRequestPurpose;
+  /**
+     * @minLength 1
+     * @maxLength 200
+     */
+  name: string;
+  /**
+     * @minimum 1
+     * @maximum 10485760
+     */
+  size: number;
+  contentType: UploadUrlRequestContentType;
+}
+
+export interface UploadUrlResponse {
+  uploadId: string;
+  uploadURL: string;
+}
+
+export interface AuthUser {
+  id: string;
+  /** @nullable */
+  email: string | null;
+  /** @nullable */
+  firstName: string | null;
+  /** @nullable */
+  lastName: string | null;
+  /** @nullable */
+  profileImageUrl: string | null;
+}
+
+export interface AuthUserEnvelope {
+  user: AuthUser | null;
+}
+
+export interface MobileTokenExchangeRequest {
+  /** @minLength 1 */
+  code: string;
+  /** @minLength 1 */
+  code_verifier: string;
+  /** @minLength 1 */
+  redirect_uri: string;
+  /** @minLength 1 */
+  state: string;
+  /** @minLength 1 */
+  nonce?: string;
+}
+
+export interface MobileTokenExchangeSuccess {
+  token: string;
+}
+
+export const LogoutSuccessValue = {
+  success: true,
+} as const;
+export type LogoutSuccess = typeof LogoutSuccessValue;
 

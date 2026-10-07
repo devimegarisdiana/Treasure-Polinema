@@ -5,8 +5,6 @@
  * API specification
  * OpenAPI spec version: 0.1.0
  */
-import type { TeamMemberInputEducationLevel } from './teamMemberInputEducationLevel';
-import type { TeamMemberInputFeeCategory } from './teamMemberInputFeeCategory';
 
 export interface TeamMemberInput {
   /**
@@ -14,16 +12,4 @@ export interface TeamMemberInput {
      * @maxLength 160
      */
   fullName: string;
-  /**
-     * @minLength 2
-     * @maxLength 200
-     */
-  institution: string;
-  /**
-     * @minLength 2
-     * @maxLength 160
-     */
-  studyProgram: string;
-  educationLevel: TeamMemberInputEducationLevel;
-  feeCategory: TeamMemberInputFeeCategory;
 }

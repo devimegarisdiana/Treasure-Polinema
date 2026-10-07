@@ -8,6 +8,88 @@
 import * as zod from 'zod';
 
 
+export const GetCurrentAuthUserResponse = zod.object({
+  "user": zod.union([zod.object({
+  "id": zod.string(),
+  "email": zod.string().email().nullable(),
+  "firstName": zod.string().nullable(),
+  "lastName": zod.string().nullable(),
+  "profileImageUrl": zod.string().nullable()
+}),zod.null()])
+})
+
+
+export const BeginBrowserLoginResponse = zod.void()
+
+
+export const HandleBrowserLoginCallbackResponse = zod.void()
+
+
+export const LogoutBrowserSessionResponse = zod.void()
+
+
+
+
+
+
+
+
+
+export const ExchangeMobileAuthorizationCodeBody = zod.object({
+  "code": zod.string().min(1),
+  "code_verifier": zod.string().min(1),
+  "redirect_uri": zod.string().url().min(1),
+  "state": zod.string().min(1),
+  "nonce": zod.string().min(1).optional()
+})
+
+export const ExchangeMobileAuthorizationCodeResponse = zod.object({
+  "token": zod.string()
+})
+
+
+export const LogoutMobileSessionResponse = zod.object({
+  "success": zod.literal(true)
+})
+
+
+/**
+ * @summary Request an authenticated private registration document upload
+ */
+export const requestUploadUrlBodyNameMax = 200;
+
+export const requestUploadUrlBodySizeMax = 10485760;
+
+
+
+export const RequestUploadUrlBody = zod.object({
+  "submissionKey": zod.string().uuid(),
+  "purpose": zod.enum(['student_id', 'payment_proof']),
+  "name": zod.string().min(1).max(requestUploadUrlBodyNameMax),
+  "size": zod.number().int().min(1).max(requestUploadUrlBodySizeMax),
+  "contentType": zod.enum(['image/jpeg', 'image/png', 'image/webp', 'application/pdf'])
+})
+
+export const RequestUploadUrlResponse = zod.object({
+  "uploadId": zod.string().uuid(),
+  "uploadURL": zod.string().url()
+})
+
+
+export const GetPublicObjectParams = zod.object({
+  "filePath": zod.coerce.string()
+})
+
+export const GetPublicObjectResponse = zod.unknown()
+
+
+export const GetStorageObjectParams = zod.object({
+  "objectPath": zod.coerce.string()
+})
+
+export const GetStorageObjectResponse = zod.unknown()
+
+
 /**
  * Returns server health status
  * @summary Health check
@@ -30,14 +112,23 @@ export const createTeamRegistrationBodyContactPhoneMax = 40;
 
 
 export const createTeamRegistrationBodyContactPhoneRegExp = new RegExp('^(?=(?:[^0-9]*[0-9]){7,15}[^0-9]*$)[+0-9() .-]+$');
+export const createTeamRegistrationBodyAlternativePhoneMin = 7;
+export const createTeamRegistrationBodyAlternativePhoneMax = 40;
+
+
+export const createTeamRegistrationBodyAlternativePhoneRegExp = new RegExp('^(?=(?:[^0-9]*[0-9]){7,15}[^0-9]*$)[+0-9() .-]+$');
+export const createTeamRegistrationBodyInstitutionMin = 2;
+export const createTeamRegistrationBodyInstitutionMax = 200;
+
+export const createTeamRegistrationBodyFacultyDepartmentMin = 2;
+export const createTeamRegistrationBodyFacultyDepartmentMax = 200;
+
+export const createTeamRegistrationBodyOtherCountryMax = 100;
+
+export const createTeamRegistrationBodyOtherCompetitionMax = 160;
+
 export const createTeamRegistrationBodyMembersItemFullNameMin = 2;
 export const createTeamRegistrationBodyMembersItemFullNameMax = 160;
-
-export const createTeamRegistrationBodyMembersItemInstitutionMin = 2;
-export const createTeamRegistrationBodyMembersItemInstitutionMax = 200;
-
-export const createTeamRegistrationBodyMembersItemStudyProgramMin = 2;
-export const createTeamRegistrationBodyMembersItemStudyProgramMax = 160;
 
 
 export const createTeamRegistrationBodyWebsiteMax = 200;
@@ -46,15 +137,21 @@ export const createTeamRegistrationBodyWebsiteMax = 200;
 
 export const CreateTeamRegistrationBody = zod.object({
   "submissionKey": zod.string().uuid(),
-  "teamName": zod.string().min(createTeamRegistrationBodyTeamNameMin).max(createTeamRegistrationBodyTeamNameMax),
+  "teamName": zod.string().min(createTeamRegistrationBodyTeamNameMin).max(createTeamRegistrationBodyTeamNameMax).optional(),
   "contactEmail": zod.string().email().max(createTeamRegistrationBodyContactEmailMax),
   "contactPhone": zod.string().min(createTeamRegistrationBodyContactPhoneMin).max(createTeamRegistrationBodyContactPhoneMax).regex(createTeamRegistrationBodyContactPhoneRegExp),
+  "alternativePhone": zod.string().min(createTeamRegistrationBodyAlternativePhoneMin).max(createTeamRegistrationBodyAlternativePhoneMax).regex(createTeamRegistrationBodyAlternativePhoneRegExp),
+  "institution": zod.string().min(createTeamRegistrationBodyInstitutionMin).max(createTeamRegistrationBodyInstitutionMax),
+  "facultyDepartment": zod.string().min(createTeamRegistrationBodyFacultyDepartmentMin).max(createTeamRegistrationBodyFacultyDepartmentMax),
+  "countryOfOrigin": zod.enum(['Indonesia', 'Philippines', 'England', 'Malaysia', 'Turkey', 'Vietnam', 'Thailand', 'Taiwan', 'Saudi Arabia', 'Other']),
+  "otherCountry": zod.string().max(createTeamRegistrationBodyOtherCountryMax).optional(),
+  "competition": zod.enum(['business_simulation', 'poster_competition', 'other']),
+  "otherCompetition": zod.string().max(createTeamRegistrationBodyOtherCompetitionMax).optional(),
+  "hasEdugateTraining": zod.boolean(),
+  "studentIdUploadId": zod.string().uuid(),
+  "paymentUploadId": zod.string().uuid(),
   "members": zod.array(zod.object({
-  "fullName": zod.string().min(createTeamRegistrationBodyMembersItemFullNameMin).max(createTeamRegistrationBodyMembersItemFullNameMax),
-  "institution": zod.string().min(createTeamRegistrationBodyMembersItemInstitutionMin).max(createTeamRegistrationBodyMembersItemInstitutionMax),
-  "studyProgram": zod.string().min(createTeamRegistrationBodyMembersItemStudyProgramMin).max(createTeamRegistrationBodyMembersItemStudyProgramMax),
-  "educationLevel": zod.enum(['diploma', 'undergraduate']),
-  "feeCategory": zod.enum(['indonesian', 'international'])
+  "fullName": zod.string().min(createTeamRegistrationBodyMembersItemFullNameMin).max(createTeamRegistrationBodyMembersItemFullNameMax)
 })).min(1),
   "consent": zod.literal(true),
   "website": zod.string().max(createTeamRegistrationBodyWebsiteMax).optional()
