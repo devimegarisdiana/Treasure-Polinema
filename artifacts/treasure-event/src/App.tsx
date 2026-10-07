@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { ArrowDown, ArrowUpRight, Menu, X } from 'lucide-react';
 
-const registrationUrl = 'http://treasure.polinema.com/';
+const registrationUrl = '/register';
 
 const copy = {
   en: {
@@ -64,7 +64,7 @@ const copy = {
     finalTitleSecond: 'move count.',
     finalText:
       'Ready to compete? Register for TREASURE 2026 during the registration period and take your place in the challenge.',
-    registerAt: 'Register at treasure.polinema.com',
+    registerAt: 'Register your team',
     furtherInfo: 'Further information',
     contact: 'Contact',
     instagram: 'Instagram',
@@ -134,7 +134,7 @@ const copy = {
     finalTitleSecond: 'kemampuanmu.',
     finalText:
       'Siap berkompetisi? Daftar TREASURE 2026 selama periode pendaftaran dan ambil bagian dalam tantangannya.',
-    registerAt: 'Daftar di treasure.polinema.com',
+    registerAt: 'Daftarkan timmu',
     furtherInfo: 'Informasi lebih lanjut',
     contact: 'Kontak',
     instagram: 'Instagram',
@@ -155,6 +155,7 @@ function App() {
 
   useEffect(() => {
     document.documentElement.lang = language;
+    document.title = 'TREASURE 2026 — Kompetisi Bisnis Internasional';
   }, [language]);
 
   return (
@@ -195,7 +196,7 @@ function App() {
           <a href="#dates" onClick={closeMenu}>{t.navDates}</a>
           <a href="#details" onClick={closeMenu}>{t.navEligibility}</a>
           <a href="#contact" onClick={closeMenu}>{t.navContact}</a>
-          <a className="nav-register" href={registrationUrl} target="_blank" rel="noreferrer" onClick={closeMenu}>
+          <a className="nav-register" href={registrationUrl} onClick={closeMenu}>
             {t.register} <ArrowUpRight size={13} />
           </a>
         </nav>
@@ -212,7 +213,7 @@ function App() {
                 : <>Strategic minds. Competitive moves. <strong>Simulating the future of business.</strong></>}
             </p>
             <div className="hero-actions">
-              <a className="button button-light" href={registrationUrl} target="_blank" rel="noreferrer">
+              <a className="button button-light" href={registrationUrl}>
                 {t.claim} <ArrowUpRight size={15} />
               </a>
               <a className="button button-ghost" href="#dates">
@@ -349,12 +350,12 @@ function App() {
             <div className="eyebrow"><span className="eyebrow-line" /> {t.registrationPeriod}</div>
             <h2>{t.finalTitle}<br />{t.finalTitleSecond}</h2>
             <p>{t.finalText}</p>
-            <a className="button button-light" href={registrationUrl} target="_blank" rel="noreferrer">
+            <a className="button button-light" href={registrationUrl}>
               {t.registerAt} <ArrowUpRight size={15} />
             </a>
           </div>
           <div className="reg-meta">
-            <div className="section-label" style={{ color: '#f4d832' }}>{t.furtherInfo}</div>
+            <div className="section-label further-info-label">{t.furtherInfo}</div>
             <div className="meta-row">
               <label>{t.contact}</label>
               <a href="tel:+6285230762534">+62 852-3076-2534 · Ms. Abryel</a>

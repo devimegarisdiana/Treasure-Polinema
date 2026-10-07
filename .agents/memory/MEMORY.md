@@ -1,0 +1,1 @@
+- [Competition rules and source trust](competition-rules.md) — do not invent team-size limits; verify printed links before using them for registration.

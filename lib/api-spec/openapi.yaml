@@ -10,6 +10,8 @@ servers:
 tags:
   - name: health
     description: Health operations
+  - name: registrations
+    description: TREASURE team registration
 paths:
   /healthz:
     get:
@@ -24,6 +26,36 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+  /registrations/teams:
+    post:
+      operationId: createTeamRegistration
+      tags: [registrations]
+      summary: Submit a TREASURE team registration
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TeamRegistrationInput"
+      responses:
+        "201":
+          description: Registration data received
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TeamRegistrationReceipt"
+        "400":
+          description: Invalid registration
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: Registration could not be saved
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
 components:
   schemas:
     HealthStatus:
@@ -33,4 +65,72 @@ components:
           type: string
       required:
         - status
+    TeamMemberInput:
+      type: object
+      required: [fullName, institution, studyProgram, educationLevel, feeCategory]
+      properties:
+        fullName:
+          type: string
+          minLength: 2
+          maxLength: 160
+        institution:
+          type: string
+          minLength: 2
+          maxLength: 200
+        studyProgram:
+          type: string
+          minLength: 2
+          maxLength: 160
+        educationLevel:
+          type: string
+          enum: [diploma, undergraduate]
+        feeCategory:
+          type: string
+          enum: [indonesian, international]
+    TeamRegistrationInput:
+      type: object
+      required: [submissionKey, teamName, contactEmail, contactPhone, members, consent]
+      properties:
+        submissionKey:
+          type: string
+          format: uuid
+        teamName:
+          type: string
+          minLength: 2
+          maxLength: 120
+        contactEmail:
+          type: string
+          format: email
+          maxLength: 254
+        contactPhone:
+          type: string
+          minLength: 7
+          maxLength: 40
+          pattern: '^(?=(?:[^0-9]*[0-9]){7,15}[^0-9]*$)[+0-9() .-]+$'
+        members:
+          type: array
+          minItems: 1
+          items:
+            $ref: "#/components/schemas/TeamMemberInput"
+        consent:
+          type: boolean
+          enum: [true]
+        website:
+          type: string
+          maxLength: 200
+    TeamRegistrationReceipt:
+      type: object
+      required: [referenceCode, submittedAt]
+      properties:
+        referenceCode:
+          type: string
+        submittedAt:
+          type: string
+          format: date-time
+    ErrorResponse:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: string
 
