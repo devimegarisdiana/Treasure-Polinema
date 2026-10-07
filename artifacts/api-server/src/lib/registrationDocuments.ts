@@ -28,7 +28,7 @@ export async function freezeDocument(
     source = await storage.getObjectEntityFile(upload.objectPath);
   } catch (error) {
     if (error instanceof ObjectNotFoundError) {
-      throw new RegistrationDocumentError("Unggahan dokumen belum selesai. Pilih dan unggah kembali file.");
+      throw new RegistrationDocumentError("The document upload is incomplete. Please select and upload the file again.");
     }
     throw error;
   }
@@ -41,7 +41,7 @@ export async function freezeDocument(
     metadata.contentType !== upload.contentType ||
     !validSignature(upload.contentType, signature)
   ) {
-    throw new RegistrationDocumentError("Dokumen tidak sesuai format atau ukuran unggahan. Unggah kembali JPG, PNG, WebP, atau PDF yang valid.");
+    throw new RegistrationDocumentError("The document format or size does not match the upload. Please upload a valid JPG, PNG, WebP, or PDF file again.");
   }
   const id = randomUUID();
   const prefix = storage.getPrivateObjectDir().split("/").filter(Boolean).slice(1).join("/");

@@ -10,7 +10,7 @@ const router: IRouter = Router();
 router.post("/registrations/teams", async (req, res): Promise<void> => {
   res.setHeader("Cache-Control", "no-store");
   if (!req.isAuthenticated()) {
-    res.status(401).json({ error: "Silakan masuk sebelum mengirim pendaftaran." });
+    res.status(401).json({ error: "Please sign in before submitting your registration." });
     return;
   }
   const ownerId = req.user.id;
@@ -35,14 +35,14 @@ router.post("/registrations/teams", async (req, res): Promise<void> => {
   } : body;
   const parsed = CreateTeamRegistrationBody.safeParse(normalized);
   if (!parsed.success || parsed.data.website?.trim()) {
-    res.status(400).json({ error: "Data pendaftaran belum lengkap atau tidak valid. Periksa kembali isian formulir." });
+    res.status(400).json({ error: "Registration details are incomplete or invalid. Please check the form." });
     return;
   }
 
   const data = parsed.data;
   if ((data.countryOfOrigin === "Other" && !data.otherCountry?.trim()) ||
       (data.competition === "other" && !data.otherCompetition?.trim())) {
-    res.status(400).json({ error: "Lengkapi pilihan negara atau kompetisi lainnya." });
+    res.status(400).json({ error: "Please enter your other country or competition selection." });
     return;
   }
   const frozen: FrozenDocument[] = [];
@@ -52,7 +52,7 @@ router.post("/registrations/teams", async (req, res): Promise<void> => {
       .where(eq(teamRegistrationsTable.submissionKey, data.submissionKey)).limit(1);
     if (prior) {
       if (prior.ownerId !== ownerId) {
-        res.status(400).json({ error: "Kode percobaan tidak valid. Mulai pendaftaran baru." });
+        res.status(400).json({ error: "The submission key is invalid. Please start a new registration." });
         return;
       }
       res.status(201).json(CreateTeamRegistrationResponse.parse({ referenceCode: prior.referenceCode, submittedAt: prior.createdAt }));
@@ -66,7 +66,7 @@ router.post("/registrations/teams", async (req, res): Promise<void> => {
     const studentId = uploads.find((u) => u.id === data.studentIdUploadId && u.purpose === "student_id" && !u.registrationId);
     const payment = uploads.find((u) => u.id === data.paymentUploadId && u.purpose === "payment_proof" && !u.registrationId);
     if (!studentId || !payment) {
-      res.status(400).json({ error: "Unggah kartu mahasiswa ketua dan bukti pembayaran untuk pendaftaran ini." });
+      res.status(400).json({ error: "Please upload the team leader's student ID and payment proof for this registration." });
       return;
     }
     frozen.push(await freezeDocument(studentId));
@@ -117,7 +117,7 @@ router.post("/registrations/teams", async (req, res): Promise<void> => {
     }
     // Never log participant names, email addresses, phone numbers, or request bodies.
     req.log.error("Unable to persist team registration");
-    res.status(500).json({ error: "Pendaftaran belum tersimpan. Silakan coba lagi; isian Anda tetap tersedia." });
+    res.status(500).json({ error: "Your registration has not been saved. Please try again; your entries are still available." });
   } finally {
     await Promise.all(frozen.map((doc) =>
       (committed ? doc.source : doc.file).delete({ ignoreNotFound: true }).catch(() => {}),

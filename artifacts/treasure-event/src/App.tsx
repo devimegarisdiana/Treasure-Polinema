@@ -74,89 +74,18 @@ const copy = {
     posterAlt:
       'TREASURE 2026 official event poster with dates, fees, eligibility and registration information',
   },
-  id: {
-    home: 'Beranda TREASURE 2026',
-    heroLogoAlt: 'TREASURE edisi ke-4 — Strategic Minds, Competitive Moves: Simulating the Future of Business',
-    openNav: 'Buka navigasi',
-    closeNav: 'Tutup navigasi',
-    navLabel: 'Navigasi utama',
-    navAbout: 'Tentang kompetisi',
-    navDates: 'Jadwal',
-    navEligibility: 'Syarat peserta',
-    navContact: 'Kontak',
-    register: 'Daftar',
-    edition: 'Kompetisi Bisnis Internasional ke-4',
-    claim: 'Daftar sekarang',
-    exploreDates: 'Lihat jadwal',
-    host: 'Departemen Akuntansi · Politeknik Negeri Malang',
-    collaboration: 'Berkolaborasi dengan Edugate',
-    registration: 'Pendaftaran',
-    training: 'Pelatihan',
-    competition: 'Kompetisi',
-    aboutLabel: '01 / Undangan',
-    aboutNote: 'Kompetisi untuk calon pemimpin bisnis',
-    thinkBigger: 'Berpikir lebih besar.',
-    competeForward: 'Melangkah lebih maju.',
-    aboutText:
-      'TREASURE kembali untuk edisi internasional keempat, mengajak mahasiswa aktif program diploma dan sarjana untuk menguji wawasan bisnis. Terima tantangannya, perluas perspektif, dan simulasikan masa depan bisnis.',
-    hostedText:
-      'Diselenggarakan oleh Departemen Akuntansi Politeknik Negeri Malang berkolaborasi dengan Edugate.',
-    datesLabel: '02 / Catat tanggalnya',
-    datesTitle: 'Tiga tanggal.',
-    datesTitleSecond: 'Satu langkah besar.',
-    datesNote: 'Ikuti setiap tahap TREASURE 2026.',
-    detailsLabel: '03 / Saatnya melangkah',
-    detailsTitle: 'Untuk calon',
-    detailsTitleSecond: 'pemimpin bisnis.',
-    detailsNote: 'Bawa pengetahuan dan ambisimu.',
-    eligibility: 'Siapa yang bisa ikut',
-    diploma: 'DIPLOMA / SARJANA',
-    challenge: 'Langkah berikutnya dimulai di sini.',
-    eligibilityText:
-      'Terbuka bagi mahasiswa aktif program diploma atau sarjana di bidang akuntansi, ekonomi, manajemen, dan bisnis.',
-    rewards: 'Hadiah',
-    rewardPitch: 'Saatnya tampil dengan kemampuan terbaik.',
-    rewardsOver: 'Total hadiah lebih dari',
-    upTo: 'Hingga USD 560',
-    fees: 'Biaya pendaftaran',
-    internationalStudents: 'Mahasiswa internasional',
-    indonesianStudents: 'Mahasiswa Indonesia',
-    feeLabel: 'Biaya pendaftaran',
-    posterLabel: '04 / Pengumuman resmi',
-    posterTitle: 'Semua detail.',
-    posterTitleSecond: 'Dalam satu poster.',
-    posterText:
-      'Jadwal, biaya pendaftaran, syarat peserta, dan informasi kontak TREASURE 2026.',
-    viewPoster: 'Lihat poster lengkap',
-    openPoster: 'Buka poster acara TREASURE 2026',
-    registrationPeriod: 'Pendaftaran · 12 Okt—5 Nov 2026',
-    finalTitle: 'Tunjukkan',
-    finalTitleSecond: 'kemampuanmu.',
-    finalText:
-      'Siap berkompetisi? Daftar TREASURE 2026 selama periode pendaftaran dan ambil bagian dalam tantangannya.',
-    registerAt: 'Daftarkan timmu',
-    furtherInfo: 'Informasi lebih lanjut',
-    contact: 'Kontak',
-    instagram: 'Instagram',
-    hostedBy: 'Diselenggarakan oleh',
-    footerCompetition: 'Kompetisi Bisnis Internasional ke-4',
-    backToTop: 'Kembali ke atas',
-    posterAlt:
-      'Poster resmi TREASURE 2026 berisi jadwal, biaya, syarat peserta, dan informasi pendaftaran',
-  },
 } as const;
 
 function App() {
   const [menuOpen, setMenuOpen] = useState(false);
-  const [language, setLanguage] = useState<'id' | 'en'>('id');
-  const t = copy[language];
+  const t = copy.en;
 
   const closeMenu = () => setMenuOpen(false);
 
   useEffect(() => {
-    document.documentElement.lang = language;
-    document.title = 'TREASURE 2026 — Kompetisi Bisnis Internasional';
-  }, [language]);
+    document.documentElement.lang = 'en';
+    document.title = 'TREASURE 2026 — International Business Competition';
+  }, []);
 
   return (
     <main className="site">
@@ -165,23 +94,6 @@ function App() {
           <img className="brand-logo" src="/treasure-wordmark.png" alt="" />
           <span className="brand-year">2026</span>
         </a>
-        <div className="language-switch" role="group" aria-label="Pilih bahasa / Choose language">
-          <button
-            type="button"
-            onClick={() => setLanguage('id')}
-            aria-pressed={language === 'id'}
-          >
-            ID
-          </button>
-          <span aria-hidden="true">/</span>
-          <button
-            type="button"
-            onClick={() => setLanguage('en')}
-            aria-pressed={language === 'en'}
-          >
-            EN
-          </button>
-        </div>
         <button
           className="menu-toggle"
           type="button"
@@ -208,9 +120,7 @@ function App() {
             <div className="eyebrow"><span className="eyebrow-line" /> {t.edition}</div>
             <img className="hero-logo" src="/treasure-logo-fourth.png" alt={t.heroLogoAlt} />
             <p className="hero-copy">
-              {language === 'id'
-                ? <>Strategi tajam. Langkah kompetitif. <strong>Simulasikan masa depan bisnis.</strong></>
-                : <>Strategic minds. Competitive moves. <strong>Simulating the future of business.</strong></>}
+              Strategic minds. Competitive moves. <strong>Simulating the future of business.</strong>
             </p>
             <div className="hero-actions">
               <a className="button button-light" href={registrationUrl}>
@@ -227,6 +137,28 @@ function App() {
             </div>
           </div>
         </div>
+        <div className="hero-facts" aria-label="TREASURE 2026 at a glance">
+          <article className="hero-fact hero-fact-date">
+            <span className="hero-fact-label">{t.registration}</span>
+            <strong>12 Oct—5 Nov 2026</strong>
+            <small>Training 16—17 Nov · Competition 23—25 Nov</small>
+          </article>
+          <article className="hero-fact hero-fact-eligibility">
+            <span className="hero-fact-label">{t.eligibility}</span>
+            <strong>Active diploma &amp; undergraduate students</strong>
+            <small>Accounting, economics, management &amp; business</small>
+          </article>
+          <article className="hero-fact hero-fact-fees">
+            <span className="hero-fact-label">{t.fees}</span>
+            <strong>USD 20 <i>international</i></strong>
+            <small>IDR 300k · Indonesian students</small>
+          </article>
+          <article className="hero-fact hero-fact-prize">
+            <span className="hero-fact-label">{t.rewards}</span>
+            <strong>IDR 10 million</strong>
+            <small>Up to USD 560</small>
+          </article>
+        </div>
         <div className="hero-footer">
           <span>{t.host}</span>
           <strong>{t.collaboration}</strong>
@@ -237,7 +169,7 @@ function App() {
         <div className="ticker-track">
           {[0, 1].map((copy) => (
             <span key={copy}>
-              <i /> {t.registration} · {language === 'id' ? '12 Okt' : '12 Oct'} — 5 Nov 2026
+              <i /> {t.registration} · 12 Oct — 5 Nov 2026
               <i /> {t.training} · 16—17 Nov 2026
               <i /> {t.competition} · 23—25 Nov 2026 <i /> TREASURE 2026
             </span>
@@ -272,7 +204,7 @@ function App() {
             <div className="timeline-row">
               <span className="timeline-num">01</span>
               <h3>{t.registration}</h3>
-              <time dateTime="2026-10-12">{language === 'id' ? '12 Okt' : '12 Oct'} — 5 Nov 2026</time>
+              <time dateTime="2026-10-12">12 Oct — 5 Nov 2026</time>
             </div>
             <div className="timeline-row">
               <span className="timeline-num">02</span>

@@ -6,7 +6,6 @@ import type { TeamRegistrationInput, TeamRegistrationReceipt } from '@workspace/
 import { useAuth } from '@workspace/replit-auth-web';
 import './registration.css';
 
-type Lang = 'id' | 'en';
 type Purpose = 'student_id' | 'payment_proof';
 type UpStatus = 'idle' | 'uploading' | 'done' | 'error';
 interface Up { status: UpStatus; name: string; uploadId: string; error: string; file: File | null }
@@ -19,37 +18,8 @@ const MIME = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'] as con
 const MAX = 10 * 1024 * 1024;
 
 const T = {
-  id: {
-    back: 'Beranda', lang: 'Pilih bahasa',
-    eyebrow: 'Pendaftaran · TREASURE 2026', title: 'Daftarkan timmu.',
-    intro: 'Isi data pendaftaran dan unggah dokumen. Setelah tersimpan, kamu mendapat kode referensi sebagai tanda terima data.',
-    period: 'Pendaftaran', periodV: '12 Okt — 5 Nov 2026', training: 'Pelatihan', trainingV: '16—17 Nov 2026', comp: 'Kompetisi', compV: '23—25 Nov 2026',
-    feeIdn: 'Mahasiswa Indonesia', feeInt: 'Mahasiswa internasional', contactH: 'Kontak', wa: 'WhatsApp Ms. Abryel',
-    gateH: 'Masuk untuk mendaftar', gateP: 'Pendaftaran memerlukan login aman agar dokumenmu tersimpan privat. Situs tetap dapat diakses tanpa login.', signIn: 'Masuk dengan aman',
-    loading: 'Memeriksa sesi login...', signedAs: 'Masuk sebagai', signOut: 'Keluar',
-    expired: 'Sesimu berakhir. Isianmu masih ada di formulir. Masuk lagi di tab baru, lalu kembali ke tab ini dan kirim ulang.',
-    leaderH: 'Ketua tim', membersH: 'Anggota tim (opsional)', nameHint: 'Tulis nama yang benar, karena akan dipakai untuk e-sertifikat.',
-    fullName: 'Nama lengkap', memberLbl: 'Nama anggota', add: 'Tambah anggota', remove: 'Hapus',
-    contactT: 'Kontak dan institusi', email: 'Email ketua', phone: 'WhatsApp ketua', altPhone: 'WhatsApp alternatif (anggota)',
-    phoneHint: 'Boleh memakai +, angka, spasi, tanda hubung, titik, dan tanda kurung.',
-    institution: 'Institusi', faculty: 'Fakultas / departemen', country: 'Negara asal', countryPick: 'Pilih negara', otherCountry: 'Tulis negara asalmu',
-    compH: 'Kompetisi dan pelatihan', competition: 'Kompetisi yang diikuti', bs: 'Business Simulation', pc: 'Poster Competition', oth: 'Lainnya', otherComp: 'Tulis kompetisi lainnya',
-    edugateQuestion: 'Pernah mengikuti pelatihan simulasi bisnis yang diselenggarakan Edugate sebelumnya?', yes: 'Ya', no: 'Tidak',
-    docsH: 'Dokumen', docsHint: 'JPG, PNG, WebP, atau PDF. Maksimal 10 MB.',
-    sid: 'Kartu mahasiswa ketua (hanya ketua)', pay: 'Bukti pembayaran pendaftaran', choose: 'Pilih berkas', replace: 'Ganti berkas', retry: 'Coba unggah lagi',
-    uploading: 'Mengunggah', uploaded: 'Terunggah', badType: 'Format harus JPG, PNG, WebP, atau PDF.', tooBig: 'Ukuran berkas maksimal 10 MB.', upFail: 'Unggahan gagal. Coba lagi.',
-    consent: 'Saya berwenang memberikan data ini dan setiap orang yang disebutkan mengetahui datanya digunakan untuk pendaftaran TREASURE 2026.',
-    submit: 'Kirim pendaftaran', sending: 'Mengirim...', waitUp: 'Tunggu unggahan selesai.',
-    r: 'Wajib diisi.', min: 'Minimal 2 karakter.', max: (n: number) => `Maksimal ${n} karakter.`,
-    badEmail: 'Format email tidak valid.', badPhone: 'Gunakan 7–15 digit; boleh memakai +, spasi, ( ) . -', pick: 'Pilih salah satu.', needFile: 'Berkas wajib diunggah.', needConsent: 'Persetujuan wajib dicentang.',
-    fixErrors: 'Periksa kolom yang ditandai. Isianmu tetap tersimpan di formulir.', failed: 'Pendaftaran belum terkirim. Isianmu tetap aman; coba kirim lagi.',
-    okTag: 'Data diterima', okTitle: 'Data pendaftaran diterima.',
-    okNote: 'Ini tanda terima data, bukan bukti pembayaran atau konfirmasi penerimaan. Simpan kode referensi ini dan hubungi panitia untuk langkah berikutnya.',
-    ref: 'Kode referensi', at: 'Diterima pada', members: 'Nama terdaftar', print: 'Cetak tanda terima', newReg: 'Daftarkan tim lain', homeL: 'Kembali ke beranda',
-    contactLine: 'Panitia: Ms. Abryel, WhatsApp +62 852-3076-2534 · Instagram @treasure_polinema',
-  },
   en: {
-    back: 'Home', lang: 'Choose language',
+    back: 'Home',
     eyebrow: 'Registration · TREASURE 2026', title: 'Register your team.',
     intro: 'Fill in the registration details and upload your documents. Once saved, you get a reference code as a receipt for your data.',
     period: 'Registration', periodV: '12 Oct — 5 Nov 2026', training: 'Training', trainingV: '16—17 Nov 2026', comp: 'Competition', compV: '23—25 Nov 2026',
@@ -103,8 +73,7 @@ const newKey = () =>
 const statusOf = (e: unknown) => (e as { status?: number } | null)?.status;
 
 export default function RegistrationPage() {
-  const [lang, setLang] = useState<Lang>('id');
-  const t = T[lang];
+  const t = T.en;
   const auth = useAuth();
   const [leader, setLeader] = useState('');
   const [slots, setSlots] = useState<Slot[]>(() => [slot(), slot(), slot(), slot()]);
@@ -134,13 +103,13 @@ export default function RegistrationPage() {
   const tokens = useRef<Record<Purpose, number>>({ student_id: 0, payment_proof: 0 });
 
   useEffect(() => {
-    document.documentElement.lang = lang;
-    document.title = `${t.eyebrow} — TREASURE 2026`;
+    document.documentElement.lang = 'en';
+    document.title = 'Registration — TREASURE 2026';
     for (const s of ['meta[name="description"]', 'meta[property="og:description"]', 'meta[name="twitter:description"]'])
       document.querySelector(s)?.setAttribute('content', t.intro);
     for (const s of ['meta[property="og:title"]', 'meta[name="twitter:title"]'])
       document.querySelector(s)?.setAttribute('content', document.title);
-  }, [lang, t.eyebrow, t.intro]);
+  }, [t.eyebrow, t.intro]);
 
   const uploading = ups.student_id.status === 'uploading' || ups.payment_proof.status === 'uploading';
   const busy = mutation.isPending || uploading;
@@ -190,7 +159,7 @@ export default function RegistrationPage() {
   const touch = (k: string) => () => setTouched((s) => ({ ...s, [k]: true }));
   const fmtDate = (iso: string) => {
     const d = new Date(iso);
-    return isNaN(d.getTime()) ? iso : new Intl.DateTimeFormat(lang === 'id' ? 'id-ID' : 'en-GB', { dateStyle: 'long', timeStyle: 'short' }).format(d);
+    return isNaN(d.getTime()) ? iso : new Intl.DateTimeFormat('en-GB', { dateStyle: 'long', timeStyle: 'short' }).format(d);
   };
 
   const doUpload = async (purpose: Purpose, file: File) => {
@@ -271,10 +240,6 @@ export default function RegistrationPage() {
       <a className="reg-back" href={home} data-testid="link-home">
         <ArrowLeft size={14} style={{ verticalAlign: '-2px' }} /> <span>{t.back}</span>
       </a>
-      <div className="reg-lang" role="group" aria-label={t.lang}>
-        <button type="button" aria-pressed={lang === 'id'} onClick={() => setLang('id')} data-testid="button-lang-id">ID</button>
-        <button type="button" aria-pressed={lang === 'en'} onClick={() => setLang('en')} data-testid="button-lang-en">EN</button>
-      </div>
     </header>
   );
 
@@ -498,7 +463,7 @@ export default function RegistrationPage() {
             <div><span>{t.period}</span><span>{t.periodV}</span></div>
             <div><span>{t.training}</span><span>{t.trainingV}</span></div>
             <div><span>{t.comp}</span><span>{t.compV}</span></div>
-            <div><span>{t.feeIdn}</span><span>IDR 300.000</span></div>
+            <div><span>{t.feeIdn}</span><span>IDR 300,000</span></div>
             <div><span>{t.feeInt}</span><span>USD 20</span></div>
             <div><span>{t.contactH}</span><a href="https://wa.me/6285230762534" style={{ color: 'var(--treasure-blue)' }} target="_blank" rel="noreferrer">{t.wa}</a></div>
             <div><span>Instagram</span><a href="https://www.instagram.com/treasure_polinema/" style={{ color: 'var(--treasure-blue)' }} target="_blank" rel="noreferrer">@treasure_polinema</a></div>

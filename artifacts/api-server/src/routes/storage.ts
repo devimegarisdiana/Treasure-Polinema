@@ -11,12 +11,12 @@ const router: IRouter = Router();
 router.post("/storage/uploads/request-url", async (req, res): Promise<void> => {
   res.setHeader("Cache-Control", "no-store");
   if (!req.isAuthenticated()) {
-    res.status(401).json({ error: "Silakan masuk sebelum mengunggah dokumen." });
+    res.status(401).json({ error: "Please sign in before uploading documents." });
     return;
   }
   const parsed = RequestUploadUrlBody.safeParse(req.body);
   if (!parsed.success) {
-    res.status(400).json({ error: "Gunakan JPG, PNG, WebP, atau PDF, maksimal 10 MB per file." });
+    res.status(400).json({ error: "Use JPG, PNG, WebP, or PDF files, up to 10 MB per file." });
     return;
   }
   try {
@@ -34,7 +34,7 @@ router.post("/storage/uploads/request-url", async (req, res): Promise<void> => {
     res.json(RequestUploadUrlResponse.parse({ uploadId: upload.id, uploadURL }));
   } catch {
     req.log.error("Unable to create registration document upload");
-    res.status(500).json({ error: "Unggahan belum dimulai. Silakan coba lagi." });
+    res.status(500).json({ error: "The upload could not be started. Please try again." });
   }
 });
 

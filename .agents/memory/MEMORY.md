@@ -1,2 +1,3 @@
 - [Competition rules and source trust](competition-rules.md) — do not invent team-size limits; verify printed links before using them for registration.
 - [Visual direction](visual-direction.md) — textured broken white with calm soft-red and blue accents; no green-dominant theme.
+- [Site language](site-language.md) — all website information must be in English.
