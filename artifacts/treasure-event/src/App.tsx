@@ -3,6 +3,7 @@ import { ArrowDown, ArrowUpRight, Menu, X } from 'lucide-react';
 
 const registrationUrl = '/register';
 const archiveUrl = `${(import.meta.env.BASE_URL as string).replace(/\/+$/, '')}/archive/2025`;
+const posterUrl = `${(import.meta.env.BASE_URL as string).replace(/\/+$/, '')}/treasure-poster-updated.png`;
 
 const copy = {
   en: {
@@ -54,7 +55,7 @@ const copy = {
     internationalStudents: 'International students',
     indonesianStudents: 'Indonesian students',
     feeLabel: 'Registration fee',
-    posterLabel: '04 / The original announcement',
+    posterLabel: '04 / The event announcement',
     posterTitle: 'All the details.',
     posterTitleSecond: 'One poster.',
     posterText:
@@ -136,7 +137,7 @@ function App() {
           </div>
           <div className="hero-aside fade-up" style={{ animationDelay: '120ms' }}>
             <div className="poster-frame">
-              <img src="/treasure-poster.png" alt={t.posterAlt} />
+              <img src={posterUrl} alt={t.posterAlt} />
             </div>
           </div>
         </div>
@@ -267,12 +268,12 @@ function App() {
             <div className="section-label">{t.posterLabel}</div>
             <h2>{t.posterTitle}<br />{t.posterTitleSecond}</h2>
             <p>{t.posterText}</p>
-            <a className="button button-light" href="/treasure-poster.png" target="_blank" rel="noreferrer">
+            <a className="button button-light" href={posterUrl} target="_blank" rel="noreferrer">
               {t.viewPoster} <ArrowUpRight size={15} />
             </a>
           </div>
-          <a className="poster-inline" href="/treasure-poster.png" target="_blank" rel="noreferrer" aria-label={t.openPoster}>
-            <img src="/treasure-poster.png" alt={t.posterAlt} loading="lazy" />
+          <a className="poster-inline" href={posterUrl} target="_blank" rel="noreferrer" aria-label={t.openPoster}>
+            <img src={posterUrl} alt={t.posterAlt} loading="lazy" />
           </a>
         </div>
       </section>

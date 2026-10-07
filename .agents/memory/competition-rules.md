@@ -15,6 +15,12 @@ Historical booklets establish the announced program, not verified event outcomes
 
 **How to apply:** Keep historical rules and payment instructions clearly dated and separate from current registration. Do not infer actual attendance, winners, or successful event outcomes from a program booklet.
 
+Do not present a minimum prize claim as a maximum after currency conversion.
+
+**Why:** The user corrected the “Up to USD 560” wording because the current prize pool exceeds the rupiah threshold. A USD cap misrepresented that claim.
+
+**How to apply:** Keep current prize copy and poster labels consistent with the user's correction, preserve unrelated artwork, and do not apply current prize changes to dated historical booklets.
+
 Treat printed outbound registration URLs as unverified until checked.
 
 **Why:** On 2026-10-07, the poster's treasure.polinema.com address served a domain-parking page over HTTP, rather than an event registration portal; HTTPS failed.
