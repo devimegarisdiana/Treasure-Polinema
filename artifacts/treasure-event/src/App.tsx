@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { ArrowDown, ArrowUpRight, Menu, X } from 'lucide-react';
 
 const registrationUrl = '/register';
+const archiveUrl = `${(import.meta.env.BASE_URL as string).replace(/\/+$/, '')}/archive/2025`;
 
 const copy = {
   en: {
@@ -14,6 +15,7 @@ const copy = {
     navDates: 'Key dates',
     navEligibility: 'Who can compete',
     navContact: 'Contact',
+    navArchive: '2025 archive',
     register: 'Register',
     edition: 'The 4th International Business Competition',
     claim: 'Claim your place',
@@ -108,6 +110,7 @@ function App() {
           <a href="#dates" onClick={closeMenu}>{t.navDates}</a>
           <a href="#details" onClick={closeMenu}>{t.navEligibility}</a>
           <a href="#contact" onClick={closeMenu}>{t.navContact}</a>
+          <a href={archiveUrl} onClick={closeMenu}>{t.navArchive}</a>
           <a className="nav-register" href={registrationUrl} onClick={closeMenu}>
             {t.register} <ArrowUpRight size={13} />
           </a>
@@ -310,6 +313,7 @@ function App() {
           <span className="brand-year">2026</span>
         </a>
         <span>{t.footerCompetition}</span>
+        <a href={archiveUrl}>2025 archive</a>
         <a href="#home">{t.backToTop} ↑</a>
       </footer>
     </main>

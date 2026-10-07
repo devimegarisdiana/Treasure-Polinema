@@ -87,7 +87,7 @@ a { color: inherit; }
 .brand-logo { display:block; width:158px; height:auto; }
 .brand-year { color:var(--treasure-blue); font:700 13px var(--app-font-sans); letter-spacing:-.05em; }
 .nav a:focus-visible,.button:focus-visible,.footer a:focus-visible { outline:2px solid var(--treasure-blue); outline-offset:4px; }
-.nav { display:flex; gap:31px; align-items:center; }
+.nav { display:flex; gap:clamp(12px,1.5vw,22px); align-items:center; }
 .nav a { text-decoration:none; text-transform:uppercase; letter-spacing:.11em; font:500 10px var(--app-font-mono); transition:color .2s; }
 .nav a:hover { color:var(--treasure-soft-red); }
 .nav-register { background:#e8edf1; color:var(--treasure-blue-deep)!important; padding:14px 19px; border:1px solid #d6dfe6; border-radius:2px; }
