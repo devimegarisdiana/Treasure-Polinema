@@ -13,6 +13,57 @@ tags:
   - name: registrations
     description: TREASURE team registration
 paths:
+  /participant-auth/me:
+    get:
+      operationId: getParticipantSession
+      responses:
+        "200":
+          description: Current participant account, independent of organizer login
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ParticipantSession" }
+  /participant-auth/signup:
+    post:
+      operationId: createParticipantAccount
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ParticipantSignup" }
+      responses:
+        "201":
+          description: Account created and signed in
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ParticipantSession" }
+        "400": { description: Invalid account details }
+        "409": { description: Username or email already registered }
+        "429": { description: Too many attempts }
+  /participant-auth/signin:
+    post:
+      operationId: signInParticipant
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ParticipantSignin" }
+      responses:
+        "200":
+          description: Participant signed in
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ParticipantSession" }
+        "401": { description: Invalid credentials }
+        "429": { description: Too many attempts }
+  /participant-auth/signout:
+    post:
+      operationId: signOutParticipant
+      responses:
+        "200":
+          description: Participant session revoked
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/LogoutSuccess" }
   /admin/access:
     get:
       operationId: getAdminAccess
@@ -241,6 +292,38 @@ paths:
                 $ref: "#/components/schemas/ErrorResponse"
 components:
   schemas:
+    ParticipantUser:
+      type: object
+      required: [id, username, email]
+      properties:
+        id: { type: string }
+        username: { type: string }
+        email: { type: string, format: email }
+    ParticipantSession:
+      type: object
+      required: [user]
+      properties:
+        user:
+          oneOf:
+            - { $ref: "#/components/schemas/ParticipantUser" }
+            - { type: "null" }
+    ParticipantSignup:
+      type: object
+      required: [username, email, password]
+      properties:
+        username:
+          type: string
+          minLength: 3
+          maxLength: 30
+          pattern: '^[A-Za-z0-9][A-Za-z0-9_.-]{2,29}$'
+        email: { type: string, format: email, maxLength: 254 }
+        password: { type: string, minLength: 12, maxLength: 128 }
+    ParticipantSignin:
+      type: object
+      required: [identifier, password]
+      properties:
+        identifier: { type: string, minLength: 3, maxLength: 254 }
+        password: { type: string, minLength: 1, maxLength: 128 }
     HealthStatus:
       type: object
       properties:

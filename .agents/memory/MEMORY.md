@@ -2,3 +2,5 @@
 - [Visual direction](visual-direction.md) — textured broken white with calm soft-red and blue accents; no green-dominant theme.
 - [Site language](site-language.md) — all website information must be in English.
 - [Organizer access](organizer-access.md) — organizer access and notification recipients are separate; receiving email does not grant access to private data.
+- [Participant accounts](participant-accounts.md) — participants sign up with username, email, and password, without Replit login; email stays mandatory.
+- [Preview cookie policy](preview-cookie-policy.md) — HTTPS development preview may rewrite SameSite=Lax to None; compare direct headers before diagnosing auth bugs.

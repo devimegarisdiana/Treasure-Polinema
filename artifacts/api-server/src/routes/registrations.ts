@@ -5,16 +5,18 @@ import { db, teamRegistrationsTable, teamRegistrationMembersTable, registrationU
 import { CreateTeamRegistrationBody, CreateTeamRegistrationResponse } from "@workspace/api-zod";
 import { freezeDocument, RegistrationDocumentError, type FrozenDocument } from "../lib/registrationDocuments";
 import { processRegistrationNotifications } from "../lib/registrationNotifications";
+import { registrationOwner, sameSiteRequest } from "../lib/participantAuth";
 
 const router: IRouter = Router();
 
 router.post("/registrations/teams", async (req, res): Promise<void> => {
   res.setHeader("Cache-Control", "no-store");
-  if (!req.isAuthenticated()) {
+  if (!sameSiteRequest(req)) { res.status(403).json({ error: "Please use the TREASURE registration page." }); return; }
+  const ownerId = registrationOwner(req);
+  if (!ownerId) {
     res.status(401).json({ error: "Please sign in before submitting your registration." });
     return;
   }
-  const ownerId = req.user.id;
   // Trim only strings; retain invalid input types so contract validation rejects them.
   const body = req.body;
   const trim = (value: unknown): unknown => typeof value === "string" ? value.trim() : value;

@@ -5,6 +5,45 @@
  * API specification
  * OpenAPI spec version: 0.1.0
  */
+export interface ParticipantUser {
+  id: string;
+  username: string;
+  email: string;
+}
+
+export interface ParticipantSession {
+  user: ParticipantUser | null;
+}
+
+export interface ParticipantSignup {
+  /**
+     * @minLength 3
+     * @maxLength 30
+     * @pattern ^[A-Za-z0-9][A-Za-z0-9_.-]{2,29}$
+     */
+  username: string;
+  /** @maxLength 254 */
+  email: string;
+  /**
+     * @minLength 12
+     * @maxLength 128
+     */
+  password: string;
+}
+
+export interface ParticipantSignin {
+  /**
+     * @minLength 3
+     * @maxLength 254
+     */
+  identifier: string;
+  /**
+     * @minLength 1
+     * @maxLength 128
+     */
+  password: string;
+}
+
 export interface HealthStatus {
   status: string;
 }

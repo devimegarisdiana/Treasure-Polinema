@@ -3,7 +3,8 @@ import type { FormEvent } from 'react';
 import { ArrowLeft, Plus, Printer, Trash2 } from 'lucide-react';
 import { useCreateTeamRegistration, useRequestUploadUrl } from '@workspace/api-client-react';
 import type { TeamRegistrationInput, TeamRegistrationReceipt } from '@workspace/api-client-react';
-import { useAuth } from '@workspace/replit-auth-web';
+import ParticipantAuth from '../components/ParticipantAuth';
+import { useParticipantAuth } from '../hooks/use-participant-auth';
 import './registration.css';
 
 type Purpose = 'student_id' | 'payment_proof';
@@ -54,10 +55,10 @@ const slot = (): Slot => ({ uid: ++uid, fullName: '' });
 const emptyUp = (): Up => ({ status: 'idle', name: '', uploadId: '', error: '', file: null });
 const emailRe = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const phoneRe = /^(?=(?:[^0-9]*[0-9]){7,15}[^0-9]*$)[+0-9() .-]+$/;
-const receiptStorageKey = 'treasure-registration-receipt';
-const readReceipt = (): TeamRegistrationReceipt | null => {
+const receiptStorageKey = (userId: string) => `treasure-registration-receipt:${userId}`;
+const readReceipt = (userId: string): TeamRegistrationReceipt | null => {
   try {
-    const s = JSON.parse(sessionStorage.getItem(receiptStorageKey) ?? 'null');
+    const s = JSON.parse(sessionStorage.getItem(receiptStorageKey(userId)) ?? 'null');
     return s && typeof s.referenceCode === 'string' && /^TR26-[0-9A-F]{12}$/.test(s.referenceCode) &&
       typeof s.submittedAt === 'string' && Number.isFinite(Date.parse(s.submittedAt))
       ? { referenceCode: s.referenceCode, submittedAt: s.submittedAt } : null;
@@ -74,7 +75,7 @@ const statusOf = (e: unknown) => (e as { status?: number } | null)?.status;
 
 export default function RegistrationPage() {
   const t = T.en;
-  const auth = useAuth();
+  const auth = useParticipantAuth();
   const [leader, setLeader] = useState('');
   const [slots, setSlots] = useState<Slot[]>(() => [slot(), slot(), slot(), slot()]);
   const [email, setEmail] = useState('');
@@ -92,13 +93,40 @@ export default function RegistrationPage() {
   const [attempted, setAttempted] = useState(false);
   const [serverError, setServerError] = useState('');
   const [expired, setExpired] = useState(false);
-  const [receipt, setReceipt] = useState<TeamRegistrationReceipt | null>(readReceipt);
+  const [receipt, setReceipt] = useState<TeamRegistrationReceipt | null>(null);
   const [sentCount, setSentCount] = useState(0);
   const mutation = useCreateTeamRegistration();
   const uploadUrl = useRequestUploadUrl();
   const formRef = useRef<HTMLFormElement>(null);
   const keyRef = useRef<string>(newKey());
   const tokens = useRef<Record<Purpose, number>>({ student_id: 0, payment_proof: 0 });
+  const lastAccountId = useRef<string | null>(null);
+
+  useEffect(() => {
+    const accountId = auth.user?.id ?? null;
+    if (!accountId) return;
+    const previousId = lastAccountId.current;
+    if (previousId && previousId !== accountId) {
+      auth.clearParticipantCache();
+      try { sessionStorage.removeItem(receiptStorageKey(previousId)); } catch { /* optional */ }
+      try { sessionStorage.removeItem(receiptStorageKey(accountId)); } catch { /* optional */ }
+      setLeader(''); setSlots([slot(), slot(), slot(), slot()]); setEmail(auth.user?.email ?? '');
+      setPhone(''); setAltPhone(''); setInstitution(''); setFaculty(''); setCountry(''); setOtherCountry('');
+      setTraining(null); setUps({ student_id: emptyUp(), payment_proof: emptyUp() });
+      tokens.current = { student_id: tokens.current.student_id + 1, payment_proof: tokens.current.payment_proof + 1 };
+      setConsent(false); setWebsite(''); setTouched({}); setAttempted(false); setServerError('');
+      setReceipt(null); setSentCount(0); keyRef.current = newKey(); mutation.reset();
+    } else if (!previousId) {
+      setReceipt(readReceipt(accountId));
+      if (!email.trim()) setEmail(auth.user?.email ?? '');
+    }
+    lastAccountId.current = accountId;
+  }, [auth.user?.id, auth.user?.email, auth.clearParticipantCache]);
+
+  useEffect(() => {
+    if (!auth.user && !expired) return;
+    if (auth.user?.email && !email.trim()) setEmail(auth.user.email);
+  }, [auth.user?.email, email, expired]);
 
   useEffect(() => {
     document.documentElement.lang = 'en';
@@ -208,7 +236,9 @@ export default function RegistrationPage() {
       const r = await mutation.mutateAsync({ data });
       setSentCount(names.length);
       setReceipt(r);
-      try { sessionStorage.setItem(receiptStorageKey, JSON.stringify(r)); } catch { /* optional */ }
+      if (auth.user) {
+        try { sessionStorage.setItem(receiptStorageKey(auth.user.id), JSON.stringify(r)); } catch { /* optional */ }
+      }
       window.scrollTo({ top: 0 });
     } catch (err) {
       if (statusOf(err) === 401) { setExpired(true); return; }
@@ -218,7 +248,9 @@ export default function RegistrationPage() {
   };
 
   const reset = () => {
-    try { sessionStorage.removeItem(receiptStorageKey); } catch { /* optional */ }
+    if (auth.user) {
+      try { sessionStorage.removeItem(receiptStorageKey(auth.user.id)); } catch { /* optional */ }
+    }
     setLeader(''); setSlots([slot(), slot(), slot(), slot()]); setEmail(''); setPhone(''); setAltPhone('');
     setInstitution(''); setFaculty(''); setCountry(''); setOtherCountry('');
     setTraining(null); setUps({ student_id: emptyUp(), payment_proof: emptyUp() });
@@ -226,6 +258,36 @@ export default function RegistrationPage() {
     setConsent(false); setWebsite(''); setTouched({}); setAttempted(false); setServerError(''); setExpired(false);
     setReceipt(null); setSentCount(0); keyRef.current = newKey(); mutation.reset();
   };
+
+  const signOutParticipant = async () => {
+    const priorId = auth.user?.id;
+    await auth.logout();
+    if (priorId) {
+      try { sessionStorage.removeItem(receiptStorageKey(priorId)); } catch { /* optional */ }
+    }
+    lastAccountId.current = null;
+    setLeader(''); setSlots([slot(), slot(), slot(), slot()]); setEmail(''); setPhone(''); setAltPhone('');
+    setInstitution(''); setFaculty(''); setCountry(''); setOtherCountry(''); setTraining(null);
+    setUps({ student_id: emptyUp(), payment_proof: emptyUp() });
+    tokens.current = { student_id: tokens.current.student_id + 1, payment_proof: tokens.current.payment_proof + 1 };
+    setConsent(false); setWebsite(''); setTouched({}); setAttempted(false); setServerError(''); setExpired(false);
+    setReceipt(null); setSentCount(0); keyRef.current = newKey(); mutation.reset();
+  };
+
+  const participantAuth = (expiredState = false) => (
+    <ParticipantAuth
+      user={auth.user}
+      loading={auth.isLoading && !expiredState}
+      checking={auth.isRefreshing}
+      sessionError={auth.hasError && !auth.user}
+      expired={expiredState}
+      busy={auth.isMutating}
+      onSignUp={async (data) => { await auth.signup(data); setExpired(false); }}
+      onSignIn={async (data) => { await auth.signin(data); setExpired(false); }}
+      onSignOut={signOutParticipant}
+      onRetry={auth.refresh}
+    />
+  );
 
   const top = (
     <header className="reg-top">
@@ -329,33 +391,17 @@ export default function RegistrationPage() {
     );
   };
 
-  const name = [auth.user?.firstName, auth.user?.lastName].filter(Boolean).join(' ') || auth.user?.email || '';
-
   let body;
-  if (auth.isLoading) {
-    body = <div className="reg-gate" role="status" aria-live="polite" data-testid="status-auth-loading"><p>{t.loading}</p><div className="reg-skel" /></div>;
-  } else if (!auth.isAuthenticated) {
-    body = (
-      <div className="reg-gate" data-testid="gate-login">
-        {expired && <div className="reg-alert" role="alert">{t.expired}</div>}
-        <h2>{t.gateH}</h2>
-        <p>{t.gateP}</p>
-        <button type="button" className="reg-btn reg-primary" onClick={expired ? auth.reauthenticate : auth.login} data-testid="button-login">{t.signIn}</button>
-      </div>
-    );
+  if (auth.isLoading && !expired) {
+    body = participantAuth();
+  } else if (!auth.user && !expired) {
+    body = participantAuth();
   } else {
     body = (
+      <div className="reg-journey">
+      {expired && participantAuth(true)}
       <form className="reg-card" ref={formRef} onSubmit={onSubmit} noValidate data-testid="form-registration">
-        <div className="reg-id">
-          <span data-testid="text-identity">{t.signedAs} {name}</span>
-          <button type="button" className="reg-btn reg-ghost" onClick={auth.logout} data-testid="button-logout">{t.signOut}</button>
-        </div>
-        {expired && (
-          <div className="reg-alert" role="alert" data-testid="text-session-expired">
-            {t.expired}{' '}
-            <button type="button" className="reg-btn reg-yellow" style={{ minHeight: 44, marginTop: 10 }} onClick={auth.reauthenticate} data-testid="button-relogin">{t.signIn}</button>
-          </div>
-        )}
+        {!expired && participantAuth()}
         {serverError && <div className="reg-alert" role="alert" data-testid="text-form-error">{serverError}</div>}
 
         <fieldset disabled={mutation.isPending}>
@@ -445,6 +491,7 @@ export default function RegistrationPage() {
           {mutation.isPending ? t.sending : uploading ? t.waitUp : t.submit}
         </button>
       </form>
+      </div>
     );
   }
 

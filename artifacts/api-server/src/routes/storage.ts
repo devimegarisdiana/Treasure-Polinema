@@ -4,13 +4,16 @@ import { and, eq } from "drizzle-orm";
 import { db, registrationUploadsTable } from "@workspace/db";
 import { RequestUploadUrlBody, RequestUploadUrlResponse } from "@workspace/api-zod";
 import { ObjectStorageService } from "../lib/objectStorage";
+import { registrationOwner, sameSiteRequest } from "../lib/participantAuth";
 
 export const registrationStorage = new ObjectStorageService();
 const router: IRouter = Router();
 
 router.post("/storage/uploads/request-url", async (req, res): Promise<void> => {
   res.setHeader("Cache-Control", "no-store");
-  if (!req.isAuthenticated()) {
+  if (!sameSiteRequest(req)) { res.status(403).json({ error: "Please use the TREASURE registration page." }); return; }
+  const ownerId = registrationOwner(req);
+  if (!ownerId) {
     res.status(401).json({ error: "Please sign in before uploading documents." });
     return;
   }
@@ -23,7 +26,7 @@ router.post("/storage/uploads/request-url", async (req, res): Promise<void> => {
     const data = parsed.data;
     const uploadURL = await registrationStorage.getObjectEntityUploadURL();
     const [upload] = await db.insert(registrationUploadsTable).values({
-      ownerId: req.user.id,
+      ownerId,
       submissionKey: data.submissionKey,
       purpose: data.purpose,
       objectPath: registrationStorage.normalizeObjectEntityPath(uploadURL),
@@ -63,12 +66,14 @@ router.get("/storage/public-objects/*filePath", async (req, res): Promise<void> 
 });
 
 router.get("/storage/objects/*path", async (req, res): Promise<void> => {
-  if (!req.isAuthenticated()) { res.status(401).json({ error: "Login required" }); return; }
+  if (!sameSiteRequest(req)) { res.status(403).json({ error: "Please use the TREASURE registration page." }); return; }
+  const ownerId = registrationOwner(req);
+  if (!ownerId) { res.status(401).json({ error: "Login required" }); return; }
   const raw = req.params.path;
   const objectPath = `/objects/${Array.isArray(raw) ? raw.join("/") : raw}`;
   const [upload] = await db.select().from(registrationUploadsTable).where(and(
     eq(registrationUploadsTable.objectPath, objectPath),
-    eq(registrationUploadsTable.ownerId, req.user.id),
+    eq(registrationUploadsTable.ownerId, ownerId),
   )).limit(1);
   if (!upload) { res.status(404).json({ error: "File not found" }); return; }
   try {

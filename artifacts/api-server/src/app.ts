@@ -5,6 +5,7 @@ import router from "./routes";
 import { logger } from "./lib/logger";
 import cookieParser from "cookie-parser";
 import { authMiddleware } from "./middlewares/authMiddleware";
+import { participantMiddleware } from "./middlewares/participantMiddleware";
 
 const app: Express = express();
 
@@ -32,6 +33,7 @@ app.use(cookieParser());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(authMiddleware);
+app.use(participantMiddleware);
 
 app.use("/api", router);
 

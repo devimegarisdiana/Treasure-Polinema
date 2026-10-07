@@ -8,6 +8,68 @@
 import * as zod from 'zod';
 
 
+export const GetParticipantSessionResponse = zod.object({
+  "user": zod.union([zod.object({
+  "id": zod.string(),
+  "username": zod.string(),
+  "email": zod.string().email()
+}),zod.null()])
+})
+
+
+export const createParticipantAccountBodyUsernameMin = 3;
+export const createParticipantAccountBodyUsernameMax = 30;
+
+
+export const createParticipantAccountBodyUsernameRegExp = new RegExp('^[A-Za-z0-9][A-Za-z0-9_.-]{2,29}$');
+export const createParticipantAccountBodyEmailMax = 254;
+
+export const createParticipantAccountBodyPasswordMin = 12;
+export const createParticipantAccountBodyPasswordMax = 128;
+
+
+
+export const CreateParticipantAccountBody = zod.object({
+  "username": zod.string().min(createParticipantAccountBodyUsernameMin).max(createParticipantAccountBodyUsernameMax).regex(createParticipantAccountBodyUsernameRegExp),
+  "email": zod.string().email().max(createParticipantAccountBodyEmailMax),
+  "password": zod.string().min(createParticipantAccountBodyPasswordMin).max(createParticipantAccountBodyPasswordMax)
+})
+
+export const CreateParticipantAccountResponse = zod.object({
+  "user": zod.union([zod.object({
+  "id": zod.string(),
+  "username": zod.string(),
+  "email": zod.string().email()
+}),zod.null()])
+})
+
+
+export const signInParticipantBodyIdentifierMin = 3;
+export const signInParticipantBodyIdentifierMax = 254;
+
+export const signInParticipantBodyPasswordMax = 128;
+
+
+
+export const SignInParticipantBody = zod.object({
+  "identifier": zod.string().min(signInParticipantBodyIdentifierMin).max(signInParticipantBodyIdentifierMax),
+  "password": zod.string().min(1).max(signInParticipantBodyPasswordMax)
+})
+
+export const SignInParticipantResponse = zod.object({
+  "user": zod.union([zod.object({
+  "id": zod.string(),
+  "username": zod.string(),
+  "email": zod.string().email()
+}),zod.null()])
+})
+
+
+export const SignOutParticipantResponse = zod.object({
+  "success": zod.literal(true)
+})
+
+
 export const GetAdminAccessResponse = zod.object({
   "isAdmin": zod.boolean()
 })
