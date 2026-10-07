@@ -26,7 +26,6 @@ router.post("/registrations/teams", async (req, res): Promise<void> => {
     institution: trim(body.institution),
     facultyDepartment: trim(body.facultyDepartment),
     otherCountry: trim(body.otherCountry),
-    otherCompetition: trim(body.otherCompetition),
     members: Array.isArray(body.members) ? body.members.map((member: unknown) => {
       if (!member || typeof member !== "object" || Array.isArray(member)) return member;
       const value = member as Record<string, unknown>;
@@ -40,9 +39,8 @@ router.post("/registrations/teams", async (req, res): Promise<void> => {
   }
 
   const data = parsed.data;
-  if ((data.countryOfOrigin === "Other" && !data.otherCountry?.trim()) ||
-      (data.competition === "other" && !data.otherCompetition?.trim())) {
-    res.status(400).json({ error: "Please enter your other country or competition selection." });
+  if (data.countryOfOrigin === "Other" && !data.otherCountry?.trim()) {
+    res.status(400).json({ error: "Please enter your other country selection." });
     return;
   }
   const frozen: FrozenDocument[] = [];
@@ -83,7 +81,7 @@ router.post("/registrations/teams", async (req, res): Promise<void> => {
         institution: data.institution,
         facultyDepartment: data.facultyDepartment,
         countryOfOrigin: data.countryOfOrigin === "Other" ? data.otherCountry : data.countryOfOrigin,
-        competition: data.competition === "other" ? data.otherCompetition : data.competition,
+        competition: data.competition,
         hasEdugateTraining: data.hasEdugateTraining,
         studentIdUploadId: data.studentIdUploadId,
         paymentUploadId: data.paymentUploadId,

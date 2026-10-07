@@ -213,10 +213,7 @@ components:
           maxLength: 100
         competition:
           type: string
-          enum: [business_simulation, poster_competition, other]
-        otherCompetition:
-          type: string
-          maxLength: 160
+          enum: [business_simulation]
         hasEdugateTraining:
           type: boolean
         studentIdUploadId:

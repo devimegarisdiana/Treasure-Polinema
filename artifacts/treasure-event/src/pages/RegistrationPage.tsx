@@ -32,7 +32,7 @@ const T = {
     contactT: 'Contact and institution', email: 'Leader email', phone: 'Leader WhatsApp', altPhone: 'Alternative WhatsApp (member)',
     phoneHint: 'You may use +, digits, spaces, hyphens, dots and parentheses.',
     institution: 'Institution', faculty: 'Faculty / department', country: 'Country of origin', countryPick: 'Select a country', otherCountry: 'Enter your country',
-    compH: 'Competition and training', competition: 'Competition', bs: 'Business Simulation', pc: 'Poster Competition', oth: 'Other', otherComp: 'Enter the other competition',
+    compH: 'Competition and training', competition: 'Competition', bs: 'Business Simulation',
     edugateQuestion: 'Have you participated in any business simulation training conducted by Edugate before?', yes: 'Yes', no: 'No',
     docsH: 'Documents', docsHint: 'JPG, PNG, WebP or PDF. Maximum 10 MB.',
     sid: "Leader's student ID (leader only)", pay: 'Registration payment proof', choose: 'Choose file', replace: 'Replace file', retry: 'Retry upload',
@@ -84,8 +84,6 @@ export default function RegistrationPage() {
   const [faculty, setFaculty] = useState('');
   const [country, setCountry] = useState('');
   const [otherCountry, setOtherCountry] = useState('');
-  const [competition, setCompetition] = useState('');
-  const [otherComp, setOtherComp] = useState('');
   const [training, setTraining] = useState<boolean | null>(null);
   const [ups, setUps] = useState<Record<Purpose, Up>>({ student_id: emptyUp(), payment_proof: emptyUp() });
   const [consent, setConsent] = useState(false);
@@ -114,9 +112,9 @@ export default function RegistrationPage() {
   const uploading = ups.student_id.status === 'uploading' || ups.payment_proof.status === 'uploading';
   const busy = mutation.isPending || uploading;
   const dirty = useMemo(
-    () => !!(leader || email || phone || altPhone || institution || faculty || country || competition || training !== null || consent || website) ||
+    () => !!(leader || email || phone || altPhone || institution || faculty || country || training !== null || consent || website) ||
       slots.some((s) => s.fullName) || ups.student_id.status !== 'idle' || ups.payment_proof.status !== 'idle',
-    [leader, email, phone, altPhone, institution, faculty, country, competition, training, consent, website, slots, ups],
+    [leader, email, phone, altPhone, institution, faculty, country, training, consent, website, slots, ups],
   );
   useEffect(() => {
     if (!dirty || receipt) return;
@@ -149,8 +147,6 @@ export default function RegistrationPage() {
   set('faculty', req(faculty, 200));
   if (!country) errors.country = t.pick;
   if (country === 'Other') set('otherCountry', otherCountry.trim() ? (otherCountry.trim().length > 100 ? t.max(100) : '') : t.r);
-  if (!competition) errors.competition = t.pick;
-  if (competition === 'other') set('otherComp', otherComp.trim() ? (otherComp.trim().length > 160 ? t.max(160) : '') : t.r);
   if (training === null) errors.training = t.pick;
   (['student_id', 'payment_proof'] as Purpose[]).forEach((p) => { if (ups[p].status !== 'done') errors[p] = ups[p].error || t.needFile; });
   if (!consent) errors.consent = t.needConsent;
@@ -200,8 +196,7 @@ export default function RegistrationPage() {
       facultyDepartment: faculty.trim(),
       countryOfOrigin: country as TeamRegistrationInput['countryOfOrigin'],
       ...(country === 'Other' ? { otherCountry: otherCountry.trim() } : {}),
-      competition: competition as TeamRegistrationInput['competition'],
-      ...(competition === 'other' ? { otherCompetition: otherComp.trim() } : {}),
+      competition: 'business_simulation',
       hasEdugateTraining: training as boolean,
       studentIdUploadId: ups.student_id.uploadId,
       paymentUploadId: ups.payment_proof.uploadId,
@@ -225,7 +220,7 @@ export default function RegistrationPage() {
   const reset = () => {
     try { sessionStorage.removeItem(receiptStorageKey); } catch { /* optional */ }
     setLeader(''); setSlots([slot(), slot(), slot(), slot()]); setEmail(''); setPhone(''); setAltPhone('');
-    setInstitution(''); setFaculty(''); setCountry(''); setOtherCountry(''); setCompetition(''); setOtherComp('');
+    setInstitution(''); setFaculty(''); setCountry(''); setOtherCountry('');
     setTraining(null); setUps({ student_id: emptyUp(), payment_proof: emptyUp() });
     tokens.current = { student_id: tokens.current.student_id + 1, payment_proof: tokens.current.payment_proof + 1 };
     setConsent(false); setWebsite(''); setTouched({}); setAttempted(false); setServerError(''); setExpired(false);
@@ -415,8 +410,10 @@ export default function RegistrationPage() {
         <fieldset disabled={mutation.isPending}>
           <legend>{t.compH}</legend>
           <div className="reg-grid">
-            {radios('competition', t.competition, competition, [['business_simulation', t.bs], ['poster_competition', t.pc], ['other', t.oth]], setCompetition)}
-            {competition === 'other' && field('otherComp', 'other-competition', t.otherComp, otherComp, setOtherComp, { full: true, max: 160 })}
+            <div className="reg-field full">
+              <label htmlFor="registration-competition">{t.competition}</label>
+              <input id="registration-competition" type="text" value={t.bs} readOnly />
+            </div>
             {radios('training', t.edugateQuestion, training === null ? '' : training ? 'yes' : 'no', [['yes', t.yes], ['no', t.no]], (v) => setTraining(v === 'yes'))}
           </div>
         </fieldset>

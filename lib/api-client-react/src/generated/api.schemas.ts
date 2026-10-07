@@ -38,8 +38,6 @@ export type TeamRegistrationInputCompetition = typeof TeamRegistrationInputCompe
 
 export const TeamRegistrationInputCompetition = {
   business_simulation: 'business_simulation',
-  poster_competition: 'poster_competition',
-  other: 'other',
 } as const;
 
 export interface TeamRegistrationInput {
@@ -77,8 +75,6 @@ export interface TeamRegistrationInput {
   /** @maxLength 100 */
   otherCountry?: string;
   competition: TeamRegistrationInputCompetition;
-  /** @maxLength 160 */
-  otherCompetition?: string;
   hasEdugateTraining: boolean;
   studentIdUploadId: string;
   paymentUploadId: string;

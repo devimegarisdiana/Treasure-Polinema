@@ -15,6 +15,12 @@ Historical booklets establish the announced program, not verified event outcomes
 
 **How to apply:** Keep historical rules and payment instructions clearly dated and separate from current registration. Do not infer actual attendance, winners, or successful event outcomes from a program booklet.
 
+The current registration is for Business Simulation only, with no poster competition or other competition categories.
+
+**Why:** The user specified: “untuk form pendaafftaran jeni slomba hanya business dimulation tanpa lomba poster dan lain2.”
+
+**How to apply:** Do not reintroduce historical competition categories into the current registration when using older guides as references. Keep historical archive information separate.
+
 Do not present a minimum prize claim as a maximum after currency conversion.
 
 **Why:** The user corrected the “Up to USD 560” wording because the current prize pool exceeds the rupiah threshold. A USD cap misrepresented that claim.

@@ -44,8 +44,6 @@ export interface TeamRegistrationInput {
   /** @maxLength 100 */
   otherCountry?: string;
   competition: TeamRegistrationInputCompetition;
-  /** @maxLength 160 */
-  otherCompetition?: string;
   hasEdugateTraining: boolean;
   studentIdUploadId: string;
   paymentUploadId: string;

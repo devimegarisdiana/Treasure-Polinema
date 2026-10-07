@@ -125,8 +125,6 @@ export const createTeamRegistrationBodyFacultyDepartmentMax = 200;
 
 export const createTeamRegistrationBodyOtherCountryMax = 100;
 
-export const createTeamRegistrationBodyOtherCompetitionMax = 160;
-
 export const createTeamRegistrationBodyMembersItemFullNameMin = 2;
 export const createTeamRegistrationBodyMembersItemFullNameMax = 160;
 
@@ -145,8 +143,7 @@ export const CreateTeamRegistrationBody = zod.object({
   "facultyDepartment": zod.string().min(createTeamRegistrationBodyFacultyDepartmentMin).max(createTeamRegistrationBodyFacultyDepartmentMax),
   "countryOfOrigin": zod.enum(['Indonesia', 'Philippines', 'England', 'Malaysia', 'Turkey', 'Vietnam', 'Thailand', 'Taiwan', 'Saudi Arabia', 'Other']),
   "otherCountry": zod.string().max(createTeamRegistrationBodyOtherCountryMax).optional(),
-  "competition": zod.enum(['business_simulation', 'poster_competition', 'other']),
-  "otherCompetition": zod.string().max(createTeamRegistrationBodyOtherCompetitionMax).optional(),
+  "competition": zod.enum(['business_simulation']),
   "hasEdugateTraining": zod.boolean(),
   "studentIdUploadId": zod.string().uuid(),
   "paymentUploadId": zod.string().uuid(),
