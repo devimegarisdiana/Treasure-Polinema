@@ -283,7 +283,7 @@ export default function RegistrationPage() {
       <div className="reg-page">
         {top}
         <section className="reg-receipt" aria-labelledby="reg-ok" data-testid="receipt">
-          <div className="reg-eyebrow" style={{ color: '#4F6B5B' }}>{t.okTag}</div>
+          <div className="reg-eyebrow" style={{ color: 'var(--treasure-blue)' }}>{t.okTag}</div>
           <h1 id="reg-ok" tabIndex={-1} ref={(el) => el?.focus()}>{t.okTitle}</h1>
           <div className="reg-note" role="status">{t.okNote}</div>
           <div>{t.ref}</div>
@@ -470,7 +470,7 @@ export default function RegistrationPage() {
         </div>
 
         <div className="reg-field" style={{ marginBottom: 20 }}>
-          <label className="reg-consent" htmlFor="consent" style={{ textTransform: 'none', letterSpacing: 0, fontFamily: "'Manrope',sans-serif", fontSize: 14, color: '#27352E' }}>
+          <label className="reg-consent" htmlFor="consent" style={{ textTransform: 'none', letterSpacing: 0, fontFamily: "'Manrope',sans-serif", fontSize: 14, color: '#39373F' }}>
             <input id="consent" type="checkbox" checked={consent} required aria-required="true" onChange={(e) => setConsent(e.target.checked)} onBlur={touch('consent')}
               disabled={mutation.isPending} aria-invalid={show('consent') ? true : undefined} aria-describedby={show('consent') ? 'consent-e' : undefined} data-testid="checkbox-consent" />
             <span>{t.consent}</span>
@@ -500,8 +500,8 @@ export default function RegistrationPage() {
             <div><span>{t.comp}</span><span>{t.compV}</span></div>
             <div><span>{t.feeIdn}</span><span>IDR 300.000</span></div>
             <div><span>{t.feeInt}</span><span>USD 20</span></div>
-            <div><span>{t.contactH}</span><a href="https://wa.me/6285230762534" style={{ color: '#F7F3EA' }} target="_blank" rel="noreferrer">{t.wa}</a></div>
-            <div><span>Instagram</span><a href="https://www.instagram.com/treasure_polinema/" style={{ color: '#F7F3EA' }} target="_blank" rel="noreferrer">@treasure_polinema</a></div>
+            <div><span>{t.contactH}</span><a href="https://wa.me/6285230762534" style={{ color: 'var(--treasure-blue)' }} target="_blank" rel="noreferrer">{t.wa}</a></div>
+            <div><span>Instagram</span><a href="https://www.instagram.com/treasure_polinema/" style={{ color: 'var(--treasure-blue)' }} target="_blank" rel="noreferrer">@treasure_polinema</a></div>
           </div>
         </aside>
         {body}
