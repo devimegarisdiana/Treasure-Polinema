@@ -1,1 +1,2 @@
 - [Competition rules and source trust](competition-rules.md) — do not invent team-size limits; verify printed links before using them for registration.
+- [Visual direction](visual-direction.md) — the user wants a soft, elegant theme rather than red.
