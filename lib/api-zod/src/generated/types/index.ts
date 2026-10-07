@@ -6,13 +6,26 @@
  * OpenAPI spec version: 0.1.0
  */
 
+export * from './adminAccess';
+export * from './adminNotification';
+export * from './adminRegistrationContact';
+export * from './adminRegistrationDetail';
+export * from './adminRegistrationDocument';
+export * from './adminRegistrationDocumentPurpose';
+export * from './adminRegistrationList';
+export * from './adminRegistrationMember';
+export * from './adminRegistrationSummary';
 export * from './authUser';
 export * from './authUserEnvelope';
 export * from './errorResponse';
 export * from './healthStatus';
+export * from './listAdminRegistrationsParams';
 export * from './logoutSuccess';
 export * from './mobileTokenExchangeRequest';
 export * from './mobileTokenExchangeSuccess';
+export * from './notificationQueued';
+export * from './notificationSetup';
+export * from './notificationStatus';
 export * from './teamMemberInput';
 export * from './teamRegistrationInput';
 export * from './teamRegistrationInputCompetition';

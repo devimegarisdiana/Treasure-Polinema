@@ -38,7 +38,7 @@ router.post("/storage/uploads/request-url", async (req, res): Promise<void> => {
   }
 });
 
-async function streamFile(response: globalThis.Response, res: Response, privateDocument = false) {
+export async function streamFile(response: globalThis.Response, res: Response, privateDocument = false) {
   res.status(response.status);
   response.headers.forEach((value, key) => res.setHeader(key, value));
   res.setHeader("X-Content-Type-Options", "nosniff");

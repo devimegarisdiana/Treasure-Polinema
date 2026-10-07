@@ -20,12 +20,17 @@ import type {
 } from '@tanstack/react-query';
 
 import type {
+  AdminAccess,
+  AdminRegistrationDetail,
+  AdminRegistrationList,
   AuthUserEnvelope,
   ErrorResponse,
   HealthStatus,
+  ListAdminRegistrationsParams,
   LogoutSuccess,
   MobileTokenExchangeRequest,
   MobileTokenExchangeSuccess,
+  NotificationQueued,
   TeamRegistrationInput,
   TeamRegistrationReceipt,
   UploadUrlRequest,
@@ -58,6 +63,370 @@ const withQueryKey = <T extends object, K>(query: T, queryKey: K): T & { queryKe
   }
   return result;
 };
+
+export const getGetAdminAccessUrl = () => {
+
+
+
+
+  return `/api/admin/access`
+}
+
+export const getAdminAccess = async ( options?: Parameters<typeof customFetch>[1]): Promise<AdminAccess> => {
+
+  return customFetch<AdminAccess>(getGetAdminAccessUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetAdminAccessQueryKey = () => {
+    return [
+    `/api/admin/access`
+    ] as const;
+    }
+
+
+export const getGetAdminAccessQueryOptions = <TData = Awaited<ReturnType<typeof getAdminAccess>>, TError = ErrorType<void>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getAdminAccess>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetAdminAccessQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getAdminAccess>>> = ({ signal }) => getAdminAccess({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getAdminAccess>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetAdminAccessQueryResult = NonNullable<Awaited<ReturnType<typeof getAdminAccess>>>
+export type GetAdminAccessQueryError = ErrorType<void>
+
+
+
+export function useGetAdminAccess<TData = Awaited<ReturnType<typeof getAdminAccess>>, TError = ErrorType<void>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getAdminAccess>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetAdminAccessQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getListAdminRegistrationsUrl = (params?: ListAdminRegistrationsParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/admin/registrations?${stringifiedParams}` : `/api/admin/registrations`
+}
+
+export const listAdminRegistrations = async (params?: ListAdminRegistrationsParams, options?: Parameters<typeof customFetch>[1]): Promise<AdminRegistrationList> => {
+
+  return customFetch<AdminRegistrationList>(getListAdminRegistrationsUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListAdminRegistrationsQueryKey = (params?: ListAdminRegistrationsParams,) => {
+    return [
+    `/api/admin/registrations`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getListAdminRegistrationsQueryOptions = <TData = Awaited<ReturnType<typeof listAdminRegistrations>>, TError = ErrorType<void>>(params?: ListAdminRegistrationsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listAdminRegistrations>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListAdminRegistrationsQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listAdminRegistrations>>> = ({ signal }) => listAdminRegistrations(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listAdminRegistrations>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListAdminRegistrationsQueryResult = NonNullable<Awaited<ReturnType<typeof listAdminRegistrations>>>
+export type ListAdminRegistrationsQueryError = ErrorType<void>
+
+
+
+export function useListAdminRegistrations<TData = Awaited<ReturnType<typeof listAdminRegistrations>>, TError = ErrorType<void>>(
+ params?: ListAdminRegistrationsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listAdminRegistrations>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListAdminRegistrationsQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetAdminRegistrationUrl = (id: string,) => {
+
+
+
+
+  return `/api/admin/registrations/${id}`
+}
+
+export const getAdminRegistration = async (id: string, options?: Parameters<typeof customFetch>[1]): Promise<AdminRegistrationDetail> => {
+
+  return customFetch<AdminRegistrationDetail>(getGetAdminRegistrationUrl(id),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetAdminRegistrationQueryKey = (id: string,) => {
+    return [
+    `/api/admin/registrations/${id}`
+    ] as const;
+    }
+
+
+export const getGetAdminRegistrationQueryOptions = <TData = Awaited<ReturnType<typeof getAdminRegistration>>, TError = ErrorType<void>>(id: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getAdminRegistration>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetAdminRegistrationQueryKey(id);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getAdminRegistration>>> = ({ signal }) => getAdminRegistration(id, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: id !== null && id !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getAdminRegistration>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetAdminRegistrationQueryResult = NonNullable<Awaited<ReturnType<typeof getAdminRegistration>>>
+export type GetAdminRegistrationQueryError = ErrorType<void>
+
+
+
+export function useGetAdminRegistration<TData = Awaited<ReturnType<typeof getAdminRegistration>>, TError = ErrorType<void>>(
+ id: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getAdminRegistration>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetAdminRegistrationQueryOptions(id,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getRetryRegistrationEmailUrl = (id: string,) => {
+
+
+
+
+  return `/api/admin/registrations/${id}/retry-email`
+}
+
+export const retryRegistrationEmail = async (id: string, options?: Parameters<typeof customFetch>[1]): Promise<NotificationQueued> => {
+
+  return customFetch<NotificationQueued>(getRetryRegistrationEmailUrl(id),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+
+export const getRetryRegistrationEmailMutationKey = () => ['retryRegistrationEmail'] as const;
+
+export const getRetryRegistrationEmailMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof retryRegistrationEmail>>, TError,RetryRegistrationEmailMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof retryRegistrationEmail>>, TError,RetryRegistrationEmailMutationVariables, TContext> => {
+
+const mutationKey = getRetryRegistrationEmailMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof retryRegistrationEmail>>, RetryRegistrationEmailMutationVariables> = (props) => {
+          const {id} = props ?? {};
+
+          return  retryRegistrationEmail(id,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type RetryRegistrationEmailMutationResult = NonNullable<Awaited<ReturnType<typeof retryRegistrationEmail>>>
+
+    export type RetryRegistrationEmailMutationError = ErrorType<void>
+    export type RetryRegistrationEmailMutationVariables = {id: string}
+
+    export const useRetryRegistrationEmail = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof retryRegistrationEmail>>, TError,RetryRegistrationEmailMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof retryRegistrationEmail>>,
+        TError,
+        RetryRegistrationEmailMutationVariables,
+        TContext
+      > => {
+      return useMutation(getRetryRegistrationEmailMutationOptions(options));
+    }
+
+export const getDownloadAdminRegistrationDocumentUrl = (id: string,
+    uploadId: string,) => {
+
+
+
+
+  return `/api/admin/registrations/${id}/documents/${uploadId}`
+}
+
+export const downloadAdminRegistrationDocument = async (id: string,
+    uploadId: string, options?: Parameters<typeof customFetch>[1]): Promise<Blob> => {
+
+  return customFetch<Blob>(getDownloadAdminRegistrationDocumentUrl(id,uploadId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getDownloadAdminRegistrationDocumentQueryKey = (id: string,
+    uploadId: string,) => {
+    return [
+    `/api/admin/registrations/${id}/documents/${uploadId}`
+    ] as const;
+    }
+
+
+export const getDownloadAdminRegistrationDocumentQueryOptions = <TData = Awaited<ReturnType<typeof downloadAdminRegistrationDocument>>, TError = ErrorType<void>>(id: string,
+    uploadId: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof downloadAdminRegistrationDocument>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getDownloadAdminRegistrationDocumentQueryKey(id,uploadId);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof downloadAdminRegistrationDocument>>> = ({ signal }) => downloadAdminRegistrationDocument(id,uploadId, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: id !== null && id !== undefined && uploadId !== null && uploadId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof downloadAdminRegistrationDocument>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type DownloadAdminRegistrationDocumentQueryResult = NonNullable<Awaited<ReturnType<typeof downloadAdminRegistrationDocument>>>
+export type DownloadAdminRegistrationDocumentQueryError = ErrorType<void>
+
+
+
+export function useDownloadAdminRegistrationDocument<TData = Awaited<ReturnType<typeof downloadAdminRegistrationDocument>>, TError = ErrorType<void>>(
+ id: string,
+    uploadId: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof downloadAdminRegistrationDocument>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getDownloadAdminRegistrationDocumentQueryOptions(id,uploadId,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
 
 export const getGetCurrentAuthUserUrl = () => {
 

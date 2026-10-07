@@ -1,9 +1,10 @@
 import { randomUUID } from "node:crypto";
 import { Router, type IRouter } from "express";
 import { and, eq, inArray } from "drizzle-orm";
-import { db, teamRegistrationsTable, teamRegistrationMembersTable, registrationUploadsTable } from "@workspace/db";
+import { db, teamRegistrationsTable, teamRegistrationMembersTable, registrationUploadsTable, registrationNotificationsTable } from "@workspace/db";
 import { CreateTeamRegistrationBody, CreateTeamRegistrationResponse } from "@workspace/api-zod";
 import { freezeDocument, RegistrationDocumentError, type FrozenDocument } from "../lib/registrationDocuments";
+import { processRegistrationNotifications } from "../lib/registrationNotifications";
 
 const router: IRouter = Router();
 
@@ -104,10 +105,12 @@ router.post("/registrations/teams", async (req, res): Promise<void> => {
           registrationId: created.id,
         }).where(eq(registrationUploadsTable.id, upload.id));
       }
+      await tx.insert(registrationNotificationsTable).values({ registrationId: created.id });
       return { referenceCode: created.referenceCode, submittedAt: created.createdAt, created: true };
     });
     committed = receipt.created;
     res.status(201).json(CreateTeamRegistrationResponse.parse(receipt));
+    if (receipt.created) void processRegistrationNotifications();
   } catch (error) {
     if (error instanceof RegistrationDocumentError) {
       res.status(400).json({ error: error.message });

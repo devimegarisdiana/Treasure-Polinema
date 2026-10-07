@@ -5,6 +5,7 @@ import { Route, Switch } from 'wouter';
 import App from './App';
 import RegistrationPage from './pages/RegistrationPage';
 import Archive2025Page from './pages/Archive2025Page';
+import AdminPage from './pages/AdminPage';
 import NotFound from './pages/not-found';
 import { ErrorBoundary } from '@/components/error-boundary';
 
@@ -24,6 +25,7 @@ createRoot(document.getElementById('root')!, {
         <Route path="/" component={App} />
         <Route path="/register" component={RegistrationPage} />
         <Route path="/archive/2025" component={Archive2025Page} />
+        <Route path="/admin" component={AdminPage} />
         <Route component={NotFound} />
       </Switch>
     </QueryClientProvider>

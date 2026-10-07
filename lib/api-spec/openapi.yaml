@@ -13,6 +13,90 @@ tags:
   - name: registrations
     description: TREASURE team registration
 paths:
+  /admin/access:
+    get:
+      operationId: getAdminAccess
+      responses:
+        "200":
+          description: Current user's administrator access
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AdminAccess" }
+        "401": { description: Sign in required }
+  /admin/registrations:
+    get:
+      operationId: listAdminRegistrations
+      parameters:
+        - in: query
+          name: page
+          schema: { type: integer, minimum: 1, default: 1 }
+        - in: query
+          name: search
+          schema: { type: string, maxLength: 120 }
+      responses:
+        "200":
+          description: Private registration list
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AdminRegistrationList" }
+        "401": { description: Sign in required }
+        "403": { description: Administrator access required }
+  /admin/registrations/{id}:
+    get:
+      operationId: getAdminRegistration
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: Private registration details
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AdminRegistrationDetail" }
+        "401": { description: Sign in required }
+        "403": { description: Administrator access required }
+        "404": { description: Registration not found }
+  /admin/registrations/{id}/retry-email:
+    post:
+      operationId: retryRegistrationEmail
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "202":
+          description: Email notification queued
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/NotificationQueued" }
+        "401": { description: Sign in required }
+        "403": { description: Administrator access required }
+        "404": { description: Registration not found }
+        "409": { description: Notification already sent or being processed }
+  /admin/registrations/{id}/documents/{uploadId}:
+    get:
+      operationId: downloadAdminRegistrationDocument
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+        - in: path
+          name: uploadId
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: Private document attachment
+          content:
+            application/octet-stream:
+              schema: { type: string, format: binary }
+        "401": { description: Sign in required }
+        "403": { description: Administrator access required }
+        "404": { description: Document not found }
   /auth/user:
     get:
       operationId: getCurrentAuthUser
@@ -299,4 +383,96 @@ components:
       required: [success]
       properties:
         success: { type: boolean, const: true }
+    AdminAccess:
+      type: object
+      required: [isAdmin]
+      properties:
+        isAdmin: { type: boolean }
+    NotificationStatus:
+      type: string
+      enum: [not_requested, pending, processing, sent, failed]
+    NotificationQueued:
+      type: object
+      required: [status]
+      properties:
+        status: { $ref: "#/components/schemas/NotificationStatus" }
+    AdminRegistrationSummary:
+      type: object
+      required: [id, referenceCode, teamName, captainName, institution, countryOfOrigin, competition, memberCount, createdAt, notificationStatus]
+      properties:
+        id: { type: string, format: uuid }
+        referenceCode: { type: string }
+        teamName: { type: string }
+        captainName: { type: string }
+        institution: { type: [string, "null"] }
+        countryOfOrigin: { type: [string, "null"] }
+        competition: { type: [string, "null"] }
+        memberCount: { type: integer }
+        createdAt: { type: string, format: date-time }
+        notificationStatus: { $ref: "#/components/schemas/NotificationStatus" }
+    NotificationSetup:
+      type: object
+      required: [recipient, sender, note]
+      properties:
+        recipient: { type: [string, "null"] }
+        sender: { type: [string, "null"] }
+        note: { type: [string, "null"] }
+    AdminRegistrationList:
+      type: object
+      required: [items, total, page, pageSize, notificationSetup]
+      properties:
+        items:
+          type: array
+          items: { $ref: "#/components/schemas/AdminRegistrationSummary" }
+        total: { type: integer }
+        page: { type: integer }
+        pageSize: { type: integer }
+        notificationSetup: { $ref: "#/components/schemas/NotificationSetup" }
+    AdminRegistrationContact:
+      type: object
+      required: [email, phone, alternativePhone, facultyDepartment, hasEdugateTraining]
+      properties:
+        email: { type: string }
+        phone: { type: string }
+        alternativePhone: { type: [string, "null"] }
+        facultyDepartment: { type: [string, "null"] }
+        hasEdugateTraining: { type: [boolean, "null"] }
+    AdminRegistrationMember:
+      type: object
+      required: [position, fullName]
+      properties:
+        position: { type: integer }
+        fullName: { type: string }
+    AdminRegistrationDocument:
+      type: object
+      required: [id, purpose, fileName, contentType, size, url]
+      properties:
+        id: { type: string, format: uuid }
+        purpose: { type: string, enum: [student_id, payment_proof] }
+        fileName: { type: string }
+        contentType: { type: string }
+        size: { type: integer }
+        url: { type: string }
+    AdminNotification:
+      type: object
+      required: [status, attempts, sentAt, lastError, nextAttemptAt]
+      properties:
+        status: { $ref: "#/components/schemas/NotificationStatus" }
+        attempts: { type: integer }
+        sentAt: { type: [string, "null"], format: date-time }
+        lastError: { type: [string, "null"] }
+        nextAttemptAt: { type: [string, "null"], format: date-time }
+    AdminRegistrationDetail:
+      type: object
+      required: [registration, contact, members, documents, notification]
+      properties:
+        registration: { $ref: "#/components/schemas/AdminRegistrationSummary" }
+        contact: { $ref: "#/components/schemas/AdminRegistrationContact" }
+        members:
+          type: array
+          items: { $ref: "#/components/schemas/AdminRegistrationMember" }
+        documents:
+          type: array
+          items: { $ref: "#/components/schemas/AdminRegistrationDocument" }
+        notification: { $ref: "#/components/schemas/AdminNotification" }
 

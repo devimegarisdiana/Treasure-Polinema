@@ -313,6 +313,7 @@ function App() {
         </a>
         <span>{t.footerCompetition}</span>
         <a href={archiveUrl}>2025 archive</a>
+        <a className="organizer-footer-link" href={`${(import.meta.env.BASE_URL as string).replace(/\/+$/, '')}/admin`}>Organizer dashboard</a>
         <a href="#home">{t.backToTop} ↑</a>
       </footer>
     </main>

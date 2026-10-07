@@ -8,6 +8,109 @@
 import * as zod from 'zod';
 
 
+export const GetAdminAccessResponse = zod.object({
+  "isAdmin": zod.boolean()
+})
+
+
+export const listAdminRegistrationsQueryPageDefault = 1;
+
+export const listAdminRegistrationsQuerySearchMax = 120;
+
+
+
+export const ListAdminRegistrationsQueryParams = zod.object({
+  "page": zod.coerce.number().int().min(1).default(listAdminRegistrationsQueryPageDefault),
+  "search": zod.coerce.string().max(listAdminRegistrationsQuerySearchMax).optional()
+})
+
+export const ListAdminRegistrationsResponse = zod.object({
+  "items": zod.array(zod.object({
+  "id": zod.string().uuid(),
+  "referenceCode": zod.string(),
+  "teamName": zod.string(),
+  "captainName": zod.string(),
+  "institution": zod.string().nullable(),
+  "countryOfOrigin": zod.string().nullable(),
+  "competition": zod.string().nullable(),
+  "memberCount": zod.number().int(),
+  "createdAt": zod.coerce.date(),
+  "notificationStatus": zod.enum(['not_requested', 'pending', 'processing', 'sent', 'failed'])
+})),
+  "total": zod.number().int(),
+  "page": zod.number().int(),
+  "pageSize": zod.number().int(),
+  "notificationSetup": zod.object({
+  "recipient": zod.string().nullable(),
+  "sender": zod.string().nullable(),
+  "note": zod.string().nullable()
+})
+})
+
+
+export const GetAdminRegistrationParams = zod.object({
+  "id": zod.coerce.string().uuid()
+})
+
+export const GetAdminRegistrationResponse = zod.object({
+  "registration": zod.object({
+  "id": zod.string().uuid(),
+  "referenceCode": zod.string(),
+  "teamName": zod.string(),
+  "captainName": zod.string(),
+  "institution": zod.string().nullable(),
+  "countryOfOrigin": zod.string().nullable(),
+  "competition": zod.string().nullable(),
+  "memberCount": zod.number().int(),
+  "createdAt": zod.coerce.date(),
+  "notificationStatus": zod.enum(['not_requested', 'pending', 'processing', 'sent', 'failed'])
+}),
+  "contact": zod.object({
+  "email": zod.string(),
+  "phone": zod.string(),
+  "alternativePhone": zod.string().nullable(),
+  "facultyDepartment": zod.string().nullable(),
+  "hasEdugateTraining": zod.boolean().nullable()
+}),
+  "members": zod.array(zod.object({
+  "position": zod.number().int(),
+  "fullName": zod.string()
+})),
+  "documents": zod.array(zod.object({
+  "id": zod.string().uuid(),
+  "purpose": zod.enum(['student_id', 'payment_proof']),
+  "fileName": zod.string(),
+  "contentType": zod.string(),
+  "size": zod.number().int(),
+  "url": zod.string()
+})),
+  "notification": zod.object({
+  "status": zod.enum(['not_requested', 'pending', 'processing', 'sent', 'failed']),
+  "attempts": zod.number().int(),
+  "sentAt": zod.coerce.date().nullable(),
+  "lastError": zod.string().nullable(),
+  "nextAttemptAt": zod.coerce.date().nullable()
+})
+})
+
+
+export const RetryRegistrationEmailParams = zod.object({
+  "id": zod.coerce.string().uuid()
+})
+
+export const RetryRegistrationEmailResponse = zod.object({
+  "status": zod.enum(['not_requested', 'pending', 'processing', 'sent', 'failed'])
+})
+
+
+export const DownloadAdminRegistrationDocumentParams = zod.object({
+  "id": zod.coerce.string().uuid(),
+  "uploadId": zod.coerce.string().uuid()
+})
+
+export const DownloadAdminRegistrationDocumentResponse = zod.unknown()
+
+
 export const GetCurrentAuthUserResponse = zod.object({
   "user": zod.union([zod.object({
   "id": zod.string(),

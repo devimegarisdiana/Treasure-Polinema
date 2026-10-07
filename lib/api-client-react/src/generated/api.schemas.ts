@@ -171,3 +171,118 @@ export const LogoutSuccessValue = {
 } as const;
 export type LogoutSuccess = typeof LogoutSuccessValue;
 
+export interface AdminAccess {
+  isAdmin: boolean;
+}
+
+export type NotificationStatus = typeof NotificationStatus[keyof typeof NotificationStatus];
+
+
+export const NotificationStatus = {
+  not_requested: 'not_requested',
+  pending: 'pending',
+  processing: 'processing',
+  sent: 'sent',
+  failed: 'failed',
+} as const;
+
+export interface NotificationQueued {
+  status: NotificationStatus;
+}
+
+export interface AdminRegistrationSummary {
+  id: string;
+  referenceCode: string;
+  teamName: string;
+  captainName: string;
+  /** @nullable */
+  institution: string | null;
+  /** @nullable */
+  countryOfOrigin: string | null;
+  /** @nullable */
+  competition: string | null;
+  memberCount: number;
+  createdAt: string;
+  notificationStatus: NotificationStatus;
+}
+
+export interface NotificationSetup {
+  /** @nullable */
+  recipient: string | null;
+  /** @nullable */
+  sender: string | null;
+  /** @nullable */
+  note: string | null;
+}
+
+export interface AdminRegistrationList {
+  items: AdminRegistrationSummary[];
+  total: number;
+  page: number;
+  pageSize: number;
+  notificationSetup: NotificationSetup;
+}
+
+export interface AdminRegistrationContact {
+  email: string;
+  phone: string;
+  /** @nullable */
+  alternativePhone: string | null;
+  /** @nullable */
+  facultyDepartment: string | null;
+  /** @nullable */
+  hasEdugateTraining: boolean | null;
+}
+
+export interface AdminRegistrationMember {
+  position: number;
+  fullName: string;
+}
+
+export type AdminRegistrationDocumentPurpose = typeof AdminRegistrationDocumentPurpose[keyof typeof AdminRegistrationDocumentPurpose];
+
+
+export const AdminRegistrationDocumentPurpose = {
+  student_id: 'student_id',
+  payment_proof: 'payment_proof',
+} as const;
+
+export interface AdminRegistrationDocument {
+  id: string;
+  purpose: AdminRegistrationDocumentPurpose;
+  fileName: string;
+  contentType: string;
+  size: number;
+  url: string;
+}
+
+export interface AdminNotification {
+  status: NotificationStatus;
+  attempts: number;
+  /** @nullable */
+  sentAt: string | null;
+  /** @nullable */
+  lastError: string | null;
+  /** @nullable */
+  nextAttemptAt: string | null;
+}
+
+export interface AdminRegistrationDetail {
+  registration: AdminRegistrationSummary;
+  contact: AdminRegistrationContact;
+  members: AdminRegistrationMember[];
+  documents: AdminRegistrationDocument[];
+  notification: AdminNotification;
+}
+
+export type ListAdminRegistrationsParams = {
+/**
+ * @minimum 1
+ */
+page?: number;
+/**
+ * @maxLength 120
+ */
+search?: string;
+};
+
