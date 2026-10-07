@@ -6,6 +6,7 @@ const registrationUrl = 'http://treasure.polinema.com/';
 const copy = {
   en: {
     home: 'TREASURE 2026 home',
+    heroLogoAlt: 'TREASURE 4th edition — Strategic Minds, Competitive Moves: Simulating the Future of Business',
     openNav: 'Open navigation',
     closeNav: 'Close navigation',
     navLabel: 'Main navigation',
@@ -75,6 +76,7 @@ const copy = {
   },
   id: {
     home: 'Beranda TREASURE 2026',
+    heroLogoAlt: 'TREASURE edisi ke-4 — Strategic Minds, Competitive Moves: Simulating the Future of Business',
     openNav: 'Buka navigasi',
     closeNav: 'Tutup navigasi',
     navLabel: 'Navigasi utama',
@@ -159,8 +161,8 @@ function App() {
     <main className="site">
       <header className="topbar">
         <a className="brand" href="#home" onClick={closeMenu} aria-label={t.home}>
-          <span className="brand-mark">T</span>
-          <span>TREASURE <span style={{ color: '#e12032' }}>2026</span></span>
+          <img className="brand-logo" src="/treasure-wordmark.png" alt="" />
+          <span className="brand-year">2026</span>
         </a>
         <div className="language-switch" role="group" aria-label="Pilih bahasa / Choose language">
           <button
@@ -203,7 +205,7 @@ function App() {
         <div className="hero-inner">
           <div className="fade-up">
             <div className="eyebrow"><span className="eyebrow-line" /> {t.edition}</div>
-            <h1>TREA<span>SURE</span></h1>
+            <img className="hero-logo" src="/treasure-logo-fourth.png" alt={t.heroLogoAlt} />
             <p className="hero-copy">
               {language === 'id'
                 ? <>Strategi tajam. Langkah kompetitif. <strong>Simulasikan masa depan bisnis.</strong></>
@@ -222,7 +224,6 @@ function App() {
             <div className="poster-frame">
               <img src="/treasure-poster.png" alt={t.posterAlt} />
             </div>
-            <div className="hero-stamp">THE<br />4TH<br /><span>EDITION</span></div>
           </div>
         </div>
         <div className="hero-footer">
@@ -371,7 +372,10 @@ function App() {
       </section>
 
       <footer className="footer">
-        <a className="brand" href="#home"><span className="brand-mark">T</span><span>TREASURE 2026</span></a>
+        <a className="brand" href="#home" aria-label={t.home}>
+          <img className="brand-logo" src="/treasure-wordmark.png" alt="" />
+          <span className="brand-year">2026</span>
+        </a>
         <span>{t.footerCompetition}</span>
         <a href="#home">{t.backToTop} ↑</a>
       </footer>
