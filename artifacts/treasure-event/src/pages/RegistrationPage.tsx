@@ -470,7 +470,7 @@ export default function RegistrationPage() {
         </div>
 
         <div className="reg-field" style={{ marginBottom: 20 }}>
-          <label className="reg-consent" htmlFor="consent" style={{ textTransform: 'none', letterSpacing: 0, fontFamily: "'Manrope',sans-serif", fontSize: 14, color: '#39373F' }}>
+          <label className="reg-consent" htmlFor="consent" style={{ textTransform: 'none', letterSpacing: 0, fontFamily: 'var(--app-font-sans)', fontSize: 14, color: '#39373F' }}>
             <input id="consent" type="checkbox" checked={consent} required aria-required="true" onChange={(e) => setConsent(e.target.checked)} onBlur={touch('consent')}
               disabled={mutation.isPending} aria-invalid={show('consent') ? true : undefined} aria-describedby={show('consent') ? 'consent-e' : undefined} data-testid="checkbox-consent" />
             <span>{t.consent}</span>
