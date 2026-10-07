@@ -48,8 +48,8 @@ const copy = {
       'Open to active diploma or undergraduate students in accounting, economics, management, and business.',
     rewards: 'Rewards',
     rewardPitch: 'A reason to bring your strongest game.',
-    rewardsOver: 'Rewards over',
-    upTo: 'Up to USD 560',
+    prizePool: 'Total prize pool',
+    prizeTotal: 'IDR 10 million+',
     fees: 'Registration fees',
     internationalStudents: 'International students',
     indonesianStudents: 'Indonesian students',
@@ -158,8 +158,7 @@ function App() {
           </article>
           <article className="hero-fact hero-fact-prize">
             <span className="hero-fact-label">{t.rewards}</span>
-            <strong>IDR 10 million</strong>
-            <small>Up to USD 560</small>
+            <strong>{t.prizeTotal}</strong>
           </article>
         </div>
         <div className="hero-footer">
@@ -244,8 +243,7 @@ function App() {
             <article className="reward">
               <div className="section-label">{t.rewards}</div>
               <h3>{t.rewardPitch}</h3>
-              <div className="reward-amount"><span>{t.rewardsOver}</span>IDR 10 million</div>
-              <div>{t.upTo}</div>
+              <div className="reward-amount"><span>{t.prizePool}</span>{t.prizeTotal}</div>
             </article>
           </div>
           <div className="fees" aria-label={t.fees}>
