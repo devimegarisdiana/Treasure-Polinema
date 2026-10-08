@@ -8,6 +8,38 @@
 import * as zod from 'zod';
 
 
+export const GetOrganizerSessionResponse = zod.object({
+  "user": zod.union([zod.object({
+  "id": zod.string(),
+  "username": zod.string()
+}),zod.null()])
+})
+
+
+export const signInOrganizerBodyUsernameMax = 100;
+
+export const signInOrganizerBodyPasswordMax = 128;
+
+
+
+export const SignInOrganizerBody = zod.object({
+  "username": zod.string().min(1).max(signInOrganizerBodyUsernameMax),
+  "password": zod.string().min(1).max(signInOrganizerBodyPasswordMax)
+})
+
+export const SignInOrganizerResponse = zod.object({
+  "user": zod.union([zod.object({
+  "id": zod.string(),
+  "username": zod.string()
+}),zod.null()])
+})
+
+
+export const SignOutOrganizerResponse = zod.object({
+  "success": zod.literal(true)
+})
+
+
 export const GetParticipantSessionResponse = zod.object({
   "user": zod.union([zod.object({
   "id": zod.string(),

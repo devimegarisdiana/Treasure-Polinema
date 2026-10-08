@@ -31,6 +31,8 @@ import type {
   MobileTokenExchangeRequest,
   MobileTokenExchangeSuccess,
   NotificationQueued,
+  OrganizerSession,
+  OrganizerSignin,
   ParticipantSession,
   ParticipantSignin,
   ParticipantSignup,
@@ -66,6 +68,227 @@ const withQueryKey = <T extends object, K>(query: T, queryKey: K): T & { queryKe
   }
   return result;
 };
+
+export const getGetOrganizerSessionUrl = () => {
+
+
+
+
+  return `/api/organizer-auth/me`
+}
+
+export const getOrganizerSession = async ( options?: Parameters<typeof customFetch>[1]): Promise<OrganizerSession> => {
+
+  return customFetch<OrganizerSession>(getGetOrganizerSessionUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetOrganizerSessionQueryKey = () => {
+    return [
+    `/api/organizer-auth/me`
+    ] as const;
+    }
+
+
+export const getGetOrganizerSessionQueryOptions = <TData = Awaited<ReturnType<typeof getOrganizerSession>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getOrganizerSession>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetOrganizerSessionQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getOrganizerSession>>> = ({ signal }) => getOrganizerSession({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getOrganizerSession>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetOrganizerSessionQueryResult = NonNullable<Awaited<ReturnType<typeof getOrganizerSession>>>
+export type GetOrganizerSessionQueryError = ErrorType<unknown>
+
+
+
+export function useGetOrganizerSession<TData = Awaited<ReturnType<typeof getOrganizerSession>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getOrganizerSession>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetOrganizerSessionQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getSignInOrganizerUrl = () => {
+
+
+
+
+  return `/api/organizer-auth/signin`
+}
+
+export const signInOrganizer = async (organizerSignin: OrganizerSignin, options?: Parameters<typeof customFetch>[1]): Promise<OrganizerSession> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<OrganizerSession>(getSignInOrganizerUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(organizerSignin)
+  }
+);}
+
+
+
+
+
+export const getSignInOrganizerMutationKey = () => ['signInOrganizer'] as const;
+
+export const getSignInOrganizerMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof signInOrganizer>>, TError,SignInOrganizerMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof signInOrganizer>>, TError,SignInOrganizerMutationVariables, TContext> => {
+
+const mutationKey = getSignInOrganizerMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof signInOrganizer>>, SignInOrganizerMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  signInOrganizer(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type SignInOrganizerMutationResult = NonNullable<Awaited<ReturnType<typeof signInOrganizer>>>
+    export type SignInOrganizerMutationBody = BodyType<OrganizerSignin>
+    export type SignInOrganizerMutationError = ErrorType<void>
+    export type SignInOrganizerMutationVariables = {data: BodyType<OrganizerSignin>}
+
+    export const useSignInOrganizer = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof signInOrganizer>>, TError,SignInOrganizerMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof signInOrganizer>>,
+        TError,
+        SignInOrganizerMutationVariables,
+        TContext
+      > => {
+      return useMutation(getSignInOrganizerMutationOptions(options));
+    }
+
+export const getSignOutOrganizerUrl = () => {
+
+
+
+
+  return `/api/organizer-auth/signout`
+}
+
+export const signOutOrganizer = async ( options?: Parameters<typeof customFetch>[1]): Promise<LogoutSuccess> => {
+
+  return customFetch<LogoutSuccess>(getSignOutOrganizerUrl(),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+
+export const getSignOutOrganizerMutationKey = () => ['signOutOrganizer'] as const;
+
+export const getSignOutOrganizerMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof signOutOrganizer>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof signOutOrganizer>>, TError,void, TContext> => {
+
+const mutationKey = getSignOutOrganizerMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof signOutOrganizer>>, void> = () => {
+
+
+          return  signOutOrganizer(requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type SignOutOrganizerMutationResult = NonNullable<Awaited<ReturnType<typeof signOutOrganizer>>>
+
+    export type SignOutOrganizerMutationError = ErrorType<unknown>
+
+
+    export const useSignOutOrganizer = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof signOutOrganizer>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof signOutOrganizer>>,
+        TError,
+        void,
+        TContext
+      > => {
+      return useMutation(getSignOutOrganizerMutationOptions(options));
+    }
 
 export const getGetParticipantSessionUrl = () => {
 

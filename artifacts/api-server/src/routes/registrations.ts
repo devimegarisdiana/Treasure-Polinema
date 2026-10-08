@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { Router, type IRouter } from "express";
-import { and, eq, inArray } from "drizzle-orm";
+import { and, eq, inArray, sql } from "drizzle-orm";
 import { db, teamRegistrationsTable, teamRegistrationMembersTable, registrationUploadsTable, registrationNotificationsTable } from "@workspace/db";
 import { CreateTeamRegistrationBody, CreateTeamRegistrationResponse } from "@workspace/api-zod";
 import { freezeDocument, RegistrationDocumentError, type FrozenDocument } from "../lib/registrationDocuments";
@@ -49,30 +49,31 @@ router.post("/registrations/teams", async (req, res): Promise<void> => {
   const frozen: FrozenDocument[] = [];
   let committed = false;
   try {
-    const [prior] = await db.select().from(teamRegistrationsTable)
-      .where(eq(teamRegistrationsTable.submissionKey, data.submissionKey)).limit(1);
-    if (prior) {
-      if (prior.ownerId !== ownerId) {
-        res.status(400).json({ error: "The submission key is invalid. Please start a new registration." });
-        return;
+    // Serializing a submission *before* inspecting its uploads prevents a retry
+    // from racing the first request's object copies and returning a false 500.
+    // The transaction lock is shared by API replicas and released at commit.
+    const result = await db.transaction(async (tx) => {
+      await tx.execute(sql`SELECT pg_advisory_xact_lock(hashtextextended(${data.submissionKey}, 0))`);
+      const [prior] = await tx.select().from(teamRegistrationsTable)
+        .where(eq(teamRegistrationsTable.submissionKey, data.submissionKey)).limit(1);
+      if (prior) {
+        if (prior.ownerId !== ownerId) {
+          return { status: 400 as const, error: "The submission key is invalid. Please start a new registration." };
+        }
+        return { status: 201 as const, receipt: { referenceCode: prior.referenceCode, submittedAt: prior.createdAt }, created: false };
       }
-      res.status(201).json(CreateTeamRegistrationResponse.parse({ referenceCode: prior.referenceCode, submittedAt: prior.createdAt }));
-      return;
-    }
-    const uploads = await db.select().from(registrationUploadsTable).where(and(
-      inArray(registrationUploadsTable.id, [data.studentIdUploadId, data.paymentUploadId]),
-      eq(registrationUploadsTable.ownerId, ownerId),
-      eq(registrationUploadsTable.submissionKey, data.submissionKey),
-    ));
-    const studentId = uploads.find((u) => u.id === data.studentIdUploadId && u.purpose === "student_id" && !u.registrationId);
-    const payment = uploads.find((u) => u.id === data.paymentUploadId && u.purpose === "payment_proof" && !u.registrationId);
-    if (!studentId || !payment) {
-      res.status(400).json({ error: "Please upload the team leader's student ID and payment proof for this registration." });
-      return;
-    }
-    frozen.push(await freezeDocument(studentId));
-    frozen.push(await freezeDocument(payment));
-    const receipt = await db.transaction(async (tx) => {
+      const uploads = await tx.select().from(registrationUploadsTable).where(and(
+        inArray(registrationUploadsTable.id, [data.studentIdUploadId, data.paymentUploadId]),
+        eq(registrationUploadsTable.ownerId, ownerId),
+        eq(registrationUploadsTable.submissionKey, data.submissionKey),
+      ));
+      const studentId = uploads.find((u) => u.id === data.studentIdUploadId && u.purpose === "student_id" && !u.registrationId);
+      const payment = uploads.find((u) => u.id === data.paymentUploadId && u.purpose === "payment_proof" && !u.registrationId);
+      if (!studentId || !payment) {
+        return { status: 400 as const, error: "Please upload the team leader's student ID and payment proof for this registration." };
+      }
+      frozen.push(await freezeDocument(studentId));
+      frozen.push(await freezeDocument(payment));
       const [created] = await tx.insert(teamRegistrationsTable).values({
         submissionKey: data.submissionKey,
         referenceCode: `TR26-${randomUUID().replaceAll("-", "").slice(0, 12).toUpperCase()}`,
@@ -92,8 +93,11 @@ router.post("/registrations/teams", async (req, res): Promise<void> => {
       if (!created) {
         const [existing] = await tx.select().from(teamRegistrationsTable)
           .where(eq(teamRegistrationsTable.submissionKey, data.submissionKey)).limit(1);
-        if (!existing || existing.ownerId !== ownerId) throw new Error("Registration retry could not be resolved");
-        return { referenceCode: existing.referenceCode, submittedAt: existing.createdAt, created: false };
+        if (!existing) throw new Error("Registration retry could not be resolved");
+        if (existing.ownerId !== ownerId) {
+          return { status: 400 as const, error: "The submission key is invalid. Please start a new registration." };
+        }
+        return { status: 201 as const, receipt: { referenceCode: existing.referenceCode, submittedAt: existing.createdAt }, created: false };
       }
       await tx.insert(teamRegistrationMembersTable).values(data.members.map((member, position) => ({
         ...member,
@@ -108,11 +112,15 @@ router.post("/registrations/teams", async (req, res): Promise<void> => {
         }).where(eq(registrationUploadsTable.id, upload.id));
       }
       await tx.insert(registrationNotificationsTable).values({ registrationId: created.id });
-      return { referenceCode: created.referenceCode, submittedAt: created.createdAt, created: true };
+      return { status: 201 as const, receipt: { referenceCode: created.referenceCode, submittedAt: created.createdAt }, created: true };
     });
-    committed = receipt.created;
-    res.status(201).json(CreateTeamRegistrationResponse.parse(receipt));
-    if (receipt.created) void processRegistrationNotifications();
+    if (result.status === 400) {
+      res.status(400).json({ error: result.error });
+      return;
+    }
+    committed = result.created;
+    res.status(201).json(CreateTeamRegistrationResponse.parse(result.receipt));
+    if (result.created) void processRegistrationNotifications();
   } catch (error) {
     if (error instanceof RegistrationDocumentError) {
       res.status(400).json({ error: error.message });
@@ -120,11 +128,25 @@ router.post("/registrations/teams", async (req, res): Promise<void> => {
     }
     // Never log participant names, email addresses, phone numbers, or request bodies.
     req.log.error("Unable to persist team registration");
-    res.status(500).json({ error: "Your registration has not been saved. Please try again; your entries are still available." });
+    res.status(500).json({ error: "We could not confirm your registration. Please retry using the same form; your entries are still available." });
   } finally {
-    await Promise.all(frozen.map((doc) =>
-      (committed ? doc.source : doc.file).delete({ ignoreNotFound: true }).catch(() => {}),
-    ));
+    if (frozen.length) {
+      // If commit succeeded but its acknowledgement was lost, never delete the
+      // documents now referenced by the saved registration.
+      let saved: boolean | null = committed;
+      if (!saved) {
+        try {
+          const [record] = await db.select({ ownerId: teamRegistrationsTable.ownerId })
+            .from(teamRegistrationsTable).where(eq(teamRegistrationsTable.submissionKey, data.submissionKey)).limit(1);
+          saved = record?.ownerId === ownerId;
+        } catch { saved = null; }
+      }
+      if (saved !== null) {
+        await Promise.all(frozen.map((doc) =>
+          (saved ? doc.source : doc.file).delete({ ignoreNotFound: true }).catch(() => {}),
+        ));
+      }
+    }
   }
 });
 

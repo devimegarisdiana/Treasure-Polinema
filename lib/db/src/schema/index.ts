@@ -21,3 +21,4 @@ export * from "./team-registrations";
 export * from "./registration-notifications";
 export * from "./auth";
 export * from "./participant-accounts";
+export * from "./organizer-accounts";

@@ -13,6 +13,41 @@ tags:
   - name: registrations
     description: TREASURE team registration
 paths:
+  /organizer-auth/me:
+    get:
+      operationId: getOrganizerSession
+      responses:
+        "200":
+          description: Current native organizer session
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/OrganizerSession" }
+  /organizer-auth/signin:
+    post:
+      operationId: signInOrganizer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/OrganizerSignin" }
+      responses:
+        "200":
+          description: Organizer signed in
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/OrganizerSession" }
+        "401": { description: Invalid credentials }
+        "429": { description: Too many attempts }
+        "503": { description: Organizer sign-in unavailable }
+  /organizer-auth/signout:
+    post:
+      operationId: signOutOrganizer
+      responses:
+        "200":
+          description: Organizer session revoked
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/LogoutSuccess" }
   /participant-auth/me:
     get:
       operationId: getParticipantSession
@@ -471,6 +506,26 @@ components:
       required: [isAdmin]
       properties:
         isAdmin: { type: boolean }
+    OrganizerIdentity:
+      type: object
+      required: [id, username]
+      properties:
+        id: { type: string }
+        username: { type: string }
+    OrganizerSession:
+      type: object
+      required: [user]
+      properties:
+        user:
+          oneOf:
+            - { $ref: "#/components/schemas/OrganizerIdentity" }
+            - { type: "null" }
+    OrganizerSignin:
+      type: object
+      required: [username, password]
+      properties:
+        username: { type: string, minLength: 1, maxLength: 100 }
+        password: { type: string, minLength: 1, maxLength: 128 }
     NotificationStatus:
       type: string
       enum: [not_requested, pending, processing, sent, failed]

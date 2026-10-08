@@ -8,12 +8,13 @@ import {
   getGetAdminAccessQueryKey, getGetAdminRegistrationQueryKey, getListAdminRegistrationsQueryKey,
   useGetAdminAccess, useGetAdminRegistration, useListAdminRegistrations, useRetryRegistrationEmail,
 } from '@workspace/api-client-react';
-import { useAuth } from '@workspace/replit-auth-web';
+import { useOrganizerAuth } from '../hooks/use-organizer-auth';
+import { OrganizerSignIn } from '../components/OrganizerSignIn';
 import type { NotificationStatus } from '@workspace/api-client-react';
 import './admin.css';
 
 const BASE = (import.meta.env.BASE_URL as string).replace(/\/+$/, '');
-const signIn = () => { window.location.href = `/api/login?returnTo=${encodeURIComponent(`${BASE}/admin`)}`; };
+const isHttp401 = (error: unknown) => (error as { status?: number } | null)?.status === 401;
 const fmtDate = (value: string) => {
   const date = new Date(value);
   return Number.isNaN(date.getTime()) ? value : new Intl.DateTimeFormat('en-GB', { dateStyle: 'medium', timeStyle: 'short' }).format(date);
@@ -24,7 +25,7 @@ const statusLabel: Record<NotificationStatus, string> = {
 const readableSize = (bytes: number) => bytes < 1024 * 1024 ? `${Math.max(1, Math.round(bytes / 1024))} KB` : `${(bytes / 1048576).toFixed(1)} MB`;
 
 export default function AdminPage() {
-  const auth = useAuth();
+  const auth = useOrganizerAuth();
   const queryClient = useQueryClient();
   const [searchInput, setSearchInput] = useState('');
   const [search, setSearch] = useState('');
@@ -33,10 +34,11 @@ export default function AdminPage() {
   const [retryError, setRetryError] = useState('');
   const [retryNotice, setRetryNotice] = useState('');
   const [verifiedUser, setVerifiedUser] = useState('');
+  const [logoutError, setLogoutError] = useState('');
   const userKey = auth.user?.id ?? '';
   const accessKey = [...getGetAdminAccessQueryKey(), userKey];
-  const access = useGetAdminAccess({ query: { enabled: !!auth.user && !auth.isLoading, queryKey: accessKey, retry: false } });
-  const authorized = !!auth.user && verifiedUser === userKey && access.data?.isAdmin === true;
+  const access = useGetAdminAccess({ query: { enabled: !!auth.user && !auth.isLoading, queryKey: accessKey, retry: false, refetchOnMount: 'always' } });
+  const authorized = !!auth.user && verifiedUser === userKey && !access.isFetching && access.isSuccess && access.data?.isAdmin === true;
   const listParams = useMemo(() => ({ page, ...(search ? { search } : {}) }), [page, search]);
   const list = useListAdminRegistrations(listParams, {
     query: { enabled: authorized, queryKey: getListAdminRegistrationsQueryKey(listParams), refetchOnMount: 'always', refetchInterval: authorized ? 30_000 : false },
@@ -45,6 +47,9 @@ export default function AdminPage() {
     query: { enabled: authorized && !!selectedId, queryKey: getGetAdminRegistrationQueryKey(selectedId || 'none'), refetchOnMount: 'always', refetchInterval: authorized && !!selectedId ? 30_000 : false },
   });
   const retry = useRetryRegistrationEmail();
+  const requestUnauthorized = (access.isError && isHttp401(access.error))
+    || (list.isError && isHttp401(list.error))
+    || (detail.isError && isHttp401(detail.error));
 
   const clearPrivateCache = () => {
     setSelectedId('');
@@ -52,7 +57,7 @@ export default function AdminPage() {
     setRetryNotice('');
     queryClient.removeQueries({ predicate: (query) => {
       const key = query.queryKey[0];
-      return typeof key === 'string' && (key === '/api/admin/registrations' || key.startsWith('/api/admin/registrations/'));
+      return typeof key === 'string' && key.startsWith('/api/admin/');
     } });
   };
 
@@ -70,8 +75,12 @@ export default function AdminPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userKey]);
   useEffect(() => {
-    if (access.isSuccess && userKey) setVerifiedUser(userKey);
-  }, [access.isSuccess, userKey]);
+    if (access.isSuccess && !access.isFetching && access.data?.isAdmin === true && userKey) setVerifiedUser(userKey);
+    else if (access.isError || access.data?.isAdmin !== true) setVerifiedUser('');
+  }, [access.isSuccess, access.isFetching, access.isError, access.data?.isAdmin, userKey]);
+  useEffect(() => {
+    if (requestUnauthorized) auth.expireSession();
+  }, [requestUnauthorized, auth.expireSession]);
   useEffect(() => {
     const timer = window.setTimeout(() => {
       setPage(1);
@@ -86,11 +95,12 @@ export default function AdminPage() {
     setPage(1);
     setVerifiedUser('');
     clearPrivateCache();
-    await auth.logout();
-    queryClient.removeQueries({ predicate: (query) => {
-      const key = query.queryKey[0];
-      return typeof key === 'string' && key.startsWith('/api/admin/');
-    } });
+    try {
+      await auth.logout();
+      setLogoutError('');
+    } catch {
+      setLogoutError('Sign-out could not be confirmed. Records are hidden here, but your server session may still be active. Retry sign-out before leaving this device.');
+    }
   };
   const onRetry = async () => {
     if (!selectedId || !detail.data) return;
@@ -104,6 +114,10 @@ export default function AdminPage() {
         queryClient.invalidateQueries({ queryKey: getListAdminRegistrationsQueryKey(listParams) }),
       ]);
     } catch (error) {
+      if (isHttp401(error)) {
+        auth.expireSession();
+        return;
+      }
       const data = (error as { data?: { error?: unknown } } | null)?.data?.error;
       setRetryError(typeof data === 'string' ? data : 'The notification could not be queued. Please try again.');
     }
@@ -119,7 +133,7 @@ export default function AdminPage() {
         <a href={`${BASE}/`} className="admin-wordmark" aria-label="TREASURE 2026 home"><img src={`${BASE}/treasure-wordmark.png`} alt="TREASURE 2026" /></a>
         <div className="admin-top-right">
           <span className="admin-private"><LockKeyhole size={13} /> Private organizer area</span>
-          {auth.isAuthenticated && <button className="admin-logout" onClick={signOut} type="button"><LogOut size={15} /> Sign out</button>}
+          {auth.isAuthenticated && !requestUnauthorized && <button className="admin-logout" onClick={signOut} type="button"><LogOut size={15} /> Sign out</button>}
         </div>
       </header>
 
@@ -133,14 +147,24 @@ export default function AdminPage() {
           {authorized && <div className="admin-live"><i /> Live refresh · 30 sec</div>}
         </div>
 
+        {logoutError && <section className="admin-gate admin-gate-error" role="alert">
+          <p>{logoutError}</p>
+          <button className="admin-secondary" type="button" disabled={auth.isSigningOut} onClick={() => void signOut()}>
+            {auth.isSigningOut ? 'Signing out…' : 'Retry sign-out'}
+          </button>
+        </section>}
         {auth.isLoading ? (
           <section className="admin-gate" aria-live="polite"><div className="admin-skeleton" /><div className="admin-skeleton short" /><p>Checking your sign-in…</p></section>
-        ) : !auth.isAuthenticated ? (
-          <section className="admin-gate" data-testid="admin-login">
-            <div className="gate-mark"><LockKeyhole size={21} /></div><h2>Sign in to continue</h2>
-            <p>This workspace is restricted to authorized TREASURE organizers. Sign-in alone does not grant organizer access.</p>
-            <button className="admin-primary" type="button" onClick={signIn}>Sign in securely <ArrowUpRight size={15} /></button>
-          </section>
+        ) : !auth.isAuthenticated || requestUnauthorized ? (
+          <OrganizerSignIn
+            onSignIn={async (credentials) => { await auth.signin(credentials); setLogoutError(''); }}
+            busy={auth.isSigningIn}
+            sessionChecking={auth.isRefreshing}
+            sessionError={auth.refetchError}
+            signinError={auth.signinError}
+            onRetrySession={() => void auth.refetch()}
+            onClearError={auth.clearSigninError}
+          />
         ) : access.isLoading ? (
           <section className="admin-gate" aria-live="polite"><div className="admin-skeleton" /><p>Verifying organizer access…</p></section>
         ) : access.isError ? (
@@ -164,11 +188,11 @@ export default function AdminPage() {
             <section className={`admin-workspace${selectedId ? ' has-detail' : ''}`}>
               <div className="registrations-panel">
                 <div className="list-head">
-                  <div><div className="section-eyebrow">Registration records</div><h2>Teams <span>{list.data ? list.data.total : '—'}</span></h2></div>
+                  <div><div className="section-eyebrow">Registration records</div><h2>Teams <span>{list.data && !list.isError ? list.data.total : '—'}</span></h2></div>
                   <div className="searchbox"><Search size={16} /><input aria-label="Search registrations" placeholder="Search team, captain, reference…" value={searchInput} onChange={(e) => setSearchInput(e.target.value)} data-testid="input-admin-search" /></div>
                 </div>
                 {list.isLoading && !list.data ? <div className="rows-loading" role="status"><div /><div /><div /><div /></div> :
-                  list.isError && !list.data ? <div className="admin-error" role="alert"><p>Registration records could not be loaded.</p><button type="button" onClick={() => void list.refetch()}>Retry</button></div> :
+                  list.isError ? <div className="admin-error" role="alert"><p>Registration records could not be loaded. Private records are hidden until the request succeeds.</p><button type="button" onClick={() => void list.refetch()}>Retry</button></div> :
                   list.data && list.data.items.length === 0 ? <div className="admin-empty"><Users size={22} /><strong>{search ? 'No matching registrations' : 'No registrations yet'}</strong><span>{search ? 'Try another team name, captain or reference code.' : 'Submitted teams will appear here.'}</span></div> :
                   <div className="registration-table-wrap"><table className="registration-table"><thead><tr><th>Team / reference</th><th>Institution</th><th>Origin</th><th>Members</th><th>Notification</th><th><span className="sr-only">Open record</span></th></tr></thead>
                     <tbody>{(list.data?.items ?? []).map((item) => <tr key={item.id} className={selectedId === item.id ? 'is-selected' : ''}>
@@ -184,9 +208,9 @@ export default function AdminPage() {
               {selectedId && (
                 <aside className="detail-panel" aria-label="Registration details">
                   <div className="detail-head"><div><div className="section-eyebrow">Team record</div><h2>Registration details</h2></div><button type="button" aria-label="Close details" className="close-detail" onClick={() => setSelectedId('')}><X size={18} /></button></div>
-                  {detail.isLoading && <div className="detail-loading" role="status"><div /><div /><div /><p>Loading private record…</p></div>}
-                  {detail.isError && <div className="admin-error" role="alert"><p>Details could not be loaded.</p><button type="button" onClick={() => void detail.refetch()}>Retry</button></div>}
-                  {detail.data && <>
+                  {detail.isLoading && !detail.data && <div className="detail-loading" role="status"><div /><div /><div /><p>Loading private record…</p></div>}
+                  {detail.isError && <div className="admin-error" role="alert"><p>Details could not be loaded. Private record details are hidden until the request succeeds.</p><button type="button" onClick={() => void detail.refetch()}>Retry</button></div>}
+                  {!detail.isError && detail.data && <>
                     <div className="detail-team"><span>{detail.data.registration.referenceCode}</span><h3>{detail.data.registration.teamName || detail.data.registration.captainName}</h3><p>{detail.data.registration.institution || 'Institution not provided'} · {detail.data.registration.countryOfOrigin || 'Origin not provided'}</p><small>Submitted {fmtDate(detail.data.registration.createdAt)}</small></div>
                     <div className="detail-section"><h3>Contact</h3><dl><dt>Email</dt><dd><a href={`mailto:${detail.data.contact.email}`}>{detail.data.contact.email}</a></dd><dt>Phone</dt><dd>{detail.data.contact.phone || '—'}</dd><dt>Alternative phone</dt><dd>{detail.data.contact.alternativePhone || '—'}</dd><dt>Faculty / department</dt><dd>{detail.data.contact.facultyDepartment || '—'}</dd><dt>Edugate training</dt><dd>{detail.data.contact.hasEdugateTraining === null ? '—' : detail.data.contact.hasEdugateTraining ? 'Yes' : 'No'}</dd></dl></div>
                     <div className="detail-section"><h3>Team members <span>{detail.data.members.length}</span></h3><ol className="member-list">{detail.data.members.map((member) => <li key={`${member.position}-${member.fullName}`}><span>{String(member.position).padStart(2, '0')}</span>{member.fullName}</li>)}</ol></div>

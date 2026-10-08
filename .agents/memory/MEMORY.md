@@ -4,3 +4,4 @@
 - [Organizer access](organizer-access.md) — organizer access and notification recipients are separate; receiving email does not grant access to private data.
 - [Participant accounts](participant-accounts.md) — participants sign up with username, email, and password, without Replit login; email stays mandatory.
 - [Preview cookie policy](preview-cookie-policy.md) — HTTPS development preview may rewrite SameSite=Lax to None; compare direct headers before diagnosing auth bugs.
+- [Registration retry ordering](registration-retry-ordering.md) — serialize retries before document copies; uncertain commits must not delete saved files.

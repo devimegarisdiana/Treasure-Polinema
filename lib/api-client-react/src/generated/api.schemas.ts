@@ -214,6 +214,28 @@ export interface AdminAccess {
   isAdmin: boolean;
 }
 
+export interface OrganizerIdentity {
+  id: string;
+  username: string;
+}
+
+export interface OrganizerSession {
+  user: OrganizerIdentity | null;
+}
+
+export interface OrganizerSignin {
+  /**
+     * @minLength 1
+     * @maxLength 100
+     */
+  username: string;
+  /**
+     * @minLength 1
+     * @maxLength 128
+     */
+  password: string;
+}
+
 export type NotificationStatus = typeof NotificationStatus[keyof typeof NotificationStatus];
 
 

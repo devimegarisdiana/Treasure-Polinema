@@ -12,26 +12,26 @@ import {
 import { isTreasureAdmin } from "../lib/adminAccess";
 import { notificationSetup, processRegistrationNotifications } from "../lib/registrationNotifications";
 import { registrationStorage, streamFile } from "./storage";
+import { sameSiteRequest } from "../lib/participantAuth";
 
 const router: IRouter = Router();
 
+router.use("/admin", (req, res, next) => {
+  res.setHeader("Cache-Control", "private, no-store");
+  if (!sameSiteRequest(req)) { res.status(403).json({ error: "This action must be performed from the organizer dashboard." }); return; }
+  next();
+});
+
 router.get("/admin/access", (req, res) => {
   res.setHeader("Cache-Control", "private, no-store");
-  if (!req.isAuthenticated()) { res.status(401).json({ error: "Please sign in." }); return; }
+  if (!req.organizer) { res.status(401).json({ error: "Please sign in." }); return; }
   res.json(GetAdminAccessResponse.parse({ isAdmin: isTreasureAdmin(req) }));
 });
 
 router.use("/admin", (req, res, next) => {
   res.setHeader("Cache-Control", "private, no-store");
-  if (!req.isAuthenticated()) { res.status(401).json({ error: "Please sign in." }); return; }
+  if (!req.organizer) { res.status(401).json({ error: "Please sign in." }); return; }
   if (!isTreasureAdmin(req)) { res.status(403).json({ error: "This dashboard is restricted to authorized organizers." }); return; }
-  // Never allow credentialed cross-origin requests to read or mutate private data.
-  const origin = req.get("origin");
-  let sameOrigin = !origin;
-  try { if (origin) sameOrigin = new URL(origin).host === req.get("host"); } catch { sameOrigin = false; }
-  if (req.get("sec-fetch-site") === "cross-site" || !sameOrigin) {
-    res.status(403).json({ error: "This action must be performed from the organizer dashboard." }); return;
-  }
   next();
 });
 

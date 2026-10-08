@@ -42,7 +42,7 @@ const T = {
     submit: 'Submit registration', sending: 'Submitting...', waitUp: 'Wait for uploads to finish.',
     r: 'This field is required.', min: 'At least 2 characters.', max: (n: number) => `At most ${n} characters.`,
     badEmail: 'Enter a valid email address.', badPhone: 'Use 7–15 digits; +, spaces, ( ) . - are allowed.', pick: 'Choose one.', needFile: 'This file is required.', needConsent: 'Consent is required.',
-    fixErrors: 'Check the highlighted fields. Your entries are still in the form.', failed: 'Registration was not sent. Your entries are safe; please try again.',
+     fixErrors: 'Check the highlighted fields. Your entries are still in the form.', failed: 'We could not confirm your registration. Your entries are safe; please try again.',
     okTag: 'Data received', okTitle: 'Registration data received.',
     okNote: 'This is a receipt for your data, not proof of payment or confirmation of acceptance. Keep this reference code and contact the organizers for next steps.',
     ref: 'Reference code', at: 'Received at', members: 'Names registered', print: 'Print receipt', newReg: 'Register another team', homeL: 'Back to home',
