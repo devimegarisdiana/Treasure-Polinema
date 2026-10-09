@@ -88,6 +88,8 @@ before(async () => {
   app.use((req, _res, next) => {
     const session = sessions.get(req.get("authorization")?.replace(/^Bearer /, "") ?? "");
     if (session) req.user = { ...session, firstName: null, lastName: null, profileImageUrl: null };
+    // Native organizer identity is explicit; email addresses grant no authority.
+    if (session?.id === "test-organizer") req.organizer = { id: "organizer:test-organizer", username: "synthetic-organizer" };
     req.isAuthenticated = function (this: Request) { return this.user != null; } as typeof req.isAuthenticated;
     req.log = logger;
     next();
@@ -234,9 +236,8 @@ test("invalid pagination/search/UUID return 400 and missing registrations return
   assert.deepEqual(missing.body, { error: "Registration not found." });
 });
 
-test("unauthenticated 401 and non-organizer 403 never query or expose private registration data", async () => {
+test("requests without a native organizer session never expose private registration data", async () => {
   for (const session of [null, "unknown-session", "participant-test-session", "email-less-test-session"]) {
-    const authenticated = session === "participant-test-session" || session === "email-less-test-session";
     for (const [path, method] of [
       ["/admin/registrations?email=organizer@example.invalid", "GET"],
       [`/admin/registrations/${id(1)}`, "GET"],
@@ -246,9 +247,8 @@ test("unauthenticated 401 and non-organizer 403 never query or expose private re
     ]) {
       const beforeQueries = statements.length;
       const response = await request(path, session, { "x-user-email": "organizer@example.invalid" }, method);
-      assert.equal(response.status, authenticated ? 403 : 401);
-      assert.deepEqual(response.body, { error: authenticated
-        ? "This dashboard is restricted to authorized organizers." : "Please sign in." });
+      assert.equal(response.status, 401);
+      assert.deepEqual(response.body, { error: "Please sign in." });
       assert.equal(statements.length, beforeQueries, "Access must be denied before querying private data.");
     }
   }
@@ -257,8 +257,8 @@ test("unauthenticated 401 and non-organizer 403 never query or expose private re
 test("organizer access honors session identity and rejects cross-origin private reads", async () => {
   assert.deepEqual((await request("/admin/access")).body, { isAdmin: true });
   const participant = await request("/admin/access", "participant-test-session");
-  assert.equal(participant.status, 200);
-  assert.deepEqual(participant.body, { isAdmin: false });
+  assert.equal(participant.status, 401);
+  assert.deepEqual(participant.body, { error: "Please sign in." });
   const anonymous = await request("/admin/access", null);
   assert.equal(anonymous.status, 401);
   assert.deepEqual(anonymous.body, { error: "Please sign in." });

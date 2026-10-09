@@ -11,7 +11,9 @@ globalThis.require = createRequire(import.meta.url);
 const artifactDir = path.dirname(fileURLToPath(import.meta.url));
 
 async function buildAll() {
-  const distDir = path.resolve(artifactDir, "dist");
+    const distDir = process.env.BUILD_OUTPUT_DIR
+      ? path.resolve(process.env.BUILD_OUTPUT_DIR)
+      : path.resolve(artifactDir, "dist");
   await rm(distDir, { recursive: true, force: true });
 
   await esbuild({
@@ -101,7 +103,7 @@ async function buildAll() {
       "puppeteer-core",
       "electron",
     ],
-    sourcemap: "linked",
+    sourcemap: process.env.BUILD_OUTPUT_DIR ? false : "linked",
     plugins: [
       // pino relies on workers to handle logging, instead of externalizing it we use a plugin to handle it
       esbuildPluginPino({ transports: ["pino-pretty"] })

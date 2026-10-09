@@ -1,0 +1,29 @@
+# Optional automation. Creating this as .github/workflows/idwebhost.yml in
+# GitHub requires permission to manage workflows; the code package itself does not.
+name: Build TREASURE for IDwebhost
+on:
+  workflow_dispatch:
+  push:
+    branches: [idwebhost-source]
+permissions:
+  contents: read
+jobs:
+  package:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter @workspace/api-server run build:idwebhost
+      - uses: actions/upload-artifact@v4
+        with:
+          name: treasure-idwebhost
+          path: dist/idwebhost/
+          if-no-files-found: error
+          retention-days: 14

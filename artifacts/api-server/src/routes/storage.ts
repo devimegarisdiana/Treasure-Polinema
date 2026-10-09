@@ -1,13 +1,56 @@
 import { Readable } from "node:stream";
-import { Router, type IRouter, type Response } from "express";
+import { Router, raw as rawBody, type IRouter, type Response } from "express";
 import { and, eq } from "drizzle-orm";
 import { db, registrationUploadsTable } from "@workspace/db";
 import { RequestUploadUrlBody, RequestUploadUrlResponse } from "@workspace/api-zod";
 import { ObjectStorageService } from "../lib/objectStorage";
 import { registrationOwner, sameSiteRequest } from "../lib/participantAuth";
+import { LocalFile, localStorageEnabled, validLocalUploadSignature } from "../lib/localObjectStorage";
 
 export const registrationStorage = new ObjectStorageService();
 const router: IRouter = Router();
+
+// Signed upload transport: the frontend uses the existing uploadURL contract.
+router.put("/storage/local-uploads/:id", async (req, res, next): Promise<void> => {
+  res.setHeader("Cache-Control", "no-store");
+  if (!localStorageEnabled()) { res.sendStatus(404); return; }
+  if (!sameSiteRequest(req)) { res.sendStatus(403); return; }
+  const ownerId = registrationOwner(req);
+  if (!ownerId) { res.status(401).json({ error: "Login required" }); return; }
+  try {
+    if (!validLocalUploadSignature(String(req.params.id), req.query.expires, req.query.signature)) {
+      res.status(403).json({ error: "The upload link expired. Please select the file again." }); return;
+    }
+    const [upload] = await db.select().from(registrationUploadsTable).where(and(
+      eq(registrationUploadsTable.objectPath, `/objects/uploads/${req.params.id}`),
+      eq(registrationUploadsTable.ownerId, ownerId),
+    )).limit(1);
+    if (!upload || upload.registrationId || req.get("content-type") !== upload.contentType) {
+      res.status(400).json({ error: "The document does not match this upload." }); return;
+    }
+    res.locals.upload = upload;
+    next();
+  } catch {
+    req.log.error("Unable to authorize a local document upload");
+    res.status(500).json({ error: "The upload could not be authorized." });
+  }
+}, rawBody({ type: ["application/pdf", "image/jpeg", "image/png", "image/webp"], limit: "10mb" }),
+async (req, res): Promise<void> => {
+  const upload = res.locals.upload as typeof registrationUploadsTable.$inferSelect;
+  if (!Buffer.isBuffer(req.body) || req.body.length !== upload.fileSize) {
+    res.status(400).json({ error: "The document size does not match this upload." }); return;
+  }
+  try {
+    await new LocalFile(`private/uploads/${req.params.id}`).save(req.body, upload.contentType);
+    res.sendStatus(200);
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === "EEXIST") {
+      res.status(409).json({ error: "This upload has already been used. Please select the file again." }); return;
+    }
+    req.log.error("Unable to save a private document");
+    res.status(500).json({ error: "The document could not be saved. Please try again." });
+  }
+});
 
 router.post("/storage/uploads/request-url", async (req, res): Promise<void> => {
   res.setHeader("Cache-Control", "no-store");

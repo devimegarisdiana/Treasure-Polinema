@@ -10,7 +10,7 @@ import organizerAuthRouter from "./organizerAuth";
 const router: IRouter = Router();
 
 router.use(healthRouter);
-router.use(authRouter);
+if (process.env.AUTH_REPLIT_ENABLED !== "false") router.use(authRouter);
 router.use(storageRouter);
 router.use(registrationsRouter);
 router.use(adminRouter);

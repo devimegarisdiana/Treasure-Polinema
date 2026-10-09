@@ -30,7 +30,7 @@ export function sameSiteRequest(req: Request): boolean {
   const origin = req.get("origin");
   if (!origin) return true;
   try {
-    const expected = new URL(`${cookieOptions(req).secure ? "https" : "http"}://${req.get("host")}`);
+    const expected = new URL(process.env.PUBLIC_APP_ORIGIN || `${cookieOptions(req).secure ? "https" : "http"}://${req.get("host")}`);
     return new URL(origin).origin === expected.origin;
   } catch { return false; }
 }

@@ -10,9 +10,9 @@ if (!rawPort) {
   );
 }
 
-const port = Number(rawPort);
+const port = rawPort === "passenger" && process.env.RUNTIME_HOST === "cpanel" ? "passenger" : Number(rawPort);
 
-if (Number.isNaN(port) || port <= 0) {
+if (typeof port === "number" && (!Number.isInteger(port) || port <= 0 || port > 65535)) {
   throw new Error(`Invalid PORT value: "${rawPort}"`);
 }
 
@@ -23,5 +23,5 @@ app.listen(port, (err) => {
   }
 
   logger.info({ port }, "Server listening");
-  startRegistrationNotificationWorker();
+  if (process.env.NOTIFICATION_WORKER_ENABLED !== "false") startRegistrationNotificationWorker();
 });

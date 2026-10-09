@@ -60,6 +60,7 @@ export async function authMiddleware(
     return this.user != null;
   } as Request['isAuthenticated'];
 
+  if (process.env.AUTH_REPLIT_ENABLED === "false") { next(); return; }
   const sid = getSessionId(req);
   if (!sid) {
     next();

@@ -48,3 +48,11 @@ Thumbs.db
 # Replit
 .cache/
 .local/
+
+# Never publish hosting credentials, document backups, or deployment archives.
+.env
+.env.*
+!.env.example
+*.treasure-backup
+*.treasure-backup.zip
+private-storage/

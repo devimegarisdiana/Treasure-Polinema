@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 import type { registrationUploadsTable } from "@workspace/db";
-import type { File } from "@google-cloud/storage";
-import { ObjectNotFoundError, ObjectStorageService } from "./objectStorage";
+import { ObjectNotFoundError, ObjectStorageService, type StorageFile } from "./objectStorage";
+import { LocalFile } from "./localObjectStorage";
 import { setObjectAclPolicy } from "./objectAcl";
 
 const storage = new ObjectStorageService();
@@ -16,14 +16,14 @@ function validSignature(type: string, data: Buffer): boolean {
 
 export interface FrozenDocument {
   objectPath: string;
-  file: File;
-  source: File;
+  file: StorageFile;
+  source: StorageFile;
 }
 
 export async function freezeDocument(
   upload: typeof registrationUploadsTable.$inferSelect,
 ): Promise<FrozenDocument> {
-  let source: File;
+  let source: StorageFile;
   try {
     source = await storage.getObjectEntityFile(upload.objectPath);
   } catch (error) {
@@ -47,7 +47,13 @@ export async function freezeDocument(
   const prefix = storage.getPrivateObjectDir().split("/").filter(Boolean).slice(1).join("/");
   const destination = source.bucket.file(`${prefix}/registration-documents/${id}`);
   try {
-    await pinned.copy(destination);
+    if (pinned instanceof LocalFile && destination instanceof LocalFile) {
+      await pinned.copy(destination);
+    } else if (!(pinned instanceof LocalFile) && !(destination instanceof LocalFile)) {
+      await pinned.copy(destination);
+    } else {
+      throw new Error("Cannot copy documents between different storage backends.");
+    }
     await setObjectAclPolicy(destination, { owner: upload.ownerId, visibility: "private" });
   } catch (error) {
     await destination.delete({ ignoreNotFound: true }).catch(() => {});

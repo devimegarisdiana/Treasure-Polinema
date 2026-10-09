@@ -8,6 +8,9 @@ import {
 
 // Never import the production DB entry point: it constructs a network Pool.
 export { teamRegistrationsTable, teamRegistrationMembersTable, registrationUploadsTable, registrationNotificationsTable };
+export {
+  participantAccountsTable, participantSessionsTable, participantAuthLimitsTable,
+} from "@workspace/db/schema";
 export const postgres = new PGlite();
 const schema = { teamRegistrationsTable, teamRegistrationMembersTable, registrationUploadsTable, registrationNotificationsTable };
 export const statements: string[] = [];

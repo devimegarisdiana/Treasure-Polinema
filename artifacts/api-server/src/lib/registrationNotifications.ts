@@ -1,4 +1,4 @@
-import { ReplitConnectors } from "@replit/connectors-sdk";
+import { sendRegistrationEmail } from "./emailTransport";
 import { eq, sql } from "drizzle-orm";
 import { db, registrationNotificationsTable, teamRegistrationsTable, teamRegistrationMembersTable } from "@workspace/db";
 import { logger } from "./logger";
@@ -19,7 +19,9 @@ export function notificationSetup() {
 
 function providerError(status: number, message: string): string {
   if (/api key|unauthorized|invalid token/i.test(message) || status === 401) {
-    return "Resend rejected the API key. Update the credentials in the connected Resend integration.";
+    return process.env.EMAIL_TRANSPORT === "direct-resend"
+      ? "Resend rejected the API key. Update RESEND_API_KEY in the external application's secure settings."
+      : "Resend rejected the API key. Update the credentials in the connected Resend integration.";
   }
   if (/verify|verified|domain|testing emails|own email/i.test(message)) {
     return "Resend rejected the sender or recipient. Verify a sending domain, or use the account owner's address with the test sender.";
@@ -51,6 +53,7 @@ async function withTimeout<T>(promise: Promise<T>): Promise<T> {
 }
 
 export async function processRegistrationNotifications(): Promise<void> {
+  if (process.env.NOTIFICATION_WORKER_ENABLED === "false") return;
   if (running) return;
   running = true;
   try {
@@ -93,17 +96,13 @@ export async function processRegistrationNotifications(): Promise<void> {
           "This notification does not confirm payment approval.",
         ].join("\n");
         // The SDK obtains fresh credentials for each send; never read API keys.
-        const response = await withTimeout(new ReplitConnectors().proxy("resend", "/emails", {
-          method: "POST",
-          headers: { "Content-Type": "application/json", "Idempotency-Key": `treasure-registration-${job.id}` },
-          body: {
+        const response = await withTimeout(sendRegistrationEmail({
             from: setup.sender,
             to: [setup.recipient],
             subject: `TREASURE 2026 — new registration ${registration.referenceCode}`,
             text,
             html: `<div style="font-family:Arial,sans-serif;line-height:1.65"><h2>New TREASURE 2026 registration</h2><p>${escapeHtml(text.split("\n").slice(1).join("\n")).replaceAll("\n", "<br>")}</p></div>`,
-          },
-        }));
+        }, `treasure-registration-${job.id}`));
         const payload = await response.json() as { id?: string; message?: string };
         if (!response.ok || !payload.id) throw new Error(providerError(response.status, payload.message ?? ""));
         await db.update(registrationNotificationsTable).set({
@@ -114,7 +113,9 @@ export async function processRegistrationNotifications(): Promise<void> {
           error.message.startsWith("Resend") || error.message.startsWith("Email provider") ||
           error.message.startsWith("Email notification") || error.message.startsWith("The registration")
         );
-        const lastError = known ? (error as Error).message : "Email delivery failed. Check the connected Resend integration; automatic retry is scheduled.";
+        const lastError = known ? (error as Error).message : process.env.EMAIL_TRANSPORT === "direct-resend"
+          ? "Email delivery failed. Check RESEND_API_KEY and the verified sender on the external host; automatic retry is scheduled."
+          : "Email delivery failed. Check the connected Resend integration; automatic retry is scheduled.";
         const delay = Math.min(15 * 60_000, 60_000 * 2 ** Math.min(job.attempts - 1, 4));
         await db.update(registrationNotificationsTable).set({
           status: "failed", lastError, lockedAt: null, nextAttemptAt: new Date(Date.now() + delay),

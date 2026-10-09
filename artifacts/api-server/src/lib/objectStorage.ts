@@ -1,6 +1,9 @@
 import { randomUUID } from 'crypto';
 import { Readable } from 'stream';
 import { File, Storage } from '@google-cloud/storage';
+import { LocalFile, localStorageEnabled, createLocalUploadUrl, localUploadOrigin } from './localObjectStorage';
+
+export type StorageFile = File | LocalFile;
 
 import {
   canAccessObject,
@@ -61,6 +64,7 @@ export class ObjectStorageService {
   }
 
   getPrivateObjectDir(): string {
+    if (localStorageEnabled()) return '/local/private';
     const dir = process.env.PRIVATE_OBJECT_DIR || '';
     if (!dir) {
       throw new Error(
@@ -71,7 +75,9 @@ export class ObjectStorageService {
     return dir;
   }
 
-  async searchPublicObject(filePath: string): Promise<File | null> {
+  async searchPublicObject(filePath: string): Promise<StorageFile | null> {
+    // Website images are included in the external site's compiled public folder.
+    if (localStorageEnabled()) return null;
     for (const searchPath of this.getPublicObjectSearchPaths()) {
       const fullPath = `${searchPath}/${filePath}`;
 
@@ -89,7 +95,7 @@ export class ObjectStorageService {
   }
 
   async downloadObject(
-    file: File,
+    file: StorageFile,
     cacheTtlSec: number = 3600,
   ): Promise<Response> {
     const [metadata] = await file.getMetadata();
@@ -112,6 +118,7 @@ export class ObjectStorageService {
   }
 
   async getObjectEntityUploadURL(): Promise<string> {
+    if (localStorageEnabled()) return createLocalUploadUrl();
     const privateObjectDir = this.getPrivateObjectDir();
     if (!privateObjectDir) {
       throw new Error(
@@ -133,7 +140,7 @@ export class ObjectStorageService {
     });
   }
 
-  async getObjectEntityFile(objectPath: string): Promise<File> {
+  async getObjectEntityFile(objectPath: string): Promise<StorageFile> {
     if (!objectPath.startsWith('/objects/')) {
       throw new ObjectNotFoundError();
     }
@@ -144,6 +151,11 @@ export class ObjectStorageService {
     }
 
     const entityId = parts.slice(1).join('/');
+    if (localStorageEnabled()) {
+      const file = new LocalFile(`private/${entityId}`);
+      if (!(await file.exists())[0]) throw new ObjectNotFoundError();
+      return file;
+    }
     let entityDir = this.getPrivateObjectDir();
     if (!entityDir.endsWith('/')) {
       entityDir = `${entityDir}/`;
@@ -160,6 +172,11 @@ export class ObjectStorageService {
   }
 
   normalizeObjectEntityPath(rawPath: string): string {
+    if (localStorageEnabled() && rawPath.startsWith(`${localUploadOrigin()}/api/storage/local-uploads/`)) {
+      const id = new URL(rawPath).pathname.split('/').at(-1);
+      if (!id || !/^[a-f0-9-]{36}$/.test(id)) throw new Error('Invalid local upload URL.');
+      return `/objects/uploads/${id}`;
+    }
     if (!rawPath.startsWith('https://storage.googleapis.com/')) {
       return rawPath;
     }
@@ -200,7 +217,7 @@ export class ObjectStorageService {
     requestedPermission,
   }: {
     userId?: string;
-    objectFile: File;
+    objectFile: StorageFile;
     requestedPermission?: ObjectPermission;
   }): Promise<boolean> {
     return canAccessObject({
