@@ -1,9 +1,0 @@
-- [Competition rules and source trust](competition-rules.md) — do not invent team-size limits; verify printed links before using them for registration.
-- [Visual direction](visual-direction.md) — textured broken white with calm soft-red and blue accents; no green-dominant theme.
-- [Site language](site-language.md) — all website information must be in English.
-- [Organizer access](organizer-access.md) — organizer access and notification recipients are separate; receiving email does not grant access to private data.
-- [Participant accounts](participant-accounts.md) — participants sign up with username, email, and password, without Replit login; email stays mandatory.
-- [Preview cookie policy](preview-cookie-policy.md) — HTTPS development preview may rewrite SameSite=Lax to None; compare direct headers before diagnosing auth bugs.
-- [Registration retry ordering](registration-retry-ordering.md) — serialize retries before document copies; uncertain commits must not delete saved files.
-- [Organizer test isolation](organizer-test-isolation.md) — shared databases let background workers claim synthetic notification jobs; isolate regression fixtures.
-- [Publishing route](publishing-preference.md) — user wants GitHub-based publishing, not Replit publishing.
