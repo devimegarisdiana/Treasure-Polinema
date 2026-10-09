@@ -26,6 +26,6 @@ packages = ["freetype", "gumbo", "harfbuzz", "jbig2dec", "libjpeg_turbo", "mupdf
 [userenv]
 
 [userenv.shared]
-REGISTRATION_EMAIL_FROM = "TREASURE 2026 <onboarding@resend.dev>"
+REGISTRATION_EMAIL_FROM = "TREASURE 2026 <admin@treasure-polinema.com>"
 REGISTRATION_NOTIFICATION_EMAIL = "abryelsuryagracia@gmail.com"
 TREASURE_ADMIN_EMAILS = "devi.mega@polinema.ac.id"
