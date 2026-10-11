@@ -14,6 +14,15 @@ process.env.PORT ||= "3000"; // Passenger normally intercepts listen(); also acc
 process.env.NOTIFICATION_WORKER_ENABLED ||= "false";
 process.env.MIGRATION_READ_ONLY ||= "true";
 
+let startupStage = "configuration";
+const diagnosticCodes = new Set([
+  "28P01", "28000", "3D000", "42501", "42883", "42P01", "42703", "42704",
+  "42P07", "23505", "53300", "57P03", "08001", "08003", "08004", "08006",
+  "ECONNREFUSED", "ECONNRESET", "ENOTFOUND", "EAI_AGAIN", "ETIMEDOUT",
+  "EACCES", "EPERM", "ENOENT", "ERR_INVALID_URL", "MODULE_NOT_FOUND",
+  "ERR_MODULE_NOT_FOUND", "ERR_DLOPEN_FAILED",
+]);
+
 async function start() {
   for (const name of ["DATABASE_URL", "PRIVATE_STORAGE_ROOT", "SESSION_SECRET", "PUBLIC_APP_ORIGIN",
     "TREASURE_ORGANIZER_USERNAME", "TREASURE_ORGANIZER_PASSWORD"]) {
@@ -32,13 +41,17 @@ async function start() {
   }
 
   if (process.env.INITIALIZE_EMPTY_DATABASE === "true") {
+    startupStage = "database-client";
     const { Client } = require("pg");
+    startupStage = "database-connect";
     const client = new Client({ connectionString: process.env.DATABASE_URL });
     await client.connect();
     try {
+      startupStage = "schema-check";
       await client.query("BEGIN");
       const tables = await client.query("SELECT tablename FROM pg_tables WHERE schemaname = 'public'");
       if (tables.rows.length === 0) {
+        startupStage = "schema-create";
         await client.query(await fs.readFile(path.join(__dirname, "schema.sql"), "utf8"));
       } else {
         const required = ["participant_accounts", "organizer_accounts", "team_registrations", "registration_uploads"];
@@ -46,6 +59,7 @@ async function start() {
           throw new Error("Database is not empty and its schema is incomplete. Initialization refused.");
         }
       }
+      startupStage = "schema-commit";
       await client.query("COMMIT");
     } catch (error) {
       await client.query("ROLLBACK");
@@ -53,12 +67,14 @@ async function start() {
     } finally { await client.end(); }
   }
   if (process.env.IMPORT_BACKUP_FILE) {
+    startupStage = "backup-restore";
     if (process.env.NOTIFICATION_WORKER_ENABLED !== "false" || process.env.MIGRATION_READ_ONLY !== "true") {
       throw new Error("Keep email delivery disabled and registration paused during restoration.");
     }
     const { restoreBackup } = await import("./tools/data-migration.mjs");
     await restoreBackup(process.env.IMPORT_BACKUP_FILE);
   }
+  startupStage = "server-load";
   await import("./server/index.mjs");
 }
 
@@ -66,6 +82,10 @@ start().catch(error => {
   // Never print database connection strings, private records, or provider keys.
   const safe = /^Missing required setting: [A-Z_]+$/.test(error?.message || "") ||
     /^(SESSION_SECRET must|PUBLIC_APP_ORIGIN must|PRIVATE_STORAGE_ROOT must|Database is not empty|Keep email delivery disabled)/.test(error?.message || "");
-  console.error(safe ? error.message : "TREASURE startup failed. Check the database, private storage, and migration settings.");
+  const code = diagnosticCodes.has(error?.code) ? error.code : "UNKNOWN";
+  const message = safe ? error.message : "Check the database, private storage, and migration settings.";
+  // Only fixed stages, allowlisted codes, and our safe configuration errors are logged.
+  // Never print an arbitrary message, stack, detail, query, URL, or environment value.
+  console.error(`TREASURE startup failed [stage=${startupStage}; code=${code}]. ${message}`);
   process.exitCode = 1;
 });
