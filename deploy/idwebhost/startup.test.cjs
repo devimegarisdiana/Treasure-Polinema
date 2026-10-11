@@ -8,9 +8,9 @@ const source = fs.readFileSync(path.join(__dirname, "app.js"), "utf8")
   .replace("start().catch(error => {", "globalThis.finished = start().catch(error => {");
 const privateMarker = "SYNTHETIC_PRIVATE_VALUE_DO_NOT_LOG";
 
-async function failure({ code, stage = "connect", settings = {} }) {
+async function failure({ code, stage = "connect", settings = {}, message = privateMarker }) {
   const output = [];
-  const error = Object.assign(new Error(privateMarker), {
+  const error = Object.assign(new Error(message), {
     code, detail: privateMarker, query: privateMarker, stack: privateMarker,
   });
   const context = {
@@ -71,4 +71,23 @@ test("Missing configuration identifies only the missing setting", async () => {
   const message = await failure({ settings: { DATABASE_URL: "" } });
   assert.match(message, /stage=configuration; code=UNKNOWN/);
   assert.match(message, /Missing required setting: DATABASE_URL/);
+});
+
+test("Authorization failures reveal fixed reasons without private server messages", async () => {
+  const cases = [
+    [`no pg_hba.conf entry for host "${privateMarker}", user "${privateMarker}", database "${privateMarker}", no encryption`, "PG_HBA_DENIED_WITHOUT_SSL"],
+    [`no pg_hba.conf entry for host "${privateMarker}", user "${privateMarker}", database "${privateMarker}", SSL off`, "PG_HBA_DENIED_WITHOUT_SSL"],
+    [`no pg_hba.conf entry for host "${privateMarker}", user "${privateMarker}", database "${privateMarker}", SSL on`, "PG_HBA_DENIED_WITH_SSL"],
+    [`no pg_hba.conf entry for host "${privateMarker}"`, "PG_HBA_DENIED"],
+    [`role "${privateMarker}" is not permitted to log in`, "ROLE_LOGIN_DISABLED"],
+    [`role "${privateMarker}" does not exist`, "ROLE_NOT_FOUND"],
+    [`password authentication failed for user "${privateMarker}"`, "PASSWORD_AUTH_FAILED"],
+    [`no password supplied: ${privateMarker}`, "PASSWORD_REQUIRED"],
+    [`SSL connection is required: ${privateMarker}`, "SSL_REQUIRED"],
+    [privateMarker, "AUTHORIZATION_REJECTED"],
+  ];
+  for (const [message, hint] of cases) {
+    const output = await failure({ code: "28000", message });
+    assert.match(output, new RegExp(`hint=${hint}\\]`));
+  }
 });
