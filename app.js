@@ -78,6 +78,23 @@ async function start() {
   await import("./server/index.mjs");
 }
 
+function authorizationHint(error) {
+  // Match internally, but output only fixed labels, never matched text.
+  if (error?.code !== "28000" && error?.code !== "28P01") return "NONE";
+  const text = typeof error.message === "string" ? error.message : "";
+  if (/no pg_hba\.conf entry/i.test(text)) {
+    if (/SSL off|no encryption/i.test(text)) return "PG_HBA_DENIED_WITHOUT_SSL";
+    if (/SSL on|SSL encryption/i.test(text)) return "PG_HBA_DENIED_WITH_SSL";
+    return "PG_HBA_DENIED";
+  }
+  if (/is not permitted to log in/i.test(text)) return "ROLE_LOGIN_DISABLED";
+  if (/role .*does not exist/i.test(text)) return "ROLE_NOT_FOUND";
+  if (/password authentication failed/i.test(text)) return "PASSWORD_AUTH_FAILED";
+  if (/no password supplied|password is required/i.test(text)) return "PASSWORD_REQUIRED";
+  if (/SSL.*required|requires?.*SSL/i.test(text)) return "SSL_REQUIRED";
+  return "AUTHORIZATION_REJECTED";
+}
+
 start().catch(error => {
   // Never print database connection strings, private records, or provider keys.
   const safe = /^Missing required setting: [A-Z_]+$/.test(error?.message || "") ||
@@ -86,6 +103,7 @@ start().catch(error => {
   const message = safe ? error.message : "Check the database, private storage, and migration settings.";
   // Only fixed stages, allowlisted codes, and our safe configuration errors are logged.
   // Never print an arbitrary message, stack, detail, query, URL, or environment value.
-  console.error(`TREASURE startup failed [stage=${startupStage}; code=${code}]. ${message}`);
+  const hint = authorizationHint(error);
+  console.error(`TREASURE startup failed [stage=${startupStage}; code=${code}; hint=${hint}]. ${message}`);
   process.exitCode = 1;
 });
