@@ -12415,6 +12415,9 @@ __export(schema_exports, {
   usersTable: () => usersTable
 });
 
+// ../../lib/db/src/schema/team-registrations.ts
+import { randomUUID } from "node:crypto";
+
 // ../../node_modules/.pnpm/zod@3.25.76/node_modules/zod/v4/classic/external.js
 var external_exports = {};
 __export(external_exports, {
@@ -23803,7 +23806,7 @@ var createInsertSchema = (entity, refine2) => {
 
 // ../../lib/db/src/schema/team-registrations.ts
 var teamRegistrationsTable = pgTable("team_registrations", {
-  id: uuid("id").primaryKey().defaultRandom(),
+  id: uuid("id").primaryKey().$defaultFn(() => randomUUID()),
   submissionKey: uuid("submission_key").notNull().unique(),
   referenceCode: varchar("reference_code", { length: 24 }).notNull().unique(),
   teamName: varchar("team_name", { length: 120 }).notNull(),
@@ -23832,7 +23835,7 @@ var teamRegistrationMembersTable = pgTable("team_registration_members", {
   feeCategory: text("fee_category").$type()
 });
 var registrationUploadsTable = pgTable("registration_uploads", {
-  id: uuid("id").primaryKey().defaultRandom(),
+  id: uuid("id").primaryKey().$defaultFn(() => randomUUID()),
   ownerId: varchar("owner_id").notNull(),
   submissionKey: uuid("submission_key").notNull(),
   purpose: text("purpose").$type().notNull(),
@@ -23847,8 +23850,9 @@ var insertTeamRegistrationSchema = createInsertSchema(teamRegistrationsTable).om
 var insertTeamRegistrationMemberSchema = createInsertSchema(teamRegistrationMembersTable).omit({ id: true });
 
 // ../../lib/db/src/schema/registration-notifications.ts
+import { randomUUID as randomUUID2 } from "node:crypto";
 var registrationNotificationsTable = pgTable("registration_notifications", {
-  id: uuid("id").primaryKey().defaultRandom(),
+  id: uuid("id").primaryKey().$defaultFn(() => randomUUID2()),
   registrationId: uuid("registration_id").notNull().unique().references(() => teamRegistrationsTable.id, { onDelete: "cascade" }),
   status: text("status").$type().notNull().default("pending"),
   attempts: integer("attempts").notNull().default(0),
@@ -23861,6 +23865,7 @@ var registrationNotificationsTable = pgTable("registration_notifications", {
 });
 
 // ../../lib/db/src/schema/auth.ts
+import { randomUUID as randomUUID3 } from "node:crypto";
 var sessionsTable = pgTable(
   "sessions",
   {
@@ -23871,7 +23876,7 @@ var sessionsTable = pgTable(
   (table) => [index("IDX_session_expire").on(table.expire)]
 );
 var usersTable = pgTable("users", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  id: varchar("id").primaryKey().$defaultFn(() => randomUUID3()),
   email: varchar("email").unique(),
   firstName: varchar("first_name"),
   lastName: varchar("last_name"),
@@ -23881,8 +23886,9 @@ var usersTable = pgTable("users", {
 });
 
 // ../../lib/db/src/schema/participant-accounts.ts
+import { randomUUID as randomUUID4 } from "node:crypto";
 var participantAccountsTable = pgTable("participant_accounts", {
-  id: uuid("id").primaryKey().defaultRandom(),
+  id: uuid("id").primaryKey().$defaultFn(() => randomUUID4()),
   username: varchar("username", { length: 30 }).notNull().unique(),
   email: varchar("email", { length: 254 }).notNull().unique(),
   passwordHash: text("password_hash").notNull(),
@@ -23900,8 +23906,9 @@ var participantAuthLimitsTable = pgTable("participant_auth_limits", {
 });
 
 // ../../lib/db/src/schema/organizer-accounts.ts
+import { randomUUID as randomUUID5 } from "node:crypto";
 var organizerAccountsTable = pgTable("organizer_accounts", {
-  id: uuid("id").primaryKey().defaultRandom(),
+  id: uuid("id").primaryKey().$defaultFn(() => randomUUID5()),
   username: varchar("username", { length: 100 }).notNull().unique(),
   passwordHash: text("password_hash").notNull(),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow()
@@ -23923,12 +23930,12 @@ var pool = new Pool3({ connectionString: process.env.DATABASE_URL });
 var db = drizzle(pool, { schema: schema_exports });
 
 // src/lib/objectStorage.ts
-import { randomUUID as randomUUID2 } from "crypto";
+import { randomUUID as randomUUID7 } from "crypto";
 import { Readable } from "stream";
 import { Storage } from "@google-cloud/storage";
 
 // src/lib/localObjectStorage.ts
-import { createHash, createHmac, randomUUID, timingSafeEqual } from "node:crypto";
+import { createHash, createHmac, randomUUID as randomUUID6, timingSafeEqual } from "node:crypto";
 import { createReadStream } from "node:fs";
 import { mkdir, readFile, writeFile, lstat, realpath, unlink, link, rename } from "node:fs/promises";
 import path from "node:path";
@@ -23958,7 +23965,7 @@ function uploadSignature(id, expires) {
   return createHmac("sha256", secret2).update(`treasure-upload-v1:${id}:${expires}`).digest("hex");
 }
 function createLocalUploadUrl() {
-  const id = randomUUID();
+  const id = randomUUID6();
   const expires = String(Math.floor(Date.now() / 1e3) + 900);
   return `${localUploadOrigin()}/api/storage/local-uploads/${id}?expires=${expires}&signature=${uploadSignature(id, expires)}`;
 }
@@ -24015,7 +24022,7 @@ var LocalFile = class {
   }
   async writeMetadata(metadata, createOnly = false) {
     const destination = await this.filePath(true, true);
-    const temporary = `${destination}.${randomUUID()}.partial`;
+    const temporary = `${destination}.${randomUUID6()}.partial`;
     try {
       await writeFile(temporary, JSON.stringify(metadata), { flag: "wx", mode: 384 });
       if (createOnly) await link(temporary, destination);
@@ -24027,7 +24034,7 @@ var LocalFile = class {
   }
   async save(data, contentType, customMetadata) {
     const destination = await this.filePath(false, true);
-    const temporary = `${destination}.${randomUUID()}.partial`;
+    const temporary = `${destination}.${randomUUID6()}.partial`;
     try {
       await writeFile(temporary, data, { flag: "wx", mode: 384 });
       await link(temporary, destination);
@@ -24258,7 +24265,7 @@ var ObjectStorageService = class {
         "PRIVATE_OBJECT_DIR not set. Create a bucket in 'Object Storage' tool and set PRIVATE_OBJECT_DIR env var."
       );
     }
-    const objectId = randomUUID2();
+    const objectId = randomUUID7();
     const fullPath = `${privateObjectDir}/uploads/${objectId}`;
     const { bucketName, objectName } = parseObjectPath(fullPath);
     return signObjectURL({

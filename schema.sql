@@ -1,5 +1,5 @@
 CREATE TABLE "registration_uploads" (
-	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"id" uuid PRIMARY KEY NOT NULL,
 	"owner_id" varchar NOT NULL,
 	"submission_key" uuid NOT NULL,
 	"purpose" text NOT NULL,
@@ -24,7 +24,7 @@ CREATE TABLE "team_registration_members" (
 );
 
 CREATE TABLE "team_registrations" (
-	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"id" uuid PRIMARY KEY NOT NULL,
 	"submission_key" uuid NOT NULL,
 	"reference_code" varchar(24) NOT NULL,
 	"team_name" varchar(120) NOT NULL,
@@ -46,7 +46,7 @@ CREATE TABLE "team_registrations" (
 );
 
 CREATE TABLE "registration_notifications" (
-	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"id" uuid PRIMARY KEY NOT NULL,
 	"registration_id" uuid NOT NULL,
 	"status" text DEFAULT 'pending' NOT NULL,
 	"attempts" integer DEFAULT 0 NOT NULL,
@@ -66,7 +66,7 @@ CREATE TABLE "sessions" (
 );
 
 CREATE TABLE "users" (
-	"id" varchar PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"id" varchar PRIMARY KEY NOT NULL,
 	"email" varchar,
 	"first_name" varchar,
 	"last_name" varchar,
@@ -77,7 +77,7 @@ CREATE TABLE "users" (
 );
 
 CREATE TABLE "participant_accounts" (
-	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"id" uuid PRIMARY KEY NOT NULL,
 	"username" varchar(30) NOT NULL,
 	"email" varchar(254) NOT NULL,
 	"password_hash" text NOT NULL,
@@ -99,7 +99,7 @@ CREATE TABLE "participant_sessions" (
 );
 
 CREATE TABLE "organizer_accounts" (
-	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"id" uuid PRIMARY KEY NOT NULL,
 	"username" varchar(100) NOT NULL,
 	"password_hash" text NOT NULL,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
