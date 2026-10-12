@@ -1,8 +1,9 @@
+import { randomUUID } from "node:crypto";
 import { index, pgTable, timestamp, uuid, varchar, text } from "drizzle-orm/pg-core";
 
 // Provisioned only from server secrets. No public organizer signup.
 export const organizerAccountsTable = pgTable("organizer_accounts", {
-  id: uuid("id").primaryKey().defaultRandom(),
+  id: uuid("id").primaryKey().$defaultFn(() => randomUUID()),
   username: varchar("username", { length: 100 }).notNull().unique(),
   passwordHash: text("password_hash").notNull(),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),

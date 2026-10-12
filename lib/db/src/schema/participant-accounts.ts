@@ -1,8 +1,9 @@
+import { randomUUID } from "node:crypto";
 import { index, integer, pgTable, text, timestamp, uuid, varchar } from "drizzle-orm/pg-core";
 
 // Separate from Replit users: a participant email can never grant organizer access.
 export const participantAccountsTable = pgTable("participant_accounts", {
-  id: uuid("id").primaryKey().defaultRandom(),
+  id: uuid("id").primaryKey().$defaultFn(() => randomUUID()),
   username: varchar("username", { length: 30 }).notNull().unique(),
   email: varchar("email", { length: 254 }).notNull().unique(),
   passwordHash: text("password_hash").notNull(),

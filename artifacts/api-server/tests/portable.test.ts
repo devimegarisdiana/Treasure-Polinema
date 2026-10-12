@@ -16,7 +16,16 @@ const headers = { Origin: "https://synthetic.example.invalid", "Content-Type": "
 test("portable app preserves native login, ownership, immutable uploads and encrypted restore", { timeout: 90_000 }, async () => {
   const temporary = await mkdtemp(path.join(tmpdir(), "treasure-portable-test-"));
   process.env.PRIVATE_STORAGE_ROOT = path.join(temporary, "source-private");
-  await postgres.exec(await readFile(path.resolve("../../dist/idwebhost/schema.sql"), "utf8"));
+  const ddl = await readFile(path.resolve("../../dist/idwebhost/schema.sql"), "utf8");
+  assert.doesNotMatch(ddl, /gen_random_uuid|uuid_generate|CREATE\s+EXTENSION/i,
+    "Hosting schema must not require database UUID functions or extensions");
+  await postgres.exec(ddl);
+  // Make accidental SQL UUID generation fail even if the test engine provides it.
+  await postgres.exec(`
+    CREATE FUNCTION public.gen_random_uuid() RETURNS uuid LANGUAGE plpgsql AS $$
+    BEGIN RAISE EXCEPTION 'Database UUID generation is forbidden in this test'; END $$;
+    SET search_path TO public, pg_catalog;
+  `);
   const server = app.listen(0, "127.0.0.1");
   await once(server, "listening");
   const address = server.address() as { port: number };
@@ -41,6 +50,7 @@ test("portable app preserves native login, ownership, immutable uploads and encr
     assert.match(signup.headers.get("set-cookie") || "", /Secure/i);
     assert.match(signup.headers.get("set-cookie") || "", /SameSite=Lax/i);
     const owner = (await postgres.query<{ id: string }>("SELECT id FROM participant_accounts")).rows[0].id;
+    assert.match(owner, /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i);
     const submissionKey = randomUUID();
     const files = [
       { purpose: "student_id", contentType: "image/png", name: "synthetic-student.png", bytes: Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jH8cAAAAASUVORK5CYII=", "base64") },

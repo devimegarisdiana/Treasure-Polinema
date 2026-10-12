@@ -1,9 +1,10 @@
+import { randomUUID } from "node:crypto";
 import { boolean, integer, pgTable, serial, text, timestamp, uuid, varchar } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import type { z } from "zod/v4";
 
 export const teamRegistrationsTable = pgTable("team_registrations", {
-  id: uuid("id").primaryKey().defaultRandom(),
+  id: uuid("id").primaryKey().$defaultFn(() => randomUUID()),
   submissionKey: uuid("submission_key").notNull().unique(),
   referenceCode: varchar("reference_code", { length: 24 }).notNull().unique(),
   teamName: varchar("team_name", { length: 120 }).notNull(),
@@ -34,7 +35,7 @@ export const teamRegistrationMembersTable = pgTable("team_registration_members",
 });
 
 export const registrationUploadsTable = pgTable("registration_uploads", {
-  id: uuid("id").primaryKey().defaultRandom(),
+  id: uuid("id").primaryKey().$defaultFn(() => randomUUID()),
   ownerId: varchar("owner_id").notNull(),
   submissionKey: uuid("submission_key").notNull(),
   purpose: text("purpose").$type<"student_id" | "payment_proof">().notNull(),

@@ -54,7 +54,11 @@ Enter these in the application's cPanel environment settings, not in chat or Git
 Use the database hostname and port supplied by IDwebhost; do not assume a remote
 connection is allowed. URL-encode the database password when constructing
 `DATABASE_URL` (e.g. `@` → `%40`, `#` → `%23`). The app uses the provider's
-PostgreSQL database, not MySQL. `gen_random_uuid()` must be supported.
+PostgreSQL database, not MySQL. New account, registration, document and notification
+IDs are generated securely by Node.js using `crypto.randomUUID()`. The database
+does not need `pgcrypto` or `gen_random_uuid()`. Existing IDs are preserved during
+restore. Direct SQL imports must supply their original IDs rather than expecting
+a database-generated UUID default.
 
 New private documents are written to the private folder on IDwebhost. Back up
 that folder together with PostgreSQL. Updating the code package must not replace
