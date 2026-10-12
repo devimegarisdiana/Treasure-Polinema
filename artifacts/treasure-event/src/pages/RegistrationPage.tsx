@@ -22,7 +22,7 @@ const T = {
   en: {
     back: 'Home',
     eyebrow: 'Registration · TREASURE 2026', title: 'Register your team.',
-    intro: 'Fill in the registration details and upload your documents. Once saved, you get a reference code as a receipt for your data.',
+    intro: 'Limited slots available! Fill in the registration details and upload your documents. Once saved, you get a reference code as a receipt for your data.',
     period: 'Registration', periodV: '12 Oct — 5 Nov 2026', training: 'Training', trainingV: '16—17 Nov 2026', comp: 'Competition', compV: '23—25 Nov 2026',
     feeIdn: 'Indonesian students', feeInt: 'International students', contactH: 'Contact', wa: 'WhatsApp Ms. Abryel',
     gateH: 'Sign in to register', gateP: 'Registration needs a secure sign-in so your documents stay private. The rest of the site stays open without signing in.', signIn: 'Sign in securely',

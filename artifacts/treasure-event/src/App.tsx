@@ -3,7 +3,7 @@ import { ArrowDown, ArrowUpRight, Menu, X } from 'lucide-react';
 
 const registrationUrl = '/register';
 const archiveUrl = `${(import.meta.env.BASE_URL as string).replace(/\/+$/, '')}/archive/2025`;
-const posterUrl = `${(import.meta.env.BASE_URL as string).replace(/\/+$/, '')}/treasure-poster-updated.png`;
+const posterUrl = `${(import.meta.env.BASE_URL as string).replace(/\/+$/, '')}/treasure-poster-2026.jpg`;
 
 const copy = {
   en: {
@@ -50,7 +50,8 @@ const copy = {
     rewards: 'Rewards',
     rewardPitch: 'A reason to bring your strongest game.',
     prizePool: 'Total prize pool',
-    prizeTotal: 'IDR 10 million+',
+    prizeTotal: 'Over IDR 14 million',
+    prizeInternational: 'or over USD 700',
     fees: 'Registration fees',
     internationalStudents: 'International students',
     indonesianStudents: 'Indonesian students',
@@ -66,7 +67,7 @@ const copy = {
     finalTitle: 'Make your',
     finalTitleSecond: 'move count.',
     finalText:
-      'Ready to compete? Register for TREASURE 2026 during the registration period and take your place in the challenge.',
+      'Limited slots available! Register for TREASURE 2026 during the registration period and take your place in the challenge.',
     registerAt: 'Register your team',
     furtherInfo: 'Further information',
     contact: 'Contact',
@@ -160,6 +161,7 @@ function App() {
           <article className="hero-fact hero-fact-prize">
             <span className="hero-fact-label">{t.rewards}</span>
             <strong>{t.prizeTotal}</strong>
+            <small>{t.prizeInternational}</small>
           </article>
         </div>
         <div className="hero-footer">
@@ -245,6 +247,7 @@ function App() {
               <div className="section-label">{t.rewards}</div>
               <h3>{t.rewardPitch}</h3>
               <div className="reward-amount"><span>{t.prizePool}</span>{t.prizeTotal}</div>
+              <p>{t.prizeInternational}</p>
             </article>
           </div>
           <div className="fees" aria-label={t.fees}>
