@@ -5314,8 +5314,14 @@ var require_lib2 = __commonJS({
   }
 });
 
+// src/lib/advisoryLock.ts
+import { createHash } from "node:crypto";
+function advisoryLockKey(value) {
+  return createHash("sha256").update("treasure-advisory-lock-v1:").update(value).digest().readBigInt64BE(0).toString();
+}
+
 // src/tools/idwebhostMigration.ts
-import { createCipheriv, createDecipheriv, createHash as createHash2, randomBytes, scryptSync } from "node:crypto";
+import { createCipheriv, createDecipheriv, createHash as createHash3, randomBytes, scryptSync } from "node:crypto";
 import { readFile as readFile2, writeFile as writeFile2, mkdir as mkdir2, stat } from "node:fs/promises";
 import path2 from "node:path";
 import { pathToFileURL } from "node:url";
@@ -23935,7 +23941,7 @@ import { Readable } from "stream";
 import { Storage } from "@google-cloud/storage";
 
 // src/lib/localObjectStorage.ts
-import { createHash, createHmac, randomUUID as randomUUID6, timingSafeEqual } from "node:crypto";
+import { createHash as createHash2, createHmac, randomUUID as randomUUID6, timingSafeEqual } from "node:crypto";
 import { createReadStream } from "node:fs";
 import { mkdir, readFile, writeFile, lstat, realpath, unlink, link, rename } from "node:fs/promises";
 import path from "node:path";
@@ -24041,7 +24047,7 @@ var LocalFile = class {
       const metadata = {
         contentType,
         size: String(data.length),
-        generation: createHash("sha256").update(data).digest("hex"),
+        generation: createHash2("sha256").update(data).digest("hex"),
         metadata: customMetadata
       };
       try {
@@ -24062,8 +24068,8 @@ var LocalFile = class {
       return;
     }
     const bytes = await readFile(await this.filePath());
-    const generation = createHash("sha256").update(bytes).digest("hex");
-    if (generation !== createHash("sha256").update(data).digest("hex")) throw new Error("Destination document conflicts with the backup.");
+    const generation = createHash2("sha256").update(bytes).digest("hex");
+    if (generation !== createHash2("sha256").update(data).digest("hex")) throw new Error("Destination document conflicts with the backup.");
     let metadata;
     try {
       [metadata] = await this.getMetadata();
@@ -24083,7 +24089,7 @@ var LocalFile = class {
   async download(options) {
     const [metadata] = await this.getMetadata();
     const data = await readFile(await this.filePath());
-    if (createHash("sha256").update(data).digest("hex") !== metadata.generation) {
+    if (createHash2("sha256").update(data).digest("hex") !== metadata.generation) {
       throw new Error("Private object checksum mismatch.");
     }
     return [options ? data.subarray(options.start ?? 0, options.end === void 0 ? void 0 : options.end + 1) : data];
@@ -24407,7 +24413,7 @@ var TABLES = [
 ];
 var MAGIC = Buffer.from("TREASURE-BACKUP-1\n");
 var MAX_BACKUP_BYTES = 256 * 1024 * 1024;
-var digest = (bytes) => createHash2("sha256").update(bytes).digest("hex");
+var digest = (bytes) => createHash3("sha256").update(bytes).digest("hex");
 function secret() {
   const value = process.env.SESSION_SECRET;
   if (!value || value.length < 32) throw new Error("Migration requires a SESSION_SECRET of at least 32 characters.");
@@ -24530,7 +24536,7 @@ async function restoreBackup(input) {
   const client = await pool.connect();
   try {
     await client.query("BEGIN");
-    await client.query("SELECT pg_advisory_xact_lock(hashtextextended('treasure-external-import', 0))");
+    await client.query("SELECT pg_advisory_xact_lock($1::bigint)", [advisoryLockKey("treasure-external-import")]);
     await client.query(`CREATE TABLE IF NOT EXISTS treasure_migration_receipts (
       backup_hash varchar(64) PRIMARY KEY, counts jsonb NOT NULL, imported_at timestamptz NOT NULL DEFAULT now()
     )`);

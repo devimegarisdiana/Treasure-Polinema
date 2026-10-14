@@ -57903,6 +57903,12 @@ async function limitAuthentication(req, identifier) {
   return true;
 }
 
+// src/lib/advisoryLock.ts
+import { createHash as createHash3 } from "node:crypto";
+function advisoryLockKey(value) {
+  return createHash3("sha256").update("treasure-advisory-lock-v1:").update(value).digest().readBigInt64BE(0).toString();
+}
+
 // src/routes/registrations.ts
 var router2 = (0, import_express2.Router)();
 router2.post("/registrations/teams", async (req, res) => {
@@ -57947,7 +57953,7 @@ router2.post("/registrations/teams", async (req, res) => {
   let committed = false;
   try {
     const result = await db.transaction(async (tx) => {
-      await tx.execute(sql`SELECT pg_advisory_xact_lock(hashtextextended(${data.submissionKey}, 0))`);
+      await tx.execute(sql`SELECT pg_advisory_xact_lock(${advisoryLockKey(data.submissionKey)}::bigint)`);
       const [prior] = await tx.select().from(teamRegistrationsTable).where(eq(teamRegistrationsTable.submissionKey, data.submissionKey)).limit(1);
       if (prior) {
         if (prior.ownerId !== ownerId) {
