@@ -60,6 +60,11 @@ does not need `pgcrypto` or `gen_random_uuid()`. Existing IDs are preserved duri
 restore. Direct SQL imports must supply their original IDs rather than expecting
 a database-generated UUID default.
 
+The confirmed hosting database is PostgreSQL 10.23. Derive advisory-lock keys
+in Node.js and pass them as signed `bigint` values to `pg_advisory_xact_lock`;
+do not rely on the newer `hashtextextended` function. Keep the key mapping
+identical across application instances so registration retries remain serialized.
+
 New private documents are written to the private folder on IDwebhost. Back up
 that folder together with PostgreSQL. Updating the code package must not replace
 the private folder. User-facing file URLs remain protected API URLs, never

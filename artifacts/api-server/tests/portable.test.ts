@@ -9,9 +9,22 @@ import { postgres } from "./fixtures/portableDatabase";
 import { LocalFile, createLocalUploadUrl, validLocalUploadSignature } from "../src/lib/localObjectStorage";
 import { restoreBackup } from "../src/tools/idwebhostMigration";
 import app from "../src/app";
+import { advisoryLockKey } from "../src/lib/advisoryLock";
 
 const hash = (bytes: Buffer) => createHash("sha256").update(bytes).digest("hex");
 const headers = { Origin: "https://synthetic.example.invalid", "Content-Type": "application/json" };
+
+test("advisory lock keys are stable signed 64-bit values without database hashing", () => {
+  const keys = Array.from({ length: 100 }, (_, index) => advisoryLockKey(`synthetic-${index}`));
+  assert.equal(advisoryLockKey("synthetic-0"), keys[0]);
+  assert.equal(new Set(keys).size, keys.length);
+  assert.ok(keys.some(key => BigInt(key) < 0n));
+  assert.ok(keys.some(key => BigInt(key) >= 0n));
+  for (const key of keys) {
+    assert.match(key, /^-?\d+$/);
+    assert.ok(BigInt(key) >= -(2n ** 63n) && BigInt(key) < 2n ** 63n);
+  }
+});
 
 test("portable app preserves native login, ownership, immutable uploads and encrypted restore", { timeout: 90_000 }, async () => {
   const temporary = await mkdtemp(path.join(tmpdir(), "treasure-portable-test-"));
@@ -24,6 +37,8 @@ test("portable app preserves native login, ownership, immutable uploads and encr
   await postgres.exec(`
     CREATE FUNCTION public.gen_random_uuid() RETURNS uuid LANGUAGE plpgsql AS $$
     BEGIN RAISE EXCEPTION 'Database UUID generation is forbidden in this test'; END $$;
+    CREATE FUNCTION public.hashtextextended(text, bigint) RETURNS bigint LANGUAGE plpgsql AS $$
+    BEGIN RAISE EXCEPTION 'hashtextextended is unavailable on PostgreSQL 10 hosting'; END $$;
     SET search_path TO public, pg_catalog;
   `);
   const server = app.listen(0, "127.0.0.1");

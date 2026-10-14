@@ -1,3 +1,4 @@
+import { advisoryLockKey } from "../lib/advisoryLock";
 import { createCipheriv, createDecipheriv, createHash, randomBytes, scryptSync } from "node:crypto";
 import { readFile, writeFile, mkdir, stat } from "node:fs/promises";
 import path from "node:path";
@@ -138,7 +139,7 @@ export async function restoreBackup(input: string): Promise<void> {
   const client = await pool.connect();
   try {
     await client.query("BEGIN");
-    await client.query("SELECT pg_advisory_xact_lock(hashtextextended('treasure-external-import', 0))");
+    await client.query("SELECT pg_advisory_xact_lock($1::bigint)", [advisoryLockKey("treasure-external-import")]);
     await client.query(`CREATE TABLE IF NOT EXISTS treasure_migration_receipts (
       backup_hash varchar(64) PRIMARY KEY, counts jsonb NOT NULL, imported_at timestamptz NOT NULL DEFAULT now()
     )`);

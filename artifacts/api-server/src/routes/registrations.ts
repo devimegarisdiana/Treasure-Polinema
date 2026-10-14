@@ -6,6 +6,7 @@ import { CreateTeamRegistrationBody, CreateTeamRegistrationResponse } from "@wor
 import { freezeDocument, RegistrationDocumentError, type FrozenDocument } from "../lib/registrationDocuments";
 import { processRegistrationNotifications } from "../lib/registrationNotifications";
 import { registrationOwner, sameSiteRequest } from "../lib/participantAuth";
+import { advisoryLockKey } from "../lib/advisoryLock";
 
 const router: IRouter = Router();
 
@@ -53,7 +54,7 @@ router.post("/registrations/teams", async (req, res): Promise<void> => {
     // from racing the first request's object copies and returning a false 500.
     // The transaction lock is shared by API replicas and released at commit.
     const result = await db.transaction(async (tx) => {
-      await tx.execute(sql`SELECT pg_advisory_xact_lock(hashtextextended(${data.submissionKey}, 0))`);
+      await tx.execute(sql`SELECT pg_advisory_xact_lock(${advisoryLockKey(data.submissionKey)}::bigint)`);
       const [prior] = await tx.select().from(teamRegistrationsTable)
         .where(eq(teamRegistrationsTable.submissionKey, data.submissionKey)).limit(1);
       if (prior) {
