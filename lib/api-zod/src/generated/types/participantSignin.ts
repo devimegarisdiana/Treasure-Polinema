@@ -7,10 +7,7 @@
  */
 
 export interface ParticipantSignin {
-  /**
-     * @minLength 3
-     * @maxLength 254
-     */
+  /** @minLength 3 */
   identifier: string;
   /**
      * @minLength 1

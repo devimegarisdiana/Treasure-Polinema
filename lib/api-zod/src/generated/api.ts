@@ -49,11 +49,8 @@ export const GetParticipantSessionResponse = zod.object({
 })
 
 
-export const createParticipantAccountBodyUsernameMin = 3;
-export const createParticipantAccountBodyUsernameMax = 30;
+export const createParticipantAccountBodyUsernameMin = 12;
 
-
-export const createParticipantAccountBodyUsernameRegExp = new RegExp('^[A-Za-z0-9][A-Za-z0-9_.-]{2,29}$');
 export const createParticipantAccountBodyEmailMax = 254;
 
 export const createParticipantAccountBodyPasswordMin = 12;
@@ -62,7 +59,7 @@ export const createParticipantAccountBodyPasswordMax = 128;
 
 
 export const CreateParticipantAccountBody = zod.object({
-  "username": zod.string().min(createParticipantAccountBodyUsernameMin).max(createParticipantAccountBodyUsernameMax).regex(createParticipantAccountBodyUsernameRegExp),
+  "username": zod.string().min(createParticipantAccountBodyUsernameMin),
   "email": zod.string().email().max(createParticipantAccountBodyEmailMax),
   "password": zod.string().min(createParticipantAccountBodyPasswordMin).max(createParticipantAccountBodyPasswordMax)
 })
@@ -77,14 +74,13 @@ export const CreateParticipantAccountResponse = zod.object({
 
 
 export const signInParticipantBodyIdentifierMin = 3;
-export const signInParticipantBodyIdentifierMax = 254;
 
 export const signInParticipantBodyPasswordMax = 128;
 
 
 
 export const SignInParticipantBody = zod.object({
-  "identifier": zod.string().min(signInParticipantBodyIdentifierMin).max(signInParticipantBodyIdentifierMax),
+  "identifier": zod.string().min(signInParticipantBodyIdentifierMin),
   "password": zod.string().min(1).max(signInParticipantBodyPasswordMax)
 })
 

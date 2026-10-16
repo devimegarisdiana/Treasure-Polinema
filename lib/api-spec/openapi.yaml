@@ -348,16 +348,14 @@ components:
       properties:
         username:
           type: string
-          minLength: 3
-          maxLength: 30
-          pattern: '^[A-Za-z0-9][A-Za-z0-9_.-]{2,29}$'
+          minLength: 12
         email: { type: string, format: email, maxLength: 254 }
         password: { type: string, minLength: 12, maxLength: 128 }
     ParticipantSignin:
       type: object
       required: [identifier, password]
       properties:
-        identifier: { type: string, minLength: 3, maxLength: 254 }
+        identifier: { type: string, minLength: 3 }
         password: { type: string, minLength: 1, maxLength: 128 }
     HealthStatus:
       type: object

@@ -1,8 +1,9 @@
 import { Router, type IRouter } from "express";
-import { eq, or } from "drizzle-orm";
+import { eq, or, sql } from "drizzle-orm";
 import { db, participantAccountsTable as accounts, participantSessionsTable as sessions } from "@workspace/db";
 import { CreateParticipantAccountBody, CreateParticipantAccountResponse, GetParticipantSessionResponse, SignInParticipantBody, SignInParticipantResponse } from "@workspace/api-zod";
 import { AuthBusyError, clearParticipantCookie, hashPassword, limitAuthentication, newParticipantSession, participantToken, sameSiteRequest, setParticipantCookie, tokenHash, verifyPassword } from "../lib/participantAuth";
+import { advisoryLockKey } from "../lib/advisoryLock";
 
 const router: IRouter = Router();
 router.use("/participant-auth", (req, res, next) => {
@@ -21,18 +22,22 @@ router.post("/participant-auth/signup", async (req, res) => {
     username: typeof req.body?.username === "string" ? req.body.username.trim().toLowerCase() : req.body?.username,
     email: typeof req.body?.email === "string" ? req.body.email.trim().toLowerCase() : req.body?.email,
   });
-  if (!parsed.success) { res.status(400).json({ error: "Enter a valid username (3–30 characters), email, and password (12–128 characters)." }); return; }
+  if (!parsed.success) { res.status(400).json({ error: "Use a username with at least 12 characters, a valid email, and a password with 12–128 characters." }); return; }
   const { username, email, password } = parsed.data;
   try {
     if (!await limitAuthentication(req, email)) {
       res.setHeader("Retry-After", "900");
       res.status(429).json({ error: "Too many account attempts. Please try again in 15 minutes." }); return;
     }
-    const [existing] = await db.select({ id: accounts.id }).from(accounts)
-      .where(or(eq(accounts.username, username), eq(accounts.email, email))).limit(1);
-    if (existing) { res.status(409).json({ error: "This username or email is already registered. Sign in or choose another." }); return; }
     const passwordHash = await hashPassword(password);
     const result = await db.transaction(async (tx) => {
+      // Usernames may now contain @ and spaces. Keep usernames and email
+      // identifiers unambiguous, including simultaneous account creation.
+      await tx.execute(sql`SELECT pg_advisory_xact_lock(${advisoryLockKey("participant-signup-identifiers")}::bigint)`);
+      const [existing] = await tx.select({ id: accounts.id }).from(accounts)
+        .where(or(eq(accounts.username, username), eq(accounts.email, email),
+          eq(accounts.username, email), eq(accounts.email, username))).limit(1);
+      if (existing) return null;
       const [account] = await tx.insert(accounts).values({ username, email, passwordHash })
         .returning({ id: accounts.id, username: accounts.username, email: accounts.email });
       const session = newParticipantSession(account.id);
@@ -41,6 +46,7 @@ router.post("/participant-auth/signup", async (req, res) => {
       await tx.insert(sessions).values(session.row);
       return { user: { ...account, id: `participant:${account.id}` }, token: session.token };
     });
+    if (!result) { res.status(409).json({ error: "This username or email is already registered. Sign in or choose another." }); return; }
     setParticipantCookie(req, res, result.token);
     res.status(201).json(CreateParticipantAccountResponse.parse({ user: result.user }));
   } catch (error) {

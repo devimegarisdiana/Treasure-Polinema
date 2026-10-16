@@ -8,6 +8,47 @@ const source = fs.readFileSync(path.join(__dirname, "app.js"), "utf8")
   .replace("start().catch(error => {", "globalThis.finished = start().catch(error => {");
 const privateMarker = "SYNTHETIC_PRIVATE_VALUE_DO_NOT_LOG";
 
+test("Hosting startup widens only the legacy username column and preserves accounts", async () => {
+  for (const dataType of ["character varying", "text"]) {
+    const queries = [];
+    const errors = [];
+    const context = {
+      __dirname: "/synthetic/app", URL,
+      process: { env: {
+        DATABASE_URL: "postgresql://synthetic:synthetic@example.invalid/synthetic",
+        PRIVATE_STORAGE_ROOT: "/synthetic/private",
+        SESSION_SECRET: privateMarker.repeat(2),
+        PUBLIC_APP_ORIGIN: "https://example.invalid",
+        TREASURE_ORGANIZER_USERNAME: "synthetic",
+        TREASURE_ORGANIZER_PASSWORD: privateMarker,
+        INITIALIZE_EMPTY_DATABASE: "false", MIGRATION_READ_ONLY: "false",
+      } },
+      console: { error: message => errors.push(message) },
+      require(name) {
+        if (name === "node:path") return path;
+        if (name === "node:fs/promises") return {};
+        if (name === "pg") return { Client: class {
+          async connect() {}
+          async query(sql) {
+            queries.push(sql);
+            return { rows: [{ data_type: dataType }] };
+          }
+          async end() {}
+        } };
+        throw new Error("Unexpected synthetic dependency");
+      },
+    };
+    vm.runInNewContext(source.replace('await import("./server/index.mjs");', "globalThis.serverLoaded = true;"), context);
+    await context.finished;
+    assert.deepEqual(errors, []);
+    assert.equal(context.serverLoaded, true);
+    assert.equal(queries.filter(sql => sql.startsWith("ALTER TABLE")).length, dataType === "character varying" ? 1 : 0);
+    assert.ok(queries.every(sql => !/\b(DROP|DELETE|TRUNCATE)\b/i.test(sql)));
+    assert.ok(queries.filter(sql => sql.startsWith("ALTER TABLE")).every(sql =>
+      sql === "ALTER TABLE public.participant_accounts ALTER COLUMN username TYPE text"));
+  }
+});
+
 async function failure({ code, stage = "connect", settings = {}, message = privateMarker }) {
   const output = [];
   const error = Object.assign(new Error(message), {

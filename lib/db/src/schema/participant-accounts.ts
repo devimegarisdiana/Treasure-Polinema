@@ -4,7 +4,7 @@ import { index, integer, pgTable, text, timestamp, uuid, varchar } from "drizzle
 // Separate from Replit users: a participant email can never grant organizer access.
 export const participantAccountsTable = pgTable("participant_accounts", {
   id: uuid("id").primaryKey().$defaultFn(() => randomUUID()),
-  username: varchar("username", { length: 30 }).notNull().unique(),
+  username: text("username").notNull().unique(),
   email: varchar("email", { length: 254 }).notNull().unique(),
   passwordHash: text("password_hash").notNull(),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),

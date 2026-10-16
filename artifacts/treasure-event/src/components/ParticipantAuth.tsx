@@ -16,7 +16,6 @@ type Props = {
   onRetry: () => Promise<unknown>;
 };
 
-const usernamePattern = /^[A-Za-z0-9][A-Za-z0-9_.-]{2,29}$/;
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 function readableError(error: unknown) {
@@ -45,8 +44,7 @@ export default function ParticipantAuth({
     }
   }, [expired]);
 
-  const usernameError = !username.trim() ? 'Enter a username.' : !usernamePattern.test(username.trim())
-    ? 'Use 3–30 letters, numbers, dots, underscores or hyphens. Start with a letter or number.' : '';
+  const usernameError = username.trim().length < 12 ? 'Use at least 12 characters.' : '';
   const emailError = !email.trim() ? 'Enter your email address.' : !emailPattern.test(email.trim()) || email.length > 254
     ? 'Enter a valid email address.' : '';
   const passwordError = password.length < 12 ? 'Use at least 12 characters.' : password.length > 128
@@ -123,10 +121,10 @@ export default function ParticipantAuth({
       {isSignup ? <>
         <div className="reg-field">
           <label htmlFor="participant-username">Username *</label>
-          <input id="participant-username" type="text" autoComplete="username" value={username} maxLength={30}
+          <input id="participant-username" type="text" autoComplete="username" value={username} minLength={12}
             onChange={(event) => setUsername(event.target.value)} aria-invalid={attempted && !!usernameError || undefined}
             aria-describedby={attempted && usernameError ? 'participant-username-error' : 'participant-username-hint'} data-testid="input-participant-username" />
-          <span className="reg-hint" id="participant-username-hint">3–30 characters · letters, numbers, . _ -</span>
+          <span className="reg-hint" id="participant-username-hint">At least 12 characters.</span>
           {attempted && usernameError && <span className="reg-err" id="participant-username-error" role="alert">{usernameError}</span>}
         </div>
         <div className="reg-field">

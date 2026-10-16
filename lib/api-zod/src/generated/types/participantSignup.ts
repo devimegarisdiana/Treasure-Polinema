@@ -7,11 +7,7 @@
  */
 
 export interface ParticipantSignup {
-  /**
-     * @minLength 3
-     * @maxLength 30
-     * @pattern ^[A-Za-z0-9][A-Za-z0-9_.-]{2,29}$
-     */
+  /** @minLength 12 */
   username: string;
   /** @maxLength 254 */
   email: string;

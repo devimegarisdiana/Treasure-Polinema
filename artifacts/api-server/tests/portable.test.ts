@@ -13,6 +13,7 @@ import { advisoryLockKey } from "../src/lib/advisoryLock";
 
 const hash = (bytes: Buffer) => createHash("sha256").update(bytes).digest("hex");
 const headers = { Origin: "https://synthetic.example.invalid", "Content-Type": "application/json" };
+const nativeUsername = "# Synthetic campus participant / 2026 " + "a".repeat(260);
 
 test("advisory lock keys are stable signed 64-bit values without database hashing", () => {
   const keys = Array.from({ length: 100 }, (_, index) => advisoryLockKey(`synthetic-${index}`));
@@ -55,9 +56,14 @@ test("portable app preserves native login, ownership, immutable uploads and encr
     }
     assert.equal((await request("/api/not-a-real-api")).status, 404);
     assert.equal((await request("/api/login", { redirect: "manual" })).status, 404);
+    const tooShort = await request("/api/participant-auth/signup", {
+      method: "POST", headers,
+      body: JSON.stringify({ username: "12345678901", email: "short@example.invalid", password: "Synthetic-password-2026" }),
+    });
+    assert.equal(tooShort.status, 400);
     const signup = await request("/api/participant-auth/signup", {
       method: "POST", headers,
-      body: JSON.stringify({ username: "synthetic-native", email: "synthetic-native@example.invalid", password: "Synthetic-password-2026" }),
+      body: JSON.stringify({ username: nativeUsername, email: "synthetic-native@example.invalid", password: "Synthetic-password-2026" }),
     });
     assert.equal(signup.status, 201, await signup.text());
     cookie = (signup.headers.get("set-cookie") || "").split(";")[0];
@@ -124,9 +130,14 @@ test("portable app preserves native login, ownership, immutable uploads and encr
     }
     const other = await request("/api/participant-auth/signup", {
       method: "POST", headers,
-      body: JSON.stringify({ username: "synthetic-other", email: "synthetic-other@example.invalid", password: "Synthetic-password-2026" }),
+      body: JSON.stringify({ username: "123456789012", email: "synthetic-other@example.invalid", password: "Synthetic-password-2026" }),
     });
     assert.equal(other.status, 201);
+    const ambiguous = await request("/api/participant-auth/signup", {
+      method: "POST", headers,
+      body: JSON.stringify({ username: "synthetic-native@example.invalid", email: "ambiguous@example.invalid", password: "Synthetic-password-2026" }),
+    });
+    assert.equal(ambiguous.status, 409, "A username must not shadow another participant's email");
     const otherCookie = (other.headers.get("set-cookie") || "").split(";")[0];
     assert.equal((await request(`/api/storage${registered[0].object_path}`, { headers: { Cookie: otherCookie, Origin: headers.Origin } })).status, 404);
     const organizer = await request("/api/organizer-auth/signin", {
@@ -137,7 +148,7 @@ test("portable app preserves native login, ownership, immutable uploads and encr
     assert.equal((await request("/api/admin/registrations", { headers: { Cookie: organizerCookie } })).status, 200);
     process.env.MIGRATION_READ_ONLY = "true";
     const signin = await request("/api/participant-auth/signin", {
-      method: "POST", headers, body: JSON.stringify({ identifier: "synthetic-native", password: "Synthetic-password-2026" }),
+      method: "POST", headers, body: JSON.stringify({ identifier: nativeUsername, password: "Synthetic-password-2026" }),
     });
     assert.equal(signin.status, 200); // Sign-in remains usable while registrations are paused.
     assert.equal((await request("/api/participant-auth/signup", { method: "POST", headers, body: "{}" })).status, 503);
@@ -171,10 +182,10 @@ test("portable app preserves native login, ownership, immutable uploads and encr
     assert.deepEqual((await postgres.query<{ profile: unknown }>("SELECT profile FROM treasure_legacy_profile_archive")).rows[0].profile, historical);
     assert.equal((await postgres.query("SELECT * FROM participant_sessions")).rows.length, 0);
     const restoredSignin = await request("/api/participant-auth/signin", {
-      method: "POST", headers, body: JSON.stringify({ identifier: "synthetic-native", password: "Synthetic-password-2026" }),
+      method: "POST", headers, body: JSON.stringify({ identifier: nativeUsername, password: "Synthetic-password-2026" }),
     });
     assert.equal(restoredSignin.status, 200);
-    assert.equal((await postgres.query<{ id: string }>("SELECT id FROM participant_accounts WHERE username = 'synthetic-native'")).rows[0].id, owner);
+    assert.equal((await postgres.query<{ id: string }>("SELECT id FROM participant_accounts WHERE username = $1", [nativeUsername.toLowerCase()])).rows[0].id, owner);
     const tampered = Buffer.from(archive); tampered[tampered.length - 1] ^= 1;
     await writeFile(backupFile, tampered);
     await assert.rejects(() => restoreBackup(backupFile));
