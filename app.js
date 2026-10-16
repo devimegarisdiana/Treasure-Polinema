@@ -66,6 +66,23 @@ async function start() {
       throw error;
     } finally { await client.end(); }
   }
+  // Non-destructive upgrade for existing hosting accounts: preserve values,
+  // ownership and uniqueness while removing the old 30-character limit.
+  {
+    startupStage = "username-schema";
+    const { Client } = require("pg");
+    const client = new Client({ connectionString: process.env.DATABASE_URL });
+    await client.connect();
+    try {
+      const column = await client.query(
+        "SELECT data_type FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'participant_accounts' AND column_name = 'username'"
+      );
+      if (column.rows[0]?.data_type === "character varying") {
+        await client.query("SET lock_timeout = '10s'");
+        await client.query("ALTER TABLE public.participant_accounts ALTER COLUMN username TYPE text");
+      }
+    } finally { await client.end(); }
+  }
   if (process.env.IMPORT_BACKUP_FILE) {
     startupStage = "backup-restore";
     if (process.env.NOTIFICATION_WORKER_ENABLED !== "false" || process.env.MIGRATION_READ_ONLY !== "true") {

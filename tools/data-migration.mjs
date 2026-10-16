@@ -23895,7 +23895,7 @@ var usersTable = pgTable("users", {
 import { randomUUID as randomUUID4 } from "node:crypto";
 var participantAccountsTable = pgTable("participant_accounts", {
   id: uuid("id").primaryKey().$defaultFn(() => randomUUID4()),
-  username: varchar("username", { length: 30 }).notNull().unique(),
+  username: text("username").notNull().unique(),
   email: varchar("email", { length: 254 }).notNull().unique(),
   passwordHash: text("password_hash").notNull(),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow()

@@ -78,7 +78,7 @@ CREATE TABLE "users" (
 
 CREATE TABLE "participant_accounts" (
 	"id" uuid PRIMARY KEY NOT NULL,
-	"username" varchar(30) NOT NULL,
+	"username" text NOT NULL,
 	"email" varchar(254) NOT NULL,
 	"password_hash" text NOT NULL,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,

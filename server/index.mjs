@@ -38289,14 +38289,12 @@ var GetParticipantSessionResponse = objectType({
     "email": stringType().email()
   }), nullType()])
 });
-var createParticipantAccountBodyUsernameMin = 3;
-var createParticipantAccountBodyUsernameMax = 30;
-var createParticipantAccountBodyUsernameRegExp = new RegExp("^[A-Za-z0-9][A-Za-z0-9_.-]{2,29}$");
+var createParticipantAccountBodyUsernameMin = 12;
 var createParticipantAccountBodyEmailMax = 254;
 var createParticipantAccountBodyPasswordMin = 12;
 var createParticipantAccountBodyPasswordMax = 128;
 var CreateParticipantAccountBody = objectType({
-  "username": stringType().min(createParticipantAccountBodyUsernameMin).max(createParticipantAccountBodyUsernameMax).regex(createParticipantAccountBodyUsernameRegExp),
+  "username": stringType().min(createParticipantAccountBodyUsernameMin),
   "email": stringType().email().max(createParticipantAccountBodyEmailMax),
   "password": stringType().min(createParticipantAccountBodyPasswordMin).max(createParticipantAccountBodyPasswordMax)
 });
@@ -38308,10 +38306,9 @@ var CreateParticipantAccountResponse = objectType({
   }), nullType()])
 });
 var signInParticipantBodyIdentifierMin = 3;
-var signInParticipantBodyIdentifierMax = 254;
 var signInParticipantBodyPasswordMax = 128;
 var SignInParticipantBody = objectType({
-  "identifier": stringType().min(signInParticipantBodyIdentifierMin).max(signInParticipantBodyIdentifierMax),
+  "identifier": stringType().min(signInParticipantBodyIdentifierMin),
   "password": stringType().min(1).max(signInParticipantBodyPasswordMax)
 });
 var SignInParticipantResponse = objectType({
@@ -57081,7 +57078,7 @@ var usersTable = pgTable("users", {
 import { randomUUID as randomUUID4 } from "node:crypto";
 var participantAccountsTable = pgTable("participant_accounts", {
   id: uuid("id").primaryKey().$defaultFn(() => randomUUID4()),
-  username: varchar("username", { length: 30 }).notNull().unique(),
+  username: text("username").notNull().unique(),
   email: varchar("email", { length: 254 }).notNull().unique(),
   passwordHash: text("password_hash").notNull(),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow()
@@ -60214,7 +60211,7 @@ router6.post("/participant-auth/signup", async (req, res) => {
     email: typeof req.body?.email === "string" ? req.body.email.trim().toLowerCase() : req.body?.email
   });
   if (!parsed.success) {
-    res.status(400).json({ error: "Enter a valid username (3\u201330 characters), email, and password (12\u2013128 characters)." });
+    res.status(400).json({ error: "Use a username with at least 12 characters, a valid email, and a password with 12\u2013128 characters." });
     return;
   }
   const { username, email: email3, password } = parsed.data;
@@ -60224,13 +60221,16 @@ router6.post("/participant-auth/signup", async (req, res) => {
       res.status(429).json({ error: "Too many account attempts. Please try again in 15 minutes." });
       return;
     }
-    const [existing] = await db.select({ id: participantAccountsTable.id }).from(participantAccountsTable).where(or(eq(participantAccountsTable.username, username), eq(participantAccountsTable.email, email3))).limit(1);
-    if (existing) {
-      res.status(409).json({ error: "This username or email is already registered. Sign in or choose another." });
-      return;
-    }
     const passwordHash = await hashPassword(password);
     const result = await db.transaction(async (tx) => {
+      await tx.execute(sql`SELECT pg_advisory_xact_lock(${advisoryLockKey("participant-signup-identifiers")}::bigint)`);
+      const [existing] = await tx.select({ id: participantAccountsTable.id }).from(participantAccountsTable).where(or(
+        eq(participantAccountsTable.username, username),
+        eq(participantAccountsTable.email, email3),
+        eq(participantAccountsTable.username, email3),
+        eq(participantAccountsTable.email, username)
+      )).limit(1);
+      if (existing) return null;
       const [account] = await tx.insert(participantAccountsTable).values({ username, email: email3, passwordHash }).returning({ id: participantAccountsTable.id, username: participantAccountsTable.username, email: participantAccountsTable.email });
       const session = newParticipantSession(account.id);
       const oldToken = participantToken(req);
@@ -60238,6 +60238,10 @@ router6.post("/participant-auth/signup", async (req, res) => {
       await tx.insert(participantSessionsTable).values(session.row);
       return { user: { ...account, id: `participant:${account.id}` }, token: session.token };
     });
+    if (!result) {
+      res.status(409).json({ error: "This username or email is already registered. Sign in or choose another." });
+      return;
+    }
     setParticipantCookie(req, res, result.token);
     res.status(201).json(CreateParticipantAccountResponse.parse({ user: result.user }));
   } catch (error40) {
