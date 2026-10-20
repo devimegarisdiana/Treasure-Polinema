@@ -50,6 +50,9 @@ Enter these in the application's cPanel environment settings, not in chat or Git
 | `REGISTRATION_NOTIFICATION_EMAIL` | Organizer notification recipient |
 | `REGISTRATION_EMAIL_FROM` | `TREASURE 2026 <admin@treasure-polinema.com>` |
 | `RESEND_API_KEY` | Valid Resend key, with this sending domain verified |
+| `GOOGLE_SHEETS_SYNC_ENABLED` | `true` only after Apps Script and cPanel settings below are configured |
+| `GOOGLE_SHEETS_WEBHOOK_URL` | HTTPS Apps Script web app URL ending in `/exec` |
+| `GOOGLE_SHEETS_SYNC_TOKEN` | Long random shared secret; set the same value in Apps Script Script Properties |
 
 Use the database hostname and port supplied by IDwebhost; do not assume a remote
 connection is allowed. URL-encode the database password when constructing
@@ -164,6 +167,41 @@ After confirming the import:
    domain work. Existing sent jobs retain their status and provider idempotency key.
 6. Keep the original database/files and encrypted backup until migration is
    accepted. Store the decryption secret privately, separately from the backup.
+
+## Optional: sync new registrations to Google Sheets
+
+The sync is off by default. It sends future registrations only; it does not
+backfill existing registrations. Each registration becomes one row containing
+its reference, team name, competition, institution, submission time, member
+names, team contact email/phone, and alternative phone. The form stores one
+shared team contact, not contact details for every member. Passwords, account
+identifiers, student-ID images, payment proofs, and document URLs are never sent.
+
+1. Create a Google spreadsheet and a tab for registrations. Keep sharing limited
+   to the organizers who need these contact details; do not publish the sheet.
+2. Open **Extensions → Apps Script**, paste `google-sheets-sync.gs` from this
+   package, and save the project.
+3. In Apps Script **Project Settings → Script Properties**, add:
+   - `TREASURE_SPREADSHEET_ID`: the ID between `/d/` and `/edit` in the sheet URL.
+   - `TREASURE_SHEET_NAME`: the exact tab name (or leave it unset for `Registrations`).
+   - `TREASURE_SYNC_TOKEN`: a long random secret, at least 32 characters.
+4. Deploy the script as a **Web app**, choose **Execute as me**, and allow access
+   to **Anyone**. The endpoint is publicly reachable, but rejects requests unless
+   the shared secret matches. Copy the deployment URL ending in `/exec`.
+5. In cPanel **Setup Node.js App → Environment variables**, set
+   `GOOGLE_SHEETS_WEBHOOK_URL` and `GOOGLE_SHEETS_SYNC_TOKEN` to the deployment
+   URL and the same secret, then set `GOOGLE_SHEETS_SYNC_ENABLED=true`. Do not
+   put the secret in GitHub, a spreadsheet cell, or chat. Restart the app.
+6. Submit a real registration only when ready, then confirm its reference appears
+   once in the sheet. Retries update the same reference row rather than adding
+   duplicates. Failed updates stay in a private retry queue and retry
+   automatically; registration submission itself does not depend on Google being
+   available.
+
+Keep the sync disabled until the spreadsheet's access list and deployment are
+ready. Changing a secret requires updating both Apps Script and cPanel. A
+misconfigured or revoked Apps Script deployment leaves updates queued for retry;
+the TREASURE database remains the source of truth.
 
 **A successful GitHub build is not a completed data migration.**
 Do not declare the domain live until the actual IDwebhost app and restored data

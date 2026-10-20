@@ -12,6 +12,7 @@ Object.assign(process.env, {
 });
 process.env.PORT ||= "3000"; // Passenger normally intercepts listen(); also accepts PORT=passenger.
 process.env.NOTIFICATION_WORKER_ENABLED ||= "false";
+process.env.GOOGLE_SHEETS_SYNC_ENABLED ||= "false";
 process.env.MIGRATION_READ_ONLY ||= "true";
 
 let startupStage = "configuration";
@@ -81,6 +82,33 @@ async function start() {
         await client.query("SET lock_timeout = '10s'");
         await client.query("ALTER TABLE public.participant_accounts ALTER COLUMN username TYPE text");
       }
+    } finally { await client.end(); }
+  }
+  {
+    startupStage = "spreadsheet-schema";
+    const { Client } = require("pg");
+    const client = new Client({ connectionString: process.env.DATABASE_URL });
+    await client.connect();
+    try {
+      await client.query(`
+        CREATE TABLE IF NOT EXISTS public.registration_spreadsheet_sync (
+          id uuid PRIMARY KEY,
+          registration_id uuid NOT NULL UNIQUE REFERENCES public.team_registrations(id) ON DELETE CASCADE,
+          status text NOT NULL DEFAULT 'pending',
+          attempts integer NOT NULL DEFAULT 0,
+          next_attempt_at timestamptz NOT NULL DEFAULT now(),
+          locked_at timestamptz,
+          synced_at timestamptz,
+          last_error text,
+          created_at timestamptz NOT NULL DEFAULT now(),
+          CONSTRAINT registration_spreadsheet_sync_status_check
+            CHECK (status IN ('pending', 'processing', 'sent', 'failed'))
+        )
+      `);
+      await client.query(`
+        CREATE INDEX IF NOT EXISTS registration_spreadsheet_sync_due_idx
+        ON public.registration_spreadsheet_sync (status, next_attempt_at, created_at)
+      `);
     } finally { await client.end(); }
   }
   if (process.env.IMPORT_BACKUP_FILE) {

@@ -59,6 +59,19 @@ CREATE TABLE "registration_notifications" (
 	CONSTRAINT "registration_notifications_registration_id_unique" UNIQUE("registration_id")
 );
 
+CREATE TABLE "registration_spreadsheet_sync" (
+	"id" uuid PRIMARY KEY NOT NULL,
+	"registration_id" uuid NOT NULL,
+	"status" text DEFAULT 'pending' NOT NULL,
+	"attempts" integer DEFAULT 0 NOT NULL,
+	"next_attempt_at" timestamp with time zone DEFAULT now() NOT NULL,
+	"locked_at" timestamp with time zone,
+	"synced_at" timestamp with time zone,
+	"last_error" text,
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
+	CONSTRAINT "registration_spreadsheet_sync_registration_id_unique" UNIQUE("registration_id")
+);
+
 CREATE TABLE "sessions" (
 	"sid" varchar PRIMARY KEY NOT NULL,
 	"sess" jsonb NOT NULL,
@@ -115,6 +128,7 @@ CREATE TABLE "organizer_sessions" (
 ALTER TABLE "registration_uploads" ADD CONSTRAINT "registration_uploads_registration_id_team_registrations_id_fk" FOREIGN KEY ("registration_id") REFERENCES "public"."team_registrations"("id") ON DELETE no action ON UPDATE no action;
 ALTER TABLE "team_registration_members" ADD CONSTRAINT "team_registration_members_registration_id_team_registrations_id_fk" FOREIGN KEY ("registration_id") REFERENCES "public"."team_registrations"("id") ON DELETE cascade ON UPDATE no action;
 ALTER TABLE "registration_notifications" ADD CONSTRAINT "registration_notifications_registration_id_team_registrations_id_fk" FOREIGN KEY ("registration_id") REFERENCES "public"."team_registrations"("id") ON DELETE cascade ON UPDATE no action;
+ALTER TABLE "registration_spreadsheet_sync" ADD CONSTRAINT "registration_spreadsheet_sync_registration_id_team_registrations_id_fk" FOREIGN KEY ("registration_id") REFERENCES "public"."team_registrations"("id") ON DELETE cascade ON UPDATE no action;
 ALTER TABLE "participant_sessions" ADD CONSTRAINT "participant_sessions_account_id_participant_accounts_id_fk" FOREIGN KEY ("account_id") REFERENCES "public"."participant_accounts"("id") ON DELETE cascade ON UPDATE no action;
 ALTER TABLE "organizer_sessions" ADD CONSTRAINT "organizer_sessions_account_id_organizer_accounts_id_fk" FOREIGN KEY ("account_id") REFERENCES "public"."organizer_accounts"("id") ON DELETE cascade ON UPDATE no action;
 CREATE INDEX "IDX_session_expire" ON "sessions" USING btree ("expire");

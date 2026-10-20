@@ -38507,7 +38507,7 @@ var health_default = router;
 
 // src/routes/registrations.ts
 var import_express2 = __toESM(require_express2(), 1);
-import { randomUUID as randomUUID9 } from "node:crypto";
+import { randomUUID as randomUUID10 } from "node:crypto";
 
 // ../../node_modules/.pnpm/drizzle-orm@0.45.2_@electric-sql+pglite@0.3.16_@types+pg@8.23.1_pg@8.23.0/node_modules/drizzle-orm/entity.js
 var entityKind = /* @__PURE__ */ Symbol.for("drizzle:entityKind");
@@ -45597,6 +45597,7 @@ __export(schema_exports, {
   participantAuthLimitsTable: () => participantAuthLimitsTable,
   participantSessionsTable: () => participantSessionsTable,
   registrationNotificationsTable: () => registrationNotificationsTable,
+  registrationSpreadsheetSyncTable: () => registrationSpreadsheetSyncTable,
   registrationUploadsTable: () => registrationUploadsTable,
   sessionsTable: () => sessionsTable,
   teamRegistrationMembersTable: () => teamRegistrationMembersTable,
@@ -57053,8 +57054,22 @@ var registrationNotificationsTable = pgTable("registration_notifications", {
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow()
 });
 
-// ../../lib/db/src/schema/auth.ts
+// ../../lib/db/src/schema/registration-spreadsheet-sync.ts
 import { randomUUID as randomUUID3 } from "node:crypto";
+var registrationSpreadsheetSyncTable = pgTable("registration_spreadsheet_sync", {
+  id: uuid("id").primaryKey().$defaultFn(() => randomUUID3()),
+  registrationId: uuid("registration_id").notNull().unique().references(() => teamRegistrationsTable.id, { onDelete: "cascade" }),
+  status: text("status").$type().notNull().default("pending"),
+  attempts: integer("attempts").notNull().default(0),
+  nextAttemptAt: timestamp("next_attempt_at", { withTimezone: true }).notNull().defaultNow(),
+  lockedAt: timestamp("locked_at", { withTimezone: true }),
+  syncedAt: timestamp("synced_at", { withTimezone: true }),
+  lastError: text("last_error"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow()
+});
+
+// ../../lib/db/src/schema/auth.ts
+import { randomUUID as randomUUID4 } from "node:crypto";
 var sessionsTable = pgTable(
   "sessions",
   {
@@ -57065,7 +57080,7 @@ var sessionsTable = pgTable(
   (table) => [index("IDX_session_expire").on(table.expire)]
 );
 var usersTable = pgTable("users", {
-  id: varchar("id").primaryKey().$defaultFn(() => randomUUID3()),
+  id: varchar("id").primaryKey().$defaultFn(() => randomUUID4()),
   email: varchar("email").unique(),
   firstName: varchar("first_name"),
   lastName: varchar("last_name"),
@@ -57075,9 +57090,9 @@ var usersTable = pgTable("users", {
 });
 
 // ../../lib/db/src/schema/participant-accounts.ts
-import { randomUUID as randomUUID4 } from "node:crypto";
+import { randomUUID as randomUUID5 } from "node:crypto";
 var participantAccountsTable = pgTable("participant_accounts", {
-  id: uuid("id").primaryKey().$defaultFn(() => randomUUID4()),
+  id: uuid("id").primaryKey().$defaultFn(() => randomUUID5()),
   username: text("username").notNull().unique(),
   email: varchar("email", { length: 254 }).notNull().unique(),
   passwordHash: text("password_hash").notNull(),
@@ -57095,9 +57110,9 @@ var participantAuthLimitsTable = pgTable("participant_auth_limits", {
 });
 
 // ../../lib/db/src/schema/organizer-accounts.ts
-import { randomUUID as randomUUID5 } from "node:crypto";
+import { randomUUID as randomUUID6 } from "node:crypto";
 var organizerAccountsTable = pgTable("organizer_accounts", {
-  id: uuid("id").primaryKey().$defaultFn(() => randomUUID5()),
+  id: uuid("id").primaryKey().$defaultFn(() => randomUUID6()),
   username: varchar("username", { length: 100 }).notNull().unique(),
   passwordHash: text("password_hash").notNull(),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow()
@@ -57119,15 +57134,15 @@ var pool = new Pool3({ connectionString: process.env.DATABASE_URL });
 var db = drizzle(pool, { schema: schema_exports });
 
 // src/lib/registrationDocuments.ts
-import { randomUUID as randomUUID8 } from "node:crypto";
+import { randomUUID as randomUUID9 } from "node:crypto";
 
 // src/lib/objectStorage.ts
-import { randomUUID as randomUUID7 } from "crypto";
+import { randomUUID as randomUUID8 } from "crypto";
 import { Readable } from "stream";
 import { Storage } from "@google-cloud/storage";
 
 // src/lib/localObjectStorage.ts
-import { createHash, createHmac, randomUUID as randomUUID6, timingSafeEqual } from "node:crypto";
+import { createHash, createHmac, randomUUID as randomUUID7, timingSafeEqual } from "node:crypto";
 import { createReadStream } from "node:fs";
 import { mkdir, readFile, writeFile, lstat, realpath, unlink, link, rename } from "node:fs/promises";
 import path from "node:path";
@@ -57157,7 +57172,7 @@ function uploadSignature(id, expires) {
   return createHmac("sha256", secret).update(`treasure-upload-v1:${id}:${expires}`).digest("hex");
 }
 function createLocalUploadUrl() {
-  const id = randomUUID6();
+  const id = randomUUID7();
   const expires = String(Math.floor(Date.now() / 1e3) + 900);
   return `${localUploadOrigin()}/api/storage/local-uploads/${id}?expires=${expires}&signature=${uploadSignature(id, expires)}`;
 }
@@ -57220,7 +57235,7 @@ var LocalFile = class {
   }
   async writeMetadata(metadata, createOnly = false) {
     const destination = await this.filePath(true, true);
-    const temporary = `${destination}.${randomUUID6()}.partial`;
+    const temporary = `${destination}.${randomUUID7()}.partial`;
     try {
       await writeFile(temporary, JSON.stringify(metadata), { flag: "wx", mode: 384 });
       if (createOnly) await link(temporary, destination);
@@ -57232,7 +57247,7 @@ var LocalFile = class {
   }
   async save(data, contentType, customMetadata) {
     const destination = await this.filePath(false, true);
-    const temporary = `${destination}.${randomUUID6()}.partial`;
+    const temporary = `${destination}.${randomUUID7()}.partial`;
     try {
       await writeFile(temporary, data, { flag: "wx", mode: 384 });
       await link(temporary, destination);
@@ -57463,7 +57478,7 @@ var ObjectStorageService = class {
         "PRIVATE_OBJECT_DIR not set. Create a bucket in 'Object Storage' tool and set PRIVATE_OBJECT_DIR env var."
       );
     }
-    const objectId = randomUUID7();
+    const objectId = randomUUID8();
     const fullPath = `${privateObjectDir}/uploads/${objectId}`;
     const { bucketName, objectName } = parseObjectPath(fullPath);
     return signObjectURL({
@@ -57619,7 +57634,7 @@ async function freezeDocument(upload) {
   if (Number(metadata.size) !== upload.fileSize || metadata.contentType !== upload.contentType || !validSignature(upload.contentType, signature)) {
     throw new RegistrationDocumentError("The document format or size does not match the upload. Please upload a valid JPG, PNG, WebP, or PDF file again.");
   }
-  const id = randomUUID8();
+  const id = randomUUID9();
   const prefix = storage.getPrivateObjectDir().split("/").filter(Boolean).slice(1).join("/");
   const destination = source.bucket.file(`${prefix}/registration-documents/${id}`);
   try {
@@ -57801,6 +57816,92 @@ function startRegistrationNotificationWorker() {
   return timer;
 }
 
+// src/lib/registrationSpreadsheetSync.ts
+var running2 = false;
+async function sendToSpreadsheet(data) {
+  const endpoint = process.env.GOOGLE_SHEETS_WEBHOOK_URL?.trim();
+  const token = process.env.GOOGLE_SHEETS_SYNC_TOKEN;
+  if (!endpoint || !token) throw new Error("Spreadsheet sync is not configured.");
+  const parsedUrl = new URL(endpoint);
+  if (parsedUrl.protocol !== "https:" || parsedUrl.hostname !== "script.google.com") {
+    throw new Error("Spreadsheet sync endpoint is not an approved HTTPS Apps Script URL.");
+  }
+  const response = await fetch(parsedUrl, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ token, registration: data }),
+    signal: AbortSignal.timeout(2e4)
+  });
+  const result = await response.json().catch(() => null);
+  if (!response.ok || result?.ok !== true) throw new Error("Spreadsheet rejected the registration update.");
+}
+async function processRegistrationSpreadsheetSync() {
+  if (process.env.GOOGLE_SHEETS_SYNC_ENABLED !== "true" || !process.env.GOOGLE_SHEETS_WEBHOOK_URL?.trim() || !process.env.GOOGLE_SHEETS_SYNC_TOKEN) return;
+  if (running2) return;
+  running2 = true;
+  try {
+    for (let count = 0; count < 5; count++) {
+      const result = await db.execute(sql`
+        WITH candidate AS (
+          SELECT id FROM registration_spreadsheet_sync
+          WHERE (status IN ('pending', 'failed') AND next_attempt_at <= now())
+             OR (status = 'processing' AND locked_at < now() - interval '5 minutes')
+          ORDER BY created_at FOR UPDATE SKIP LOCKED LIMIT 1
+        )
+        UPDATE registration_spreadsheet_sync AS s
+        SET status = 'processing', locked_at = now(), attempts = attempts + 1
+        FROM candidate WHERE s.id = candidate.id
+        RETURNING s.id, s.registration_id, s.attempts
+      `);
+      const job = result.rows[0];
+      if (!job) break;
+      try {
+        const [registration] = await db.select().from(teamRegistrationsTable).where(eq(teamRegistrationsTable.id, job.registration_id)).limit(1);
+        if (!registration) throw new Error("The registration could not be found.");
+        const members = await db.select({ name: teamRegistrationMembersTable.fullName }).from(teamRegistrationMembersTable).where(eq(teamRegistrationMembersTable.registrationId, registration.id)).orderBy(teamRegistrationMembersTable.position);
+        await sendToSpreadsheet({
+          referenceCode: registration.referenceCode,
+          teamName: registration.teamName,
+          competition: registration.competition,
+          institution: registration.institution,
+          submittedAt: registration.createdAt.toISOString(),
+          memberNames: members.map((member) => member.name),
+          // The current registration form stores a shared team contact,
+          // not a separate email or phone for every member.
+          contactEmail: registration.contactEmail,
+          contactPhone: registration.contactPhone,
+          alternativePhone: registration.alternativePhone
+        });
+        await db.update(registrationSpreadsheetSyncTable).set({
+          status: "sent",
+          syncedAt: /* @__PURE__ */ new Date(),
+          lockedAt: null,
+          lastError: null
+        }).where(eq(registrationSpreadsheetSyncTable.id, job.id));
+      } catch {
+        const delay = Math.min(15 * 6e4, 6e4 * 2 ** Math.min(job.attempts - 1, 4));
+        await db.update(registrationSpreadsheetSyncTable).set({
+          status: "failed",
+          lastError: "Spreadsheet update failed. Check the Apps Script endpoint, token, and sheet access; automatic retry is scheduled.",
+          lockedAt: null,
+          nextAttemptAt: new Date(Date.now() + delay)
+        }).where(eq(registrationSpreadsheetSyncTable.id, job.id));
+        logger.warn("A registration spreadsheet update failed; it remains queued for retry");
+      }
+    }
+  } catch {
+    logger.error("Unable to process the registration spreadsheet queue");
+  } finally {
+    running2 = false;
+  }
+}
+function startRegistrationSpreadsheetSyncWorker() {
+  void processRegistrationSpreadsheetSync();
+  const timer = setInterval(() => void processRegistrationSpreadsheetSync(), 3e4);
+  timer.unref();
+  return timer;
+}
+
 // src/lib/participantAuth.ts
 import { createHash as createHash2, randomBytes, scrypt, timingSafeEqual as timingSafeEqual2 } from "node:crypto";
 var PARTICIPANT_COOKIE = "treasure_participant_session";
@@ -57972,7 +58073,7 @@ router2.post("/registrations/teams", async (req, res) => {
       frozen.push(await freezeDocument(payment));
       const [created] = await tx.insert(teamRegistrationsTable).values({
         submissionKey: data.submissionKey,
-        referenceCode: `TR26-${randomUUID9().replaceAll("-", "").slice(0, 12).toUpperCase()}`,
+        referenceCode: `TR26-${randomUUID10().replaceAll("-", "").slice(0, 12).toUpperCase()}`,
         teamName: data.teamName ?? data.members[0].fullName.slice(0, 120),
         contactEmail: data.contactEmail.toLowerCase(),
         contactPhone: data.contactPhone,
@@ -58007,6 +58108,7 @@ router2.post("/registrations/teams", async (req, res) => {
         }).where(eq(registrationUploadsTable.id, upload.id));
       }
       await tx.insert(registrationNotificationsTable).values({ registrationId: created.id });
+      await tx.insert(registrationSpreadsheetSyncTable).values({ registrationId: created.id });
       return { status: 201, receipt: { referenceCode: created.referenceCode, submittedAt: created.createdAt }, created: true };
     });
     if (result.status === 400) {
@@ -58015,7 +58117,10 @@ router2.post("/registrations/teams", async (req, res) => {
     }
     committed = result.created;
     res.status(201).json(CreateTeamRegistrationResponse.parse(result.receipt));
-    if (result.created) void processRegistrationNotifications();
+    if (result.created) {
+      void processRegistrationNotifications();
+      void processRegistrationSpreadsheetSync();
+    }
   } catch (error40) {
     if (error40 instanceof RegistrationDocumentError) {
       res.status(400).json({ error: error40.message });
@@ -60600,6 +60705,7 @@ app_default.listen(port, (err) => {
   }
   logger.info({ port }, "Server listening");
   if (process.env.NOTIFICATION_WORKER_ENABLED !== "false") startRegistrationNotificationWorker();
+  if (process.env.GOOGLE_SHEETS_SYNC_ENABLED === "true") startRegistrationSpreadsheetSyncWorker();
 });
 /*! Bundled license information:
 
