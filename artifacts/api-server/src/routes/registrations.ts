@@ -1,10 +1,11 @@
 import { randomUUID } from "node:crypto";
 import { Router, type IRouter } from "express";
 import { and, eq, inArray, sql } from "drizzle-orm";
-import { db, teamRegistrationsTable, teamRegistrationMembersTable, registrationUploadsTable, registrationNotificationsTable } from "@workspace/db";
+import { db, teamRegistrationsTable, teamRegistrationMembersTable, registrationUploadsTable, registrationNotificationsTable, registrationSpreadsheetSyncTable } from "@workspace/db";
 import { CreateTeamRegistrationBody, CreateTeamRegistrationResponse } from "@workspace/api-zod";
 import { freezeDocument, RegistrationDocumentError, type FrozenDocument } from "../lib/registrationDocuments";
 import { processRegistrationNotifications } from "../lib/registrationNotifications";
+import { processRegistrationSpreadsheetSync } from "../lib/registrationSpreadsheetSync";
 import { registrationOwner, sameSiteRequest } from "../lib/participantAuth";
 import { advisoryLockKey } from "../lib/advisoryLock";
 
@@ -113,6 +114,7 @@ router.post("/registrations/teams", async (req, res): Promise<void> => {
         }).where(eq(registrationUploadsTable.id, upload.id));
       }
       await tx.insert(registrationNotificationsTable).values({ registrationId: created.id });
+      await tx.insert(registrationSpreadsheetSyncTable).values({ registrationId: created.id });
       return { status: 201 as const, receipt: { referenceCode: created.referenceCode, submittedAt: created.createdAt }, created: true };
     });
     if (result.status === 400) {
@@ -121,7 +123,10 @@ router.post("/registrations/teams", async (req, res): Promise<void> => {
     }
     committed = result.created;
     res.status(201).json(CreateTeamRegistrationResponse.parse(result.receipt));
-    if (result.created) void processRegistrationNotifications();
+    if (result.created) {
+      void processRegistrationNotifications();
+      void processRegistrationSpreadsheetSync();
+    }
   } catch (error) {
     if (error instanceof RegistrationDocumentError) {
       res.status(400).json({ error: error.message });

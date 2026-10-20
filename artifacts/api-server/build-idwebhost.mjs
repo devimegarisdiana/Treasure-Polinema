@@ -31,6 +31,7 @@ await writeFile(path.join(output, "schema.sql"), ddl);
 await cp(path.join(root, "artifacts/treasure-event/dist/public"), path.join(output, "public"), { recursive: true });
 await cp(path.join(root, "deploy/idwebhost/app.js"), path.join(output, "app.js"));
 await cp(path.join(root, "deploy/idwebhost/README.md"), path.join(output, "README.md"));
+await cp(path.join(root, "deploy/idwebhost/google-sheets-sync.gs"), path.join(output, "google-sheets-sync.gs"));
 const apiPackage = JSON.parse(await readFile(path.join(api, "package.json"), "utf8"));
 const dbPackage = JSON.parse(await readFile(path.join(root, "lib/db/package.json"), "utf8"));
 await writeFile(path.join(output, "package.json"), JSON.stringify({

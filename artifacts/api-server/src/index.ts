@@ -1,6 +1,7 @@
 import app from "./app";
 import { logger } from "./lib/logger";
 import { startRegistrationNotificationWorker } from "./lib/registrationNotifications";
+import { startRegistrationSpreadsheetSyncWorker } from "./lib/registrationSpreadsheetSync";
 
 const rawPort = process.env["PORT"];
 
@@ -24,4 +25,5 @@ app.listen(port, (err) => {
 
   logger.info({ port }, "Server listening");
   if (process.env.NOTIFICATION_WORKER_ENABLED !== "false") startRegistrationNotificationWorker();
+  if (process.env.GOOGLE_SHEETS_SYNC_ENABLED === "true") startRegistrationSpreadsheetSyncWorker();
 });

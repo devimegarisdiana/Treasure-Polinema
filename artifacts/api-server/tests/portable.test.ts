@@ -10,6 +10,7 @@ import { LocalFile, createLocalUploadUrl, validLocalUploadSignature } from "../s
 import { restoreBackup } from "../src/tools/idwebhostMigration";
 import app from "../src/app";
 import { advisoryLockKey } from "../src/lib/advisoryLock";
+import { processRegistrationSpreadsheetSync } from "../src/lib/registrationSpreadsheetSync";
 
 const hash = (bytes: Buffer) => createHash("sha256").update(bytes).digest("hex");
 const headers = { Origin: "https://synthetic.example.invalid", "Content-Type": "application/json" };
@@ -113,6 +114,50 @@ test("portable app preserves native login, ownership, immutable uploads and encr
     assert.deepEqual(await retried.json(), receipt);
     assert.equal((await postgres.query<{ count: number }>("SELECT count(*)::int AS count FROM team_registrations")).rows[0].count, 1);
     assert.equal((await postgres.query<{ status: string }>("SELECT status FROM registration_notifications")).rows[0].status, "pending");
+    assert.equal((await postgres.query<{ status: string }>("SELECT status FROM registration_spreadsheet_sync")).rows[0].status, "pending");
+    const oldSheetsEnabled = process.env.GOOGLE_SHEETS_SYNC_ENABLED;
+    const oldSheetsUrl = process.env.GOOGLE_SHEETS_WEBHOOK_URL;
+    const oldSheetsToken = process.env.GOOGLE_SHEETS_SYNC_TOKEN;
+    const originalFetch = globalThis.fetch;
+    let sheetRequests = 0;
+    let failSheetRequest = true;
+    process.env.GOOGLE_SHEETS_SYNC_ENABLED = "true";
+    process.env.GOOGLE_SHEETS_WEBHOOK_URL = "https://script.google.com/macros/s/synthetic/exec";
+    process.env.GOOGLE_SHEETS_SYNC_TOKEN = "synthetic-secret-not-for-production";
+    globalThis.fetch = async (_input, init) => {
+      sheetRequests++;
+      const sent = JSON.parse(String(init?.body));
+      assert.equal(sent.token, "synthetic-secret-not-for-production");
+      assert.deepEqual(sent.registration.memberNames, ["Synthetic participant"]);
+      assert.equal(sent.registration.contactEmail, "synthetic-native@example.invalid");
+      assert.equal(sent.registration.contactPhone, "+620000000001");
+      assert.equal(sent.registration.alternativePhone, "+620000000002");
+      assert.ok(!JSON.stringify(sent).includes("student_id"));
+      assert.ok(!JSON.stringify(sent).includes("payment_proof"));
+      assert.ok(!JSON.stringify(sent).includes("passwordHash"));
+      const ok = !failSheetRequest;
+      failSheetRequest = false;
+      return new Response(JSON.stringify({ ok }), { status: 200, headers: { "Content-Type": "application/json" } });
+    };
+    try {
+      await processRegistrationSpreadsheetSync();
+      assert.equal((await postgres.query<{ status: string }>("SELECT status FROM registration_spreadsheet_sync")).rows[0].status, "failed");
+      assert.equal((await postgres.query<{ count: number }>("SELECT count(*)::int AS count FROM team_registrations")).rows[0].count, 1,
+        "a spreadsheet failure must not remove a saved registration");
+      await postgres.exec("UPDATE registration_spreadsheet_sync SET next_attempt_at = now()");
+      await processRegistrationSpreadsheetSync();
+      assert.equal((await postgres.query<{ status: string }>("SELECT status FROM registration_spreadsheet_sync")).rows[0].status, "sent");
+      await processRegistrationSpreadsheetSync();
+      assert.equal(sheetRequests, 2, "a successful retry must not resend an already synced registration");
+    } finally {
+      globalThis.fetch = originalFetch;
+      if (oldSheetsEnabled === undefined) delete process.env.GOOGLE_SHEETS_SYNC_ENABLED;
+      else process.env.GOOGLE_SHEETS_SYNC_ENABLED = oldSheetsEnabled;
+      if (oldSheetsUrl === undefined) delete process.env.GOOGLE_SHEETS_WEBHOOK_URL;
+      else process.env.GOOGLE_SHEETS_WEBHOOK_URL = oldSheetsUrl;
+      if (oldSheetsToken === undefined) delete process.env.GOOGLE_SHEETS_SYNC_TOKEN;
+      else process.env.GOOGLE_SHEETS_SYNC_TOKEN = oldSheetsToken;
+    }
 
     const registered = (await postgres.query<Record<string, unknown>>("SELECT * FROM registration_uploads ORDER BY purpose DESC")).rows;
     const documents: Array<{ objectPath: string; contentType: string; size: number; ownerId: string; sha256: string; bytes: string }> = [];
