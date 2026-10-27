@@ -36,6 +36,7 @@ import type {
   ParticipantSession,
   ParticipantSignin,
   ParticipantSignup,
+  SpreadsheetBackfillResult,
   TeamRegistrationInput,
   TeamRegistrationReceipt,
   UploadUrlRequest,
@@ -956,6 +957,80 @@ export function useDownloadAdminRegistrationDocument<TData = Awaited<ReturnType<
 
 
 
+
+export const getBackfillRegistrationSpreadsheetUrl = () => {
+
+
+
+
+  return `/api/admin/spreadsheet-sync/backfill`
+}
+
+/**
+ * @summary Queue existing registrations from the current IDwebhost database
+ */
+export const backfillRegistrationSpreadsheet = async ( options?: Parameters<typeof customFetch>[1]): Promise<SpreadsheetBackfillResult> => {
+
+  return customFetch<SpreadsheetBackfillResult>(getBackfillRegistrationSpreadsheetUrl(),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+
+export const getBackfillRegistrationSpreadsheetMutationKey = () => ['backfillRegistrationSpreadsheet'] as const;
+
+export const getBackfillRegistrationSpreadsheetMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof backfillRegistrationSpreadsheet>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof backfillRegistrationSpreadsheet>>, TError,void, TContext> => {
+
+const mutationKey = getBackfillRegistrationSpreadsheetMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof backfillRegistrationSpreadsheet>>, void> = () => {
+
+
+          return  backfillRegistrationSpreadsheet(requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type BackfillRegistrationSpreadsheetMutationResult = NonNullable<Awaited<ReturnType<typeof backfillRegistrationSpreadsheet>>>
+
+    export type BackfillRegistrationSpreadsheetMutationError = ErrorType<void>
+
+
+    /**
+ * @summary Queue existing registrations from the current IDwebhost database
+ */
+export const useBackfillRegistrationSpreadsheet = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof backfillRegistrationSpreadsheet>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof backfillRegistrationSpreadsheet>>,
+        TError,
+        void,
+        TContext
+      > => {
+      return useMutation(getBackfillRegistrationSpreadsheetMutationOptions(options));
+    }
 
 export const getGetCurrentAuthUserUrl = () => {
 

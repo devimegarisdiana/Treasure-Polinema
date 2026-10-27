@@ -33,6 +33,7 @@ export * from './participantSession';
 export * from './participantSignin';
 export * from './participantSignup';
 export * from './participantUser';
+export * from './spreadsheetBackfillResult';
 export * from './teamMemberInput';
 export * from './teamRegistrationInput';
 export * from './teamRegistrationInputCompetition';

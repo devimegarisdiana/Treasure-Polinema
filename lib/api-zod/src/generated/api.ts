@@ -201,6 +201,21 @@ export const DownloadAdminRegistrationDocumentParams = zod.object({
 export const DownloadAdminRegistrationDocumentResponse = zod.unknown()
 
 
+/**
+ * @summary Queue existing registrations from the current IDwebhost database
+ */
+export const backfillRegistrationSpreadsheetResponseQueuedCountMin = 0;
+
+export const backfillRegistrationSpreadsheetResponseAlreadyQueuedCountMin = 0;
+
+
+
+export const BackfillRegistrationSpreadsheetResponse = zod.object({
+  "queuedCount": zod.number().int().min(backfillRegistrationSpreadsheetResponseQueuedCountMin),
+  "alreadyQueuedCount": zod.number().int().min(backfillRegistrationSpreadsheetResponseAlreadyQueuedCountMin)
+})
+
+
 export const GetCurrentAuthUserResponse = zod.object({
   "user": zod.union([zod.object({
   "id": zod.string(),

@@ -115,6 +115,10 @@
 .reg-receipt dt { font:500 10px 'DM Mono',monospace; text-transform:uppercase; letter-spacing:.1em; color:#625d66; padding-top:3px; }
 .reg-receipt dd { margin:0; overflow-wrap:anywhere; }
 .reg-actions { display:flex; gap:12px; flex-wrap:wrap; margin-top:26px; }
+.reg-group { margin-top:24px; padding:20px; border:1px solid #b8c8d6; background:#edf2f6; }
+.reg-group h2 { margin:0 0 8px; font-size:20px; }
+.reg-group p { font-size:14px; line-height:1.6; margin:0 0 16px; }
+.reg-group .reg-group-url { margin:12px 0 0; font-size:12px; overflow-wrap:anywhere; }
 .reg-success-top { background:#e8edf1; }
 .reg-gate { padding:clamp(24px,4vw,42px); }
 .reg-gate h2 { font:500 30px 'Newsreader',Georgia,serif; letter-spacing:-.025em; margin:0 0 10px; }

@@ -5,12 +5,14 @@ import { mkdtemp, readFile, writeFile, rm, symlink, unlink } from "node:fs/promi
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { once } from "node:events";
-import { postgres } from "./fixtures/portableDatabase";
+import { db, postgres, teamRegistrationsTable, registrationSpreadsheetSyncTable } from "./fixtures/portableDatabase";
+import { inArray } from "drizzle-orm";
 import { LocalFile, createLocalUploadUrl, validLocalUploadSignature } from "../src/lib/localObjectStorage";
 import { restoreBackup } from "../src/tools/idwebhostMigration";
 import app from "../src/app";
 import { advisoryLockKey } from "../src/lib/advisoryLock";
 import { processRegistrationSpreadsheetSync } from "../src/lib/registrationSpreadsheetSync";
+import { queueExistingRegistrationSpreadsheets } from "../src/lib/registrationSpreadsheetBackfill";
 
 const hash = (bytes: Buffer) => createHash("sha256").update(bytes).digest("hex");
 const headers = { Origin: "https://synthetic.example.invalid", "Content-Type": "application/json" };
@@ -50,6 +52,7 @@ test("portable app preserves native login, ownership, immutable uploads and encr
   const request = (url: string, options?: RequestInit) => fetch(`${origin}${url}`, options);
   let cookie = "";
   try {
+    assert.deepEqual(await queueExistingRegistrationSpreadsheets(), { queuedCount: 0, alreadyQueuedCount: 0 });
     for (const page of ["/", "/register", "/admin", "/archive/2025"]) {
       const result = await request(page);
       assert.equal(result.status, 200);
@@ -191,6 +194,62 @@ test("portable app preserves native login, ownership, immutable uploads and encr
     assert.equal(organizer.status, 200, await organizer.clone().text());
     const organizerCookie = (organizer.headers.get("set-cookie") || "").split(";")[0];
     assert.equal((await request("/api/admin/registrations", { headers: { Cookie: organizerCookie } })).status, 200);
+    // All backfill fixtures live in this in-memory database, never hosting or Replit data.
+    const backfillUrl = "/api/admin/spreadsheet-sync/backfill";
+    const backfillOptions = { method: "POST", headers: { ...headers, Cookie: organizerCookie } };
+    assert.equal((await request(backfillUrl, { method: "POST", headers })).status, 401);
+    assert.equal((await request(backfillUrl, { method: "POST", headers: { ...headers, Cookie: cookie } })).status, 401);
+    assert.equal((await request(backfillUrl, { method: "POST", headers: {
+      ...headers, Cookie: organizerCookie, Origin: "https://untrusted.example.invalid",
+    } })).status, 403);
+    process.env.RUNTIME_HOST = "replit";
+    try {
+      assert.equal((await request(backfillUrl, backfillOptions)).status, 503);
+    } finally { process.env.RUNTIME_HOST = "cpanel"; }
+    assert.equal((await postgres.query("SELECT * FROM registration_spreadsheet_sync")).rows.length, 1);
+    const fixtures = Array.from({ length: 504 }, (_, index) => ({
+      id: randomUUID(), submissionKey: randomUUID(),
+      referenceCode: `TR26-${String(index).padStart(12, "0")}`, teamName: `Synthetic old team ${index}`,
+      contactEmail: "synthetic-old@example.invalid", contactPhone: "+620000000000",
+      createdAt: new Date("2026-01-01T00:00:00Z"),
+    }));
+    await db.insert(teamRegistrationsTable).values(fixtures);
+    await db.insert(registrationSpreadsheetSyncTable).values(
+      (["pending", "processing", "failed"] as const).map((status, index) => ({
+        registrationId: fixtures[index].id, status, attempts: 3,
+        lockedAt: status === "processing" ? new Date() : null,
+        nextAttemptAt: new Date("2030-01-01T00:00:00Z"), lastError: "Synthetic prior error",
+      })),
+    );
+    const jobsBefore = (await postgres.query<{ id: string }>("SELECT * FROM registration_spreadsheet_sync ORDER BY id")).rows;
+    const registrationsBefore = (await postgres.query("SELECT * FROM team_registrations ORDER BY id")).rows;
+    const uploadsBefore = (await postgres.query("SELECT * FROM registration_uploads ORDER BY id")).rows;
+    const accountsBefore = (await postgres.query("SELECT * FROM participant_accounts ORDER BY id")).rows;
+    const backfilled = await request(backfillUrl, backfillOptions);
+    assert.equal(backfilled.status, 202);
+    assert.equal(backfilled.headers.get("cache-control"), "private, no-store");
+    assert.deepEqual(await backfilled.json(), { queuedCount: 501, alreadyQueuedCount: 4 });
+    const again = await request(backfillUrl, backfillOptions);
+    assert.deepEqual(await again.json(), { queuedCount: 0, alreadyQueuedCount: 505 });
+    for (const job of jobsBefore) {
+      assert.deepEqual((await postgres.query("SELECT * FROM registration_spreadsheet_sync WHERE id = $1", [job.id])).rows[0], job,
+        "sent, failed, pending, and processing jobs must not be reset");
+    }
+    assert.deepEqual((await postgres.query("SELECT * FROM team_registrations ORDER BY id")).rows, registrationsBefore);
+    assert.deepEqual((await postgres.query("SELECT * FROM registration_uploads ORDER BY id")).rows, uploadsBefore);
+    assert.deepEqual((await postgres.query("SELECT * FROM participant_accounts ORDER BY id")).rows, accountsBefore);
+    const concurrentFixture = { ...fixtures[0], id: randomUUID(), submissionKey: randomUUID(), referenceCode: "TR26-FFFFFFFFFFFF" };
+    await db.insert(teamRegistrationsTable).values(concurrentFixture);
+    const concurrent = await Promise.all([
+      request(backfillUrl, backfillOptions), request(backfillUrl, backfillOptions),
+    ]);
+    const concurrentResults = await Promise.all(concurrent.map(async response => {
+      assert.equal(response.status, 202);
+      return await response.json() as { queuedCount: number; alreadyQueuedCount: number };
+    }));
+    assert.equal(concurrentResults.reduce((sum, result) => sum + result.queuedCount, 0), 1);
+    assert.equal((await postgres.query("SELECT * FROM registration_spreadsheet_sync")).rows.length, 506);
+    await db.delete(teamRegistrationsTable).where(inArray(teamRegistrationsTable.id, [...fixtures.map(row => row.id), concurrentFixture.id]));
     process.env.MIGRATION_READ_ONLY = "true";
     const signin = await request("/api/participant-auth/signin", {
       method: "POST", headers, body: JSON.stringify({ identifier: nativeUsername, password: "Synthetic-password-2026" }),

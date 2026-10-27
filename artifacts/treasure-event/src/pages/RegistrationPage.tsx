@@ -14,6 +14,7 @@ interface Slot { uid: number; fullName: string }
 
 const BASE = (import.meta.env.BASE_URL as string).replace(/\/+$/, '');
 const home = `${BASE}/`;
+const PARTICIPANT_GROUP_URL = 'https://chat.whatsapp.com/JpCQ5ZJIaEvCdou5uNoFrA';
 const COUNTRIES = ['Indonesia', 'Philippines', 'England', 'Malaysia', 'Turkey', 'Vietnam', 'Thailand', 'Taiwan', 'Saudi Arabia', 'Other'] as const;
 const MIME = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'] as const;
 const MAX = 10 * 1024 * 1024;
@@ -314,6 +315,14 @@ export default function RegistrationPage() {
             <dt>{t.at}</dt><dd data-testid="text-submitted-at">{fmtDate(receipt.submittedAt)}</dd>
             {sentCount > 0 && <><dt>{t.members}</dt><dd>{sentCount}</dd></>}
           </dl>
+          <div className="reg-group">
+            <h2>Join the participants’ WhatsApp group</h2>
+            <p>Join the group for TREASURE 2026 announcements and participant updates. Open the invitation below to join yourself.</p>
+            <a className="reg-btn reg-yellow" href={PARTICIPANT_GROUP_URL} target="_blank" rel="noopener noreferrer" data-testid="link-participant-whatsapp-group">
+              Join WAG participants
+            </a>
+            <p className="reg-group-url">{PARTICIPANT_GROUP_URL}</p>
+          </div>
           <p style={{ fontSize: 13, lineHeight: 1.6, marginTop: 20 }}>{t.contactLine}</p>
           <div className="reg-actions">
             <button type="button" className="reg-btn reg-yellow" onClick={() => window.print()} data-testid="button-print"><Printer size={15} /> {t.print}</button>

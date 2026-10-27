@@ -207,6 +207,13 @@ export interface AdminAccess {
   isAdmin: boolean;
 }
 
+export interface SpreadsheetBackfillResult {
+  /** @minimum 0 */
+  queuedCount: number;
+  /** @minimum 0 */
+  alreadyQueuedCount: number;
+}
+
 export interface OrganizerIdentity {
   id: string;
   username: string;

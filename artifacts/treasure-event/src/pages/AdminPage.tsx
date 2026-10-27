@@ -10,6 +10,7 @@ import {
 } from '@workspace/api-client-react';
 import { useOrganizerAuth } from '../hooks/use-organizer-auth';
 import { OrganizerSignIn } from '../components/OrganizerSignIn';
+import { SpreadsheetBackfill } from '../components/SpreadsheetBackfill';
 import type { NotificationStatus } from '@workspace/api-client-react';
 import './admin.css';
 
@@ -185,6 +186,7 @@ export default function AdminPage() {
             {setup && setup.recipient && setup.sender && !setup.note && (
               <div className="setup-ok"><Mail size={15} /> Email configured <span>{setup.sender} → {setup.recipient}</span></div>
             )}
+            <SpreadsheetBackfill key={userKey} onSessionExpired={auth.expireSession} />
             <section className={`admin-workspace${selectedId ? ' has-detail' : ''}`}>
               <div className="registrations-panel">
                 <div className="list-head">

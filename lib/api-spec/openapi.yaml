@@ -183,6 +183,20 @@ paths:
         "401": { description: Sign in required }
         "403": { description: Administrator access required }
         "404": { description: Document not found }
+  /admin/spreadsheet-sync/backfill:
+    post:
+      operationId: backfillRegistrationSpreadsheet
+      summary: Queue existing registrations from the current IDwebhost database
+      responses:
+        "202":
+          description: Missing registrations queued; existing sync jobs left unchanged
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/SpreadsheetBackfillResult" }
+        "401": { description: Organizer sign-in required }
+        "403": { description: Authorized organizer and same-site request required }
+        "500": { description: Could not queue registrations; safe to retry }
+        "503": { description: This action is available only on IDwebhost }
   /auth/user:
     get:
       operationId: getCurrentAuthUser
@@ -504,6 +518,12 @@ components:
       required: [isAdmin]
       properties:
         isAdmin: { type: boolean }
+    SpreadsheetBackfillResult:
+      type: object
+      required: [queuedCount, alreadyQueuedCount]
+      properties:
+        queuedCount: { type: integer, minimum: 0 }
+        alreadyQueuedCount: { type: integer, minimum: 0 }
     OrganizerIdentity:
       type: object
       required: [id, username]
