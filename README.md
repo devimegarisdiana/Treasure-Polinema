@@ -203,6 +203,27 @@ ready. Changing a secret requires updating both Apps Script and cPanel. A
 misconfigured or revoked Apps Script deployment leaves updates queued for retry;
 the TREASURE database remains the source of truth.
 
+### Queue registrations submitted before Google Sheets sync was installed
+
+After installing this code update and restarting the IDwebhost app, sign in to
+the **live site's Organizer desk**. Under **Previous registrations → Google
+Sheets**, click **Queue previous registrations** and confirm. The result shows
+how many were newly queued and how many already had a queue entry (including
+completed updates). This applies to all registrations, not just the current
+dashboard search or page. Queued means scheduled, not delivered; delivery uses
+the existing worker and requires the Google Sheets configuration above.
+
+This explicit action reads only the database connected to the running IDwebhost
+app. It is rejected in the Replit preview. Do not import a Replit backup, dummy
+registrations, or private documents to populate the sheet. No reset, data
+migration, document copy, or password transfer is needed.
+
+Repeated or concurrent clicks create at most one queue entry per registration.
+Existing pending, processing, sent, and failed entries are not reset. If a
+response is lost, safely click again; previously queued registrations will be
+reported as already queued. The Apps Script receiver updates the row matching
+the registration's reference code, so delivery retries do not append a duplicate.
+
 **A successful GitHub build is not a completed data migration.**
 Do not declare the domain live until the actual IDwebhost app and restored data
 have been checked. A future update repeats only step 1; it must not reimport data.

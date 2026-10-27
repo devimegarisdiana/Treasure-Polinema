@@ -12414,6 +12414,7 @@ __export(schema_exports, {
   participantAuthLimitsTable: () => participantAuthLimitsTable,
   participantSessionsTable: () => participantSessionsTable,
   registrationNotificationsTable: () => registrationNotificationsTable,
+  registrationSpreadsheetSyncTable: () => registrationSpreadsheetSyncTable,
   registrationUploadsTable: () => registrationUploadsTable,
   sessionsTable: () => sessionsTable,
   teamRegistrationMembersTable: () => teamRegistrationMembersTable,
@@ -23870,8 +23871,22 @@ var registrationNotificationsTable = pgTable("registration_notifications", {
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow()
 });
 
-// ../../lib/db/src/schema/auth.ts
+// ../../lib/db/src/schema/registration-spreadsheet-sync.ts
 import { randomUUID as randomUUID3 } from "node:crypto";
+var registrationSpreadsheetSyncTable = pgTable("registration_spreadsheet_sync", {
+  id: uuid("id").primaryKey().$defaultFn(() => randomUUID3()),
+  registrationId: uuid("registration_id").notNull().unique().references(() => teamRegistrationsTable.id, { onDelete: "cascade" }),
+  status: text("status").$type().notNull().default("pending"),
+  attempts: integer("attempts").notNull().default(0),
+  nextAttemptAt: timestamp("next_attempt_at", { withTimezone: true }).notNull().defaultNow(),
+  lockedAt: timestamp("locked_at", { withTimezone: true }),
+  syncedAt: timestamp("synced_at", { withTimezone: true }),
+  lastError: text("last_error"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow()
+});
+
+// ../../lib/db/src/schema/auth.ts
+import { randomUUID as randomUUID4 } from "node:crypto";
 var sessionsTable = pgTable(
   "sessions",
   {
@@ -23882,7 +23897,7 @@ var sessionsTable = pgTable(
   (table) => [index("IDX_session_expire").on(table.expire)]
 );
 var usersTable = pgTable("users", {
-  id: varchar("id").primaryKey().$defaultFn(() => randomUUID3()),
+  id: varchar("id").primaryKey().$defaultFn(() => randomUUID4()),
   email: varchar("email").unique(),
   firstName: varchar("first_name"),
   lastName: varchar("last_name"),
@@ -23892,9 +23907,9 @@ var usersTable = pgTable("users", {
 });
 
 // ../../lib/db/src/schema/participant-accounts.ts
-import { randomUUID as randomUUID4 } from "node:crypto";
+import { randomUUID as randomUUID5 } from "node:crypto";
 var participantAccountsTable = pgTable("participant_accounts", {
-  id: uuid("id").primaryKey().$defaultFn(() => randomUUID4()),
+  id: uuid("id").primaryKey().$defaultFn(() => randomUUID5()),
   username: text("username").notNull().unique(),
   email: varchar("email", { length: 254 }).notNull().unique(),
   passwordHash: text("password_hash").notNull(),
@@ -23912,9 +23927,9 @@ var participantAuthLimitsTable = pgTable("participant_auth_limits", {
 });
 
 // ../../lib/db/src/schema/organizer-accounts.ts
-import { randomUUID as randomUUID5 } from "node:crypto";
+import { randomUUID as randomUUID6 } from "node:crypto";
 var organizerAccountsTable = pgTable("organizer_accounts", {
-  id: uuid("id").primaryKey().$defaultFn(() => randomUUID5()),
+  id: uuid("id").primaryKey().$defaultFn(() => randomUUID6()),
   username: varchar("username", { length: 100 }).notNull().unique(),
   passwordHash: text("password_hash").notNull(),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow()
@@ -23936,12 +23951,12 @@ var pool = new Pool3({ connectionString: process.env.DATABASE_URL });
 var db = drizzle(pool, { schema: schema_exports });
 
 // src/lib/objectStorage.ts
-import { randomUUID as randomUUID7 } from "crypto";
+import { randomUUID as randomUUID8 } from "crypto";
 import { Readable } from "stream";
 import { Storage } from "@google-cloud/storage";
 
 // src/lib/localObjectStorage.ts
-import { createHash as createHash2, createHmac, randomUUID as randomUUID6, timingSafeEqual } from "node:crypto";
+import { createHash as createHash2, createHmac, randomUUID as randomUUID7, timingSafeEqual } from "node:crypto";
 import { createReadStream } from "node:fs";
 import { mkdir, readFile, writeFile, lstat, realpath, unlink, link, rename } from "node:fs/promises";
 import path from "node:path";
@@ -23971,7 +23986,7 @@ function uploadSignature(id, expires) {
   return createHmac("sha256", secret2).update(`treasure-upload-v1:${id}:${expires}`).digest("hex");
 }
 function createLocalUploadUrl() {
-  const id = randomUUID6();
+  const id = randomUUID7();
   const expires = String(Math.floor(Date.now() / 1e3) + 900);
   return `${localUploadOrigin()}/api/storage/local-uploads/${id}?expires=${expires}&signature=${uploadSignature(id, expires)}`;
 }
@@ -24028,7 +24043,7 @@ var LocalFile = class {
   }
   async writeMetadata(metadata, createOnly = false) {
     const destination = await this.filePath(true, true);
-    const temporary = `${destination}.${randomUUID6()}.partial`;
+    const temporary = `${destination}.${randomUUID7()}.partial`;
     try {
       await writeFile(temporary, JSON.stringify(metadata), { flag: "wx", mode: 384 });
       if (createOnly) await link(temporary, destination);
@@ -24040,7 +24055,7 @@ var LocalFile = class {
   }
   async save(data, contentType, customMetadata) {
     const destination = await this.filePath(false, true);
-    const temporary = `${destination}.${randomUUID6()}.partial`;
+    const temporary = `${destination}.${randomUUID7()}.partial`;
     try {
       await writeFile(temporary, data, { flag: "wx", mode: 384 });
       await link(temporary, destination);
@@ -24271,7 +24286,7 @@ var ObjectStorageService = class {
         "PRIVATE_OBJECT_DIR not set. Create a bucket in 'Object Storage' tool and set PRIVATE_OBJECT_DIR env var."
       );
     }
-    const objectId = randomUUID7();
+    const objectId = randomUUID8();
     const fullPath = `${privateObjectDir}/uploads/${objectId}`;
     const { bucketName, objectName } = parseObjectPath(fullPath);
     return signObjectURL({

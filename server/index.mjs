@@ -38406,6 +38406,12 @@ var DownloadAdminRegistrationDocumentParams = objectType({
   "uploadId": coerce.string().uuid()
 });
 var DownloadAdminRegistrationDocumentResponse = unknownType();
+var backfillRegistrationSpreadsheetResponseQueuedCountMin = 0;
+var backfillRegistrationSpreadsheetResponseAlreadyQueuedCountMin = 0;
+var BackfillRegistrationSpreadsheetResponse = objectType({
+  "queuedCount": numberType().int().min(backfillRegistrationSpreadsheetResponseQueuedCountMin),
+  "alreadyQueuedCount": numberType().int().min(backfillRegistrationSpreadsheetResponseAlreadyQueuedCountMin)
+});
 var GetCurrentAuthUserResponse = objectType({
   "user": unionType([objectType({
     "id": stringType(),
@@ -60117,6 +60123,26 @@ function isTreasureAdmin(req) {
   return !!req.organizer;
 }
 
+// src/lib/registrationSpreadsheetBackfill.ts
+async function queueExistingRegistrationSpreadsheets() {
+  return db.transaction(async (tx) => {
+    const registrations = await tx.select({
+      id: teamRegistrationsTable.id,
+      syncId: registrationSpreadsheetSyncTable.id
+    }).from(teamRegistrationsTable).leftJoin(
+      registrationSpreadsheetSyncTable,
+      eq(registrationSpreadsheetSyncTable.registrationId, teamRegistrationsTable.id)
+    );
+    const missing = registrations.filter(({ syncId }) => syncId === null);
+    let queuedCount = 0;
+    for (let offset = 0; offset < missing.length; offset += 500) {
+      const inserted = await tx.insert(registrationSpreadsheetSyncTable).values(missing.slice(offset, offset + 500).map(({ id }) => ({ registrationId: id }))).onConflictDoNothing({ target: registrationSpreadsheetSyncTable.registrationId }).returning({ id: registrationSpreadsheetSyncTable.id });
+      queuedCount += inserted.length;
+    }
+    return { queuedCount, alreadyQueuedCount: registrations.length - queuedCount };
+  });
+}
+
 // src/routes/admin.ts
 var router5 = (0, import_express5.Router)();
 router5.use("/admin", (req, res, next) => {
@@ -60146,6 +60172,20 @@ router5.use("/admin", (req, res, next) => {
     return;
   }
   next();
+});
+router5.post("/admin/spreadsheet-sync/backfill", async (req, res) => {
+  if (process.env.RUNTIME_HOST !== "cpanel") {
+    res.status(503).json({ error: "Queue existing registrations from the live IDwebhost organizer dashboard, not the Replit preview." });
+    return;
+  }
+  try {
+    const result = await queueExistingRegistrationSpreadsheets();
+    res.status(202).json(BackfillRegistrationSpreadsheetResponse.parse(result));
+    void processRegistrationSpreadsheetSync();
+  } catch {
+    req.log.error("Unable to queue existing registrations for Google Sheets");
+    res.status(500).json({ error: "Registrations could not be queued. It is safe to try again." });
+  }
 });
 var projection = {
   id: teamRegistrationsTable.id,
