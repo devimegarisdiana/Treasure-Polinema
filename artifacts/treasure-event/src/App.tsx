@@ -4,6 +4,7 @@ import { ArrowDown, ArrowUpRight, Menu, X } from 'lucide-react';
 const registrationUrl = '/register';
 const archiveUrl = `${(import.meta.env.BASE_URL as string).replace(/\/+$/, '')}/archive/2025`;
 const posterUrl = `${(import.meta.env.BASE_URL as string).replace(/\/+$/, '')}/treasure-poster-2026.jpg`;
+const cohostLogoUrl = `${(import.meta.env.BASE_URL as string).replace(/\/+$/, '')}/cohost-ilocos.webp`;
 
 const copy = {
   en: {
@@ -192,6 +193,13 @@ function App() {
             <h2>{t.thinkBigger}<br /><em>{t.competeForward}</em></h2>
             <p>{t.aboutText}</p>
             <p>{t.hostedText}</p>
+            <div className="event-cohost">
+              <img src={cohostLogoUrl} alt="Ilocos Sur Polytechnic State College seal" width={480} height={480} loading="lazy" />
+              <div>
+                <span className="section-label">Co-host</span>
+                <h3>Ilocos Sur Polytechnic State College</h3>
+              </div>
+            </div>
           </div>
         </div>
       </section>
@@ -304,6 +312,10 @@ function App() {
             <div className="meta-row">
               <label>{t.hostedBy}</label>
               <strong>{t.host}<br />{t.collaboration}</strong>
+            </div>
+            <div className="meta-row">
+              <label>Co-host</label>
+              <strong>Ilocos Sur Polytechnic State College</strong>
             </div>
           </div>
         </div>
