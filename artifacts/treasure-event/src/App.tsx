@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { ArrowDown, ArrowUpRight, Menu, X } from 'lucide-react';
+import InstagramReels from './components/InstagramReels';
 
 const registrationUrl = '/register';
 const archiveUrl = `${(import.meta.env.BASE_URL as string).replace(/\/+$/, '')}/archive/2025`;
@@ -288,6 +289,8 @@ function App() {
           </a>
         </div>
       </section>
+
+      <InstagramReels />
 
       <section className="registration" id="contact">
         <div className="registration-inner">
