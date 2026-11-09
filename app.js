@@ -85,6 +85,16 @@ async function start() {
     } finally { await client.end(); }
   }
   {
+    startupStage = "member-document-schema";
+    const { Client } = require("pg");
+    const client = new Client({ connectionString: process.env.DATABASE_URL });
+    await client.connect();
+    try {
+      await client.query("SET lock_timeout = '10s'");
+      await client.query("ALTER TABLE public.registration_uploads ADD COLUMN IF NOT EXISTS member_position integer");
+    } finally { await client.end(); }
+  }
+  {
     startupStage = "spreadsheet-schema";
     const { Client } = require("pg");
     const client = new Client({ connectionString: process.env.DATABASE_URL });

@@ -3,6 +3,7 @@ CREATE TABLE "registration_uploads" (
 	"owner_id" varchar NOT NULL,
 	"submission_key" uuid NOT NULL,
 	"purpose" text NOT NULL,
+	"member_position" integer,
 	"object_path" text NOT NULL,
 	"file_name" varchar(200) NOT NULL,
 	"content_type" varchar(40) NOT NULL,

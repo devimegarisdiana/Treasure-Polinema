@@ -38380,6 +38380,8 @@ var GetAdminRegistrationResponse = objectType({
     "fullName": stringType()
   })),
   "documents": arrayType(objectType({
+    "memberPosition": numberType().int().nullable(),
+    "memberName": stringType().nullable(),
     "id": stringType().uuid(),
     "purpose": enumType(["student_id", "payment_proof"]),
     "fileName": stringType(),
@@ -38493,6 +38495,7 @@ var CreateTeamRegistrationBody = objectType({
   "studentIdUploadId": stringType().uuid(),
   "paymentUploadId": stringType().uuid(),
   "members": arrayType(objectType({
+    "studentIdUploadId": stringType().uuid(),
     "fullName": stringType().min(createTeamRegistrationBodyMembersItemFullNameMin).max(createTeamRegistrationBodyMembersItemFullNameMax)
   })).min(1),
   "consent": literalType(true),
@@ -57035,6 +57038,7 @@ var registrationUploadsTable = pgTable("registration_uploads", {
   ownerId: varchar("owner_id").notNull(),
   submissionKey: uuid("submission_key").notNull(),
   purpose: text("purpose").$type().notNull(),
+  memberPosition: integer("member_position"),
   objectPath: text("object_path").notNull().unique(),
   fileName: varchar("file_name", { length: 200 }).notNull(),
   contentType: varchar("content_type", { length: 40 }).notNull(),
@@ -58040,7 +58044,7 @@ router2.post("/registrations/teams", async (req, res) => {
     members: Array.isArray(body.members) ? body.members.map((member) => {
       if (!member || typeof member !== "object" || Array.isArray(member)) return member;
       const value = member;
-      return { fullName: trim(value.fullName) };
+      return { fullName: trim(value.fullName), studentIdUploadId: value.studentIdUploadId };
     }) : body.members
   } : body;
   const parsed = CreateTeamRegistrationBody.safeParse(normalized);
@@ -58065,18 +58069,22 @@ router2.post("/registrations/teams", async (req, res) => {
         }
         return { status: 201, receipt: { referenceCode: prior.referenceCode, submittedAt: prior.createdAt }, created: false };
       }
+      const studentIds = data.members.map((member) => member.studentIdUploadId);
+      if (studentIds[0] !== data.studentIdUploadId || (/* @__PURE__ */ new Set([...studentIds, data.paymentUploadId])).size !== studentIds.length + 1) {
+        return { status: 400, error: "Upload a separate student ID for each registered person, including the team leader." };
+      }
       const uploads = await tx.select().from(registrationUploadsTable).where(and(
-        inArray(registrationUploadsTable.id, [data.studentIdUploadId, data.paymentUploadId]),
+        inArray(registrationUploadsTable.id, [...studentIds, data.paymentUploadId]),
         eq(registrationUploadsTable.ownerId, ownerId),
         eq(registrationUploadsTable.submissionKey, data.submissionKey)
       ));
-      const studentId = uploads.find((u) => u.id === data.studentIdUploadId && u.purpose === "student_id" && !u.registrationId);
+      const studentDocuments = studentIds.map((id) => uploads.find((u) => u.id === id && u.purpose === "student_id" && !u.registrationId));
       const payment = uploads.find((u) => u.id === data.paymentUploadId && u.purpose === "payment_proof" && !u.registrationId);
-      if (!studentId || !payment) {
-        return { status: 400, error: "Please upload the team leader's student ID and payment proof for this registration." };
+      if (studentDocuments.some((document2) => !document2) || !payment) {
+        return { status: 400, error: "Please upload a student ID for every registered person and one payment proof for this registration." };
       }
-      frozen.push(await freezeDocument(studentId));
-      frozen.push(await freezeDocument(payment));
+      const documents = [...studentDocuments.filter((document2) => document2 !== void 0), payment];
+      for (const document2 of documents) frozen.push(await freezeDocument(document2));
       const [created] = await tx.insert(teamRegistrationsTable).values({
         submissionKey: data.submissionKey,
         referenceCode: `TR26-${randomUUID10().replaceAll("-", "").slice(0, 12).toUpperCase()}`,
@@ -58102,15 +58110,16 @@ router2.post("/registrations/teams", async (req, res) => {
         return { status: 201, receipt: { referenceCode: existing.referenceCode, submittedAt: existing.createdAt }, created: false };
       }
       await tx.insert(teamRegistrationMembersTable).values(data.members.map((member, position) => ({
-        ...member,
+        fullName: member.fullName,
         institution: data.institution,
         registrationId: created.id,
         position
       })));
-      for (const [index2, upload] of [studentId, payment].entries()) {
+      for (const [index2, upload] of documents.entries()) {
         await tx.update(registrationUploadsTable).set({
           objectPath: frozen[index2].objectPath,
-          registrationId: created.id
+          registrationId: created.id,
+          memberPosition: upload.purpose === "student_id" ? index2 : null
         }).where(eq(registrationUploadsTable.id, upload.id));
       }
       await tx.insert(registrationNotificationsTable).values({ registrationId: created.id });
@@ -60262,14 +60271,19 @@ router5.get("/admin/registrations/:id", async (req, res) => {
       registration: { ...registration, createdAt: registration.createdAt.toISOString() },
       contact,
       members: team,
-      documents: documents.map((document2) => ({
-        id: document2.id,
-        purpose: document2.purpose,
-        fileName: document2.fileName,
-        contentType: document2.contentType,
-        size: document2.fileSize,
-        url: `/api/admin/registrations/${id}/documents/${document2.id}`
-      })),
+      documents: documents.map((document2) => {
+        const member = document2.purpose === "student_id" ? document2.memberPosition == null ? team[0] : team.find((person) => person.position === document2.memberPosition) : void 0;
+        return {
+          id: document2.id,
+          purpose: document2.purpose,
+          fileName: document2.fileName,
+          memberPosition: document2.purpose === "student_id" ? document2.memberPosition ?? member?.position ?? null : null,
+          memberName: member?.fullName ?? null,
+          contentType: document2.contentType,
+          size: document2.fileSize,
+          url: `/api/admin/registrations/${id}/documents/${document2.id}`
+        };
+      }),
       notification: {
         status: notification?.status ?? "not_requested",
         attempts: notification?.attempts ?? 0,
