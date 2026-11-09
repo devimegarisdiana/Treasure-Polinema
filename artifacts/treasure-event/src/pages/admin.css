@@ -90,4 +90,13 @@
 .session-check>span:nth-child(2){width:27px;animation-delay:.18s}
 .session-check p{flex-basis:100%;margin:4px 0 0;color:#77737a;font:9px var(--app-font-mono)}
 .button-progress{width:12px;height:12px;border:1px solid rgba(255,255,255,.42);border-top-color:#fff;border-radius:50%;animation:admin-spin .75s linear infinite}
+.member-student-note{margin:0 0 12px;color:#77737a;font-size:11px;line-height:1.6}
+.member-list .member-student-copy{min-width:0;flex:1}
+.member-student-copy>strong{display:block;font-weight:500;overflow-wrap:anywhere}
+.member-student-link{display:inline-flex;align-items:center;gap:5px;margin-top:7px;padding:5px 7px;border:1px solid #cbd5df;color:#3e5874;background:#eff3f6;font-size:11px;text-decoration:none}
+.member-student-link:hover{background:#e1e9f0}
+.member-student-link:focus-visible{outline:2px solid #3e5874;outline-offset:3px}
+.member-student-filename,.member-student-missing{display:block;margin-top:5px;font-size:10px;line-height:1.5;overflow-wrap:anywhere}
+.member-student-filename{color:#77737a}
+.member-student-missing{color:#975354}
 @media(max-width:650px){.admin-login-gate{margin:24px auto;padding:28px 20px 23px}.admin-login-gate h2{font-size:27px}}
