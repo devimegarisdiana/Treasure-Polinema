@@ -34,7 +34,7 @@ router.post("/registrations/teams", async (req, res): Promise<void> => {
     members: Array.isArray(body.members) ? body.members.map((member: unknown) => {
       if (!member || typeof member !== "object" || Array.isArray(member)) return member;
       const value = member as Record<string, unknown>;
-      return { fullName: trim(value.fullName) };
+      return { fullName: trim(value.fullName), studentIdUploadId: value.studentIdUploadId };
     }) : body.members,
   } : body;
   const parsed = CreateTeamRegistrationBody.safeParse(normalized);
@@ -64,18 +64,23 @@ router.post("/registrations/teams", async (req, res): Promise<void> => {
         }
         return { status: 201 as const, receipt: { referenceCode: prior.referenceCode, submittedAt: prior.createdAt }, created: false };
       }
+      const studentIds = data.members.map((member) => member.studentIdUploadId);
+      if (studentIds[0] !== data.studentIdUploadId ||
+          new Set([...studentIds, data.paymentUploadId]).size !== studentIds.length + 1) {
+        return { status: 400 as const, error: "Upload a separate student ID for each registered person, including the team leader." };
+      }
       const uploads = await tx.select().from(registrationUploadsTable).where(and(
-        inArray(registrationUploadsTable.id, [data.studentIdUploadId, data.paymentUploadId]),
+        inArray(registrationUploadsTable.id, [...studentIds, data.paymentUploadId]),
         eq(registrationUploadsTable.ownerId, ownerId),
         eq(registrationUploadsTable.submissionKey, data.submissionKey),
       ));
-      const studentId = uploads.find((u) => u.id === data.studentIdUploadId && u.purpose === "student_id" && !u.registrationId);
+      const studentDocuments = studentIds.map((id) => uploads.find((u) => u.id === id && u.purpose === "student_id" && !u.registrationId));
       const payment = uploads.find((u) => u.id === data.paymentUploadId && u.purpose === "payment_proof" && !u.registrationId);
-      if (!studentId || !payment) {
-        return { status: 400 as const, error: "Please upload the team leader's student ID and payment proof for this registration." };
+      if (studentDocuments.some((document) => !document) || !payment) {
+        return { status: 400 as const, error: "Please upload a student ID for every registered person and one payment proof for this registration." };
       }
-      frozen.push(await freezeDocument(studentId));
-      frozen.push(await freezeDocument(payment));
+      const documents = [...studentDocuments.filter((document) => document !== undefined), payment];
+      for (const document of documents) frozen.push(await freezeDocument(document));
       const [created] = await tx.insert(teamRegistrationsTable).values({
         submissionKey: data.submissionKey,
         referenceCode: `TR26-${randomUUID().replaceAll("-", "").slice(0, 12).toUpperCase()}`,
@@ -102,15 +107,16 @@ router.post("/registrations/teams", async (req, res): Promise<void> => {
         return { status: 201 as const, receipt: { referenceCode: existing.referenceCode, submittedAt: existing.createdAt }, created: false };
       }
       await tx.insert(teamRegistrationMembersTable).values(data.members.map((member, position) => ({
-        ...member,
+        fullName: member.fullName,
         institution: data.institution,
         registrationId: created.id,
         position,
       })));
-      for (const [index, upload] of [studentId, payment].entries()) {
+      for (const [index, upload] of documents.entries()) {
         await tx.update(registrationUploadsTable).set({
           objectPath: frozen[index].objectPath,
           registrationId: created.id,
+          memberPosition: upload.purpose === "student_id" ? index : null,
         }).where(eq(registrationUploadsTable.id, upload.id));
       }
       await tx.insert(registrationNotificationsTable).values({ registrationId: created.id });

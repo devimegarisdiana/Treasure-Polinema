@@ -119,11 +119,18 @@ router.get("/admin/registrations/:id", async (req, res) => {
     res.json(GetAdminRegistrationResponse.parse({
       registration: { ...registration, createdAt: registration.createdAt.toISOString() },
       contact, members: team,
-      documents: documents.map((document) => ({
-        id: document.id, purpose: document.purpose, fileName: document.fileName,
-        contentType: document.contentType, size: document.fileSize,
-        url: `/api/admin/registrations/${id}/documents/${document.id}`,
-      })),
+      documents: documents.map((document) => {
+        const member = document.purpose === "student_id"
+          ? document.memberPosition == null ? team[0] : team.find((person) => person.position === document.memberPosition)
+          : undefined;
+        return {
+          id: document.id, purpose: document.purpose, fileName: document.fileName,
+          memberPosition: document.purpose === "student_id" ? document.memberPosition ?? member?.position ?? null : null,
+          memberName: member?.fullName ?? null,
+          contentType: document.contentType, size: document.fileSize,
+          url: `/api/admin/registrations/${id}/documents/${document.id}`,
+        };
+      }),
       notification: {
         status: notification?.status ?? "not_requested", attempts: notification?.attempts ?? 0,
         sentAt: notification?.sentAt?.toISOString() ?? null, lastError: notification?.lastError ?? null,

@@ -170,6 +170,21 @@ After confirming the import:
 
 ## Optional: sync new registrations to Google Sheets
 
+### Student IDs for all registered participants
+
+New registrations require one separate student-ID upload for the team leader and
+each named member, plus one team payment proof. Unused member fields may stay
+blank. The server rejects missing IDs, one upload reused for multiple people,
+and documents owned by another account or submission.
+
+On startup, this package adds the nullable `member_position` column to
+`registration_uploads` if needed. This is an additive schema update, not a data
+import or reset. Existing registrations and their private files are preserved;
+historical student-ID documents without this metadata remain labelled as the
+team leader's document. The organizer dashboard names the owner of each new ID.
+Deploy `app.js`, `server`, and `schema.sql` together with the updated frontend;
+copying only `public` is not sufficient for this update.
+
 The sync is off by default. It sends future registrations only; it does not
 backfill existing registrations. Each registration becomes one row containing
 its reference, team name, competition, institution, submission time, member

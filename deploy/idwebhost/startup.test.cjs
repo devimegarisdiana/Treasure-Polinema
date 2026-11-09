@@ -42,10 +42,12 @@ test("Hosting startup widens only the legacy username column and preserves accou
     await context.finished;
     assert.deepEqual(errors, []);
     assert.equal(context.serverLoaded, true);
-    assert.equal(queries.filter(sql => sql.startsWith("ALTER TABLE")).length, dataType === "character varying" ? 1 : 0);
+    assert.equal(queries.filter(sql => sql.startsWith("ALTER TABLE")).length, dataType === "character varying" ? 2 : 1);
     assert.ok(queries.every(sql => !/(?:^|;)\s*(DROP|DELETE|TRUNCATE)\b/i.test(sql)));
     assert.ok(queries.filter(sql => sql.startsWith("ALTER TABLE")).every(sql =>
-      sql === "ALTER TABLE public.participant_accounts ALTER COLUMN username TYPE text"));
+      sql === "ALTER TABLE public.participant_accounts ALTER COLUMN username TYPE text" ||
+      sql === "ALTER TABLE public.registration_uploads ADD COLUMN IF NOT EXISTS member_position integer"));
+    assert.equal(queries.filter(sql => sql === "ALTER TABLE public.registration_uploads ADD COLUMN IF NOT EXISTS member_position integer").length, 1);
     assert.equal(queries.filter(sql => sql.includes("CREATE TABLE IF NOT EXISTS public.registration_spreadsheet_sync")).length, 1);
   }
 });

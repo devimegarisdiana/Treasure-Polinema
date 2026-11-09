@@ -36,8 +36,8 @@ const T = {
     institution: 'Institution', faculty: 'Faculty / department', country: 'Country of origin', countryPick: 'Select a country', otherCountry: 'Enter your country',
     compH: 'Competition and training', competition: 'Competition', bs: 'Business Simulation',
     edugateQuestion: 'Have you participated in any business simulation training conducted by Edugate before?', yes: 'Yes', no: 'No',
-    docsH: 'Documents', docsHint: 'JPG, PNG, WebP or PDF. Maximum 10 MB.',
-    sid: "Leader's student ID (leader only)", pay: 'Registration payment proof', choose: 'Choose file', replace: 'Replace file', retry: 'Retry upload',
+    docsH: 'Payment document', docsHint: 'JPG, PNG, WebP or PDF. Maximum 10 MB per file.',
+    sid: "Team leader's student ID", pay: 'Registration payment proof', choose: 'Choose file', replace: 'Replace file', retry: 'Retry upload',
     uploading: 'Uploading', uploaded: 'Uploaded', badType: 'File must be JPG, PNG, WebP or PDF.', tooBig: 'File must be 10 MB or smaller.', upFail: 'Upload failed. Please retry.',
     consent: 'I am authorized to provide this data and everyone named knows it is used for TREASURE 2026 registration.',
     submit: 'Submit registration', sending: 'Submitting...', waitUp: 'Wait for uploads to finish.',
@@ -87,7 +87,7 @@ export default function RegistrationPage() {
   const [country, setCountry] = useState('');
   const [otherCountry, setOtherCountry] = useState('');
   const [training, setTraining] = useState<boolean | null>(null);
-  const [ups, setUps] = useState<Record<Purpose, Up>>({ student_id: emptyUp(), payment_proof: emptyUp() });
+  const [ups, setUps] = useState<Record<string, Up>>({ student_id: emptyUp(), payment_proof: emptyUp() });
   const [consent, setConsent] = useState(false);
   const [website, setWebsite] = useState('');
   const [touched, setTouched] = useState<Record<string, boolean>>({});
@@ -100,7 +100,19 @@ export default function RegistrationPage() {
   const uploadUrl = useRequestUploadUrl();
   const formRef = useRef<HTMLFormElement>(null);
   const keyRef = useRef<string>(newKey());
-  const tokens = useRef<Record<Purpose, number>>({ student_id: 0, payment_proof: 0 });
+  const tokens = useRef<Record<string, number>>({ student_id: 0, payment_proof: 0 });
+  const invalidateUploads = () => {
+    tokens.current = Object.fromEntries(Object.entries(tokens.current).map(([key, value]) => [key, value + 1]));
+  };
+  const clearMemberUpload = (id: number) => {
+    const key = `member-${id}`;
+    tokens.current[key] = (tokens.current[key] ?? 0) + 1;
+    setUps((current) => {
+      const next = { ...current };
+      delete next[key];
+      return next;
+    });
+  };
   const lastAccountId = useRef<string | null>(null);
 
   useEffect(() => {
@@ -114,7 +126,7 @@ export default function RegistrationPage() {
       setLeader(''); setSlots([slot(), slot(), slot(), slot()]); setEmail(auth.user?.email ?? '');
       setPhone(''); setAltPhone(''); setInstitution(''); setFaculty(''); setCountry(''); setOtherCountry('');
       setTraining(null); setUps({ student_id: emptyUp(), payment_proof: emptyUp() });
-      tokens.current = { student_id: tokens.current.student_id + 1, payment_proof: tokens.current.payment_proof + 1 };
+      invalidateUploads();
       setConsent(false); setWebsite(''); setTouched({}); setAttempted(false); setServerError('');
       setReceipt(null); setSentCount(0); keyRef.current = newKey(); mutation.reset();
     } else if (!previousId) {
@@ -138,11 +150,11 @@ export default function RegistrationPage() {
       document.querySelector(s)?.setAttribute('content', document.title);
   }, [t.eyebrow, t.intro]);
 
-  const uploading = ups.student_id.status === 'uploading' || ups.payment_proof.status === 'uploading';
+  const uploading = Object.values(ups).some((upload) => upload.status === 'uploading');
   const busy = mutation.isPending || uploading;
   const dirty = useMemo(
     () => !!(leader || email || phone || altPhone || institution || faculty || country || training !== null || consent || website) ||
-      slots.some((s) => s.fullName) || ups.student_id.status !== 'idle' || ups.payment_proof.status !== 'idle',
+      slots.some((s) => s.fullName) || Object.values(ups).some((upload) => upload.status !== 'idle'),
     [leader, email, phone, altPhone, institution, faculty, country, training, consent, website, slots, ups],
   );
   useEffect(() => {
@@ -178,6 +190,10 @@ export default function RegistrationPage() {
   if (country === 'Other') set('otherCountry', otherCountry.trim() ? (otherCountry.trim().length > 100 ? t.max(100) : '') : t.r);
   if (training === null) errors.training = t.pick;
   (['student_id', 'payment_proof'] as Purpose[]).forEach((p) => { if (ups[p].status !== 'done') errors[p] = ups[p].error || t.needFile; });
+  slots.forEach((s) => {
+    const key = `member-${s.uid}`;
+    if (s.fullName.trim() && ups[key]?.status !== 'done') errors[key] = ups[key]?.error || t.needFile;
+  });
   if (!consent) errors.consent = t.needConsent;
 
   const show = (k: string) => ((attempted || touched[k]) && errors[k] ? errors[k] : '');
@@ -187,9 +203,9 @@ export default function RegistrationPage() {
     return isNaN(d.getTime()) ? iso : new Intl.DateTimeFormat('en-GB', { dateStyle: 'long', timeStyle: 'short' }).format(d);
   };
 
-  const doUpload = async (purpose: Purpose, file: File) => {
-    const token = ++tokens.current[purpose];
-    const patch = (u: Partial<Up>) => { if (tokens.current[purpose] === token) setUps((s) => ({ ...s, [purpose]: { ...s[purpose], ...u } })); };
+  const doUpload = async (purpose: Purpose, file: File, uploadKey: string = purpose) => {
+    const token = tokens.current[uploadKey] = (tokens.current[uploadKey] ?? 0) + 1;
+    const patch = (u: Partial<Up>) => { if (tokens.current[uploadKey] === token) setUps((s) => ({ ...s, [uploadKey]: { ...(s[uploadKey] ?? emptyUp()), ...u } })); };
     if (!(MIME as readonly string[]).includes(file.type)) return patch({ status: 'error', name: file.name, file, uploadId: '', error: t.badType });
     if (file.size < 1 || file.size > MAX) return patch({ status: 'error', name: file.name, file, uploadId: '', error: t.tooBig });
     patch({ status: 'uploading', name: file.name, file, uploadId: '', error: '' });
@@ -229,7 +245,12 @@ export default function RegistrationPage() {
       hasEdugateTraining: training as boolean,
       studentIdUploadId: ups.student_id.uploadId,
       paymentUploadId: ups.payment_proof.uploadId,
-      members: names.map((fullName) => ({ fullName })),
+      members: [
+        { fullName: leader.trim(), studentIdUploadId: ups.student_id.uploadId },
+        ...slots.filter((s) => s.fullName.trim()).map((s) => ({
+          fullName: s.fullName.trim(), studentIdUploadId: ups[`member-${s.uid}`].uploadId,
+        })),
+      ],
       consent: true,
       ...(website ? { website } : {}),
     };
@@ -255,7 +276,7 @@ export default function RegistrationPage() {
     setLeader(''); setSlots([slot(), slot(), slot(), slot()]); setEmail(''); setPhone(''); setAltPhone('');
     setInstitution(''); setFaculty(''); setCountry(''); setOtherCountry('');
     setTraining(null); setUps({ student_id: emptyUp(), payment_proof: emptyUp() });
-    tokens.current = { student_id: tokens.current.student_id + 1, payment_proof: tokens.current.payment_proof + 1 };
+    invalidateUploads();
     setConsent(false); setWebsite(''); setTouched({}); setAttempted(false); setServerError(''); setExpired(false);
     setReceipt(null); setSentCount(0); keyRef.current = newKey(); mutation.reset();
   };
@@ -270,7 +291,7 @@ export default function RegistrationPage() {
     setLeader(''); setSlots([slot(), slot(), slot(), slot()]); setEmail(''); setPhone(''); setAltPhone('');
     setInstitution(''); setFaculty(''); setCountry(''); setOtherCountry(''); setTraining(null);
     setUps({ student_id: emptyUp(), payment_proof: emptyUp() });
-    tokens.current = { student_id: tokens.current.student_id + 1, payment_proof: tokens.current.payment_proof + 1 };
+    invalidateUploads();
     setConsent(false); setWebsite(''); setTouched({}); setAttempted(false); setServerError(''); setExpired(false);
     setReceipt(null); setSentCount(0); keyRef.current = newKey(); mutation.reset();
   };
@@ -370,10 +391,10 @@ export default function RegistrationPage() {
     );
   };
 
-  const fileBox = (p: Purpose, label: string) => {
-    const u = ups[p];
-    const err = u.status === 'error' ? u.error : show(p);
-    const inputId = `file-${p}`;
+  const fileBox = (p: Purpose, label: string, uploadKey: string = p) => {
+    const u = ups[uploadKey] ?? emptyUp();
+    const err = u.status === 'error' ? u.error : show(uploadKey);
+    const inputId = `file-${uploadKey}`;
     return (
       <div className="reg-field full">
         <label htmlFor={inputId}>{label} *</label>
@@ -381,14 +402,14 @@ export default function RegistrationPage() {
           <input id={inputId} type="file" accept=".jpg,.jpeg,.png,.webp,.pdf,image/jpeg,image/png,image/webp,application/pdf"
             disabled={u.status === 'uploading' || mutation.isPending} required aria-required="true"
             aria-invalid={err ? true : undefined} aria-describedby={`${inputId}-s`} data-testid={`input-${inputId}`}
-            onChange={(e) => { const f = e.target.files?.[0]; if (f) void doUpload(p, f); e.target.value = ''; }} />
+            onChange={(e) => { const f = e.target.files?.[0]; if (f) void doUpload(p, f, uploadKey); e.target.value = ''; }} />
           <div id={`${inputId}-s`} aria-live="polite">
             {u.status === 'uploading' && <div className="row"><span>{t.uploading}: {u.name}</span><div className="reg-bar" style={{ flex: '1 1 100%' }} role="progressbar" aria-label={t.uploading}><i /></div></div>}
             {u.status === 'done' && <div className="row"><span className="reg-ok">{t.uploaded}: {u.name}</span></div>}
             {u.status === 'error' && u.file && (
               <div className="row">
                 <span className="reg-err">{u.name}</span>
-                {u.error === t.upFail && <button type="button" className="reg-btn reg-ghost" onClick={() => u.file && void doUpload(p, u.file)} disabled={busy} data-testid={`button-retry-${p}`}>{t.retry}</button>}
+                {u.error === t.upFail && <button type="button" className="reg-btn reg-ghost" onClick={() => u.file && void doUpload(p, u.file, uploadKey)} disabled={busy} data-testid={`button-retry-${uploadKey}`}>{t.retry}</button>}
               </div>
             )}
           </div>
@@ -417,21 +438,27 @@ export default function RegistrationPage() {
           <legend>{t.leaderH}</legend>
           <div className="reg-grid">
             {field('leader', 'leader-name', t.fullName, leader, setLeader, { full: true, hint: t.nameHint, max: 160, auto: 'name' })}
+            {fileBox('student_id', t.sid)}
           </div>
         </fieldset>
 
         <fieldset disabled={mutation.isPending}>
           <legend>{t.membersH}</legend>
+          <p className="reg-hint">A separate student ID is required for every named member. Leave unused member fields blank.</p>
           <div className="reg-grid">
             {slots.map((s, i) => (
               <div key={s.uid} className="reg-field full" style={{ flexDirection: 'row', gap: 8, alignItems: 'flex-end' }}>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   {field(`s${s.uid}`, `member-${s.uid}`, `${t.memberLbl} ${i + 1}`, s.fullName,
-                    (v) => setSlots((a) => a.map((x) => (x.uid === s.uid ? { ...x, fullName: v } : x))), { full: true, hint: t.nameHint, max: 160, required: false })}
+                    (v) => {
+                      setSlots((a) => a.map((x) => (x.uid === s.uid ? { ...x, fullName: v } : x)));
+                      if (!v.trim()) clearMemberUpload(s.uid);
+                    }, { full: true, hint: t.nameHint, max: 160, required: false })}
+                  {s.fullName.trim() && fileBox('student_id', `Student ID — ${s.fullName.trim()}`, `member-${s.uid}`)}
                 </div>
                 {i >= 4 && (
                   <button type="button" className="reg-btn reg-ghost" style={{ minHeight: 50, padding: '0 14px' }} aria-label={`${t.remove} ${i + 1}`}
-                    onClick={() => setSlots((a) => a.filter((x) => x.uid !== s.uid))} data-testid={`button-remove-${i}`}><Trash2 size={14} /></button>
+                    onClick={() => { clearMemberUpload(s.uid); setSlots((a) => a.filter((x) => x.uid !== s.uid)); }} data-testid={`button-remove-${i}`}><Trash2 size={14} /></button>
                 )}
               </div>
             ))}
@@ -476,7 +503,6 @@ export default function RegistrationPage() {
         <fieldset>
           <legend>{t.docsH}</legend>
           <div className="reg-grid">
-            {fileBox('student_id', t.sid)}
             {fileBox('payment_proof', t.pay)}
           </div>
         </fieldset>

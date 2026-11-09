@@ -3,16 +3,16 @@ import { drizzle } from "drizzle-orm/pglite";
 import { generateDrizzleJson, generateMigration } from "drizzle-kit/api";
 import {
   teamRegistrationsTable, teamRegistrationMembersTable,
-  registrationUploadsTable, registrationNotificationsTable,
+  registrationUploadsTable, registrationNotificationsTable, registrationSpreadsheetSyncTable,
 } from "@workspace/db/schema";
 
 // Never import the production DB entry point: it constructs a network Pool.
-export { teamRegistrationsTable, teamRegistrationMembersTable, registrationUploadsTable, registrationNotificationsTable };
+export { teamRegistrationsTable, teamRegistrationMembersTable, registrationUploadsTable, registrationNotificationsTable, registrationSpreadsheetSyncTable };
 export {
   participantAccountsTable, participantSessionsTable, participantAuthLimitsTable,
 } from "@workspace/db/schema";
 export const postgres = new PGlite();
-const schema = { teamRegistrationsTable, teamRegistrationMembersTable, registrationUploadsTable, registrationNotificationsTable };
+const schema = { teamRegistrationsTable, teamRegistrationMembersTable, registrationUploadsTable, registrationNotificationsTable, registrationSpreadsheetSyncTable };
 export const statements: string[] = [];
 export const db = drizzle(postgres, {
   schema,

@@ -80,6 +80,7 @@ test("portable app preserves native login, ownership, immutable uploads and encr
     const files = [
       { purpose: "student_id", contentType: "image/png", name: "synthetic-student.png", bytes: Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jH8cAAAAASUVORK5CYII=", "base64") },
       { purpose: "payment_proof", contentType: "application/pdf", name: "synthetic-payment.pdf", bytes: Buffer.from("%PDF-1.4\nSynthetic test only\n%%EOF") },
+      { purpose: "student_id", contentType: "application/pdf", name: "synthetic-member.pdf", bytes: Buffer.from("%PDF-1.4\nSynthetic member student ID\n%%EOF") },
     ];
     const uploads: string[] = [];
     for (const file of files) {
@@ -104,8 +105,28 @@ test("portable app preserves native login, ownership, immutable uploads and encr
       institution: "Synthetic campus", facultyDepartment: "Synthetic department", countryOfOrigin: "Indonesia",
       competition: "business_simulation", hasEdugateTraining: false, consent: true,
       studentIdUploadId: uploads[0], paymentUploadId: uploads[1],
-      members: [{ fullName: "Synthetic participant", educationLevel: "undergraduate", feeCategory: "indonesian" }],
+      members: [
+        { fullName: "Synthetic participant", studentIdUploadId: uploads[0] },
+        { fullName: "Synthetic member", studentIdUploadId: uploads[2] },
+      ],
     };
+    const submit = (body: unknown) => request("/api/registrations/teams", {
+      method: "POST", headers: { ...headers, Cookie: cookie }, body: JSON.stringify(body),
+    });
+    assert.equal((await submit({ ...payload, members: [payload.members[0], { fullName: "Missing student ID" }] })).status, 400);
+    assert.equal((await submit({ ...payload, members: [payload.members[0], { fullName: "Reused student ID", studentIdUploadId: uploads[0] }] })).status, 400);
+    assert.equal((await submit({ ...payload, members: [payload.members[0], { fullName: "Unknown student ID", studentIdUploadId: randomUUID() }] })).status, 400);
+    assert.equal((await submit({ ...payload, studentIdUploadId: uploads[2] })).status, 400, "the leader ID must match the first member");
+    await postgres.query("UPDATE registration_uploads SET purpose = 'payment_proof' WHERE id = $1", [uploads[2]]);
+    assert.equal((await submit(payload)).status, 400, "payment proof cannot substitute for a member student ID");
+    await postgres.query("UPDATE registration_uploads SET purpose = 'student_id' WHERE id = $1", [uploads[2]]);
+    await postgres.query("UPDATE registration_uploads SET owner_id = 'synthetic-other-owner' WHERE id = $1", [uploads[2]]);
+    assert.equal((await submit(payload)).status, 400, "a member cannot attach another participant's student ID");
+    await postgres.query("UPDATE registration_uploads SET owner_id = $1 WHERE id = $2", [`participant:${owner}`, uploads[2]]);
+    await postgres.query("UPDATE registration_uploads SET submission_key = $1 WHERE id = $2", [randomUUID(), uploads[2]]);
+    assert.equal((await submit(payload)).status, 400, "a member cannot attach a draft from another submission");
+    await postgres.query("UPDATE registration_uploads SET submission_key = $1 WHERE id = $2", [submissionKey, uploads[2]]);
+    assert.equal((await postgres.query<{ count: number }>("SELECT count(*)::int AS count FROM team_registrations")).rows[0].count, 0);
     const submitted = await request("/api/registrations/teams", {
       method: "POST", headers: { ...headers, Cookie: cookie }, body: JSON.stringify(payload),
     });
@@ -115,6 +136,10 @@ test("portable app preserves native login, ownership, immutable uploads and encr
       method: "POST", headers: { ...headers, Cookie: cookie }, body: JSON.stringify(payload),
     });
     assert.deepEqual(await retried.json(), receipt);
+    const linkedStudentIds = await postgres.query<{ id: string; member_position: number }>(
+      "SELECT id, member_position FROM registration_uploads WHERE purpose = 'student_id' AND registration_id IS NOT NULL ORDER BY member_position"
+    );
+    assert.deepEqual(linkedStudentIds.rows.map((row) => [row.id, row.member_position]), [[uploads[0], 0], [uploads[2], 1]]);
     assert.equal((await postgres.query<{ count: number }>("SELECT count(*)::int AS count FROM team_registrations")).rows[0].count, 1);
     assert.equal((await postgres.query<{ status: string }>("SELECT status FROM registration_notifications")).rows[0].status, "pending");
     assert.equal((await postgres.query<{ status: string }>("SELECT status FROM registration_spreadsheet_sync")).rows[0].status, "pending");
@@ -131,7 +156,7 @@ test("portable app preserves native login, ownership, immutable uploads and encr
       sheetRequests++;
       const sent = JSON.parse(String(init?.body));
       assert.equal(sent.token, "synthetic-secret-not-for-production");
-      assert.deepEqual(sent.registration.memberNames, ["Synthetic participant"]);
+      assert.deepEqual(sent.registration.memberNames, ["Synthetic participant", "Synthetic member"]);
       assert.equal(sent.registration.contactEmail, "synthetic-native@example.invalid");
       assert.equal(sent.registration.contactPhone, "+620000000001");
       assert.equal(sent.registration.alternativePhone, "+620000000002");
@@ -167,7 +192,7 @@ test("portable app preserves native login, ownership, immutable uploads and encr
     for (const upload of registered) {
       const file = new LocalFile(`private/${String(upload.object_path).slice("/objects/".length)}`);
       const [bytes] = await file.download();
-      const expected = files.find(value => value.purpose === upload.purpose)!;
+      const expected = files.find(value => value.name === upload.file_name)!;
       assert.deepEqual(bytes, expected.bytes);
       const download = await request(`/api/storage${upload.object_path}`, { headers: { Cookie: cookie, Origin: headers.Origin } });
       assert.equal(download.status, 200);
@@ -194,6 +219,18 @@ test("portable app preserves native login, ownership, immutable uploads and encr
     assert.equal(organizer.status, 200, await organizer.clone().text());
     const organizerCookie = (organizer.headers.get("set-cookie") || "").split(";")[0];
     assert.equal((await request("/api/admin/registrations", { headers: { Cookie: organizerCookie } })).status, 200);
+    const registrationId = (await postgres.query<{ id: string }>("SELECT id FROM team_registrations")).rows[0].id;
+    const detailResponse = await request(`/api/admin/registrations/${registrationId}`, { headers: { Cookie: organizerCookie } });
+    assert.equal(detailResponse.status, 200, await detailResponse.clone().text());
+    const detail = await detailResponse.json() as { documents: Array<{ id: string; purpose: string; memberName: string | null; memberPosition: number | null; url: string }> };
+    assert.deepEqual(detail.documents.filter((doc) => doc.purpose === "student_id").sort((a, b) => a.memberPosition! - b.memberPosition!)
+      .map((doc) => [doc.id, doc.memberName, doc.memberPosition]), [
+        [uploads[0], "Synthetic participant", 0], [uploads[2], "Synthetic member", 1],
+      ]);
+    for (const document of detail.documents) {
+      assert.equal((await request(document.url, { headers: { Cookie: organizerCookie } })).status, 200);
+      assert.equal((await request(document.url, { headers: { Cookie: otherCookie } })).status, 401);
+    }
     // All backfill fixtures live in this in-memory database, never hosting or Replit data.
     const backfillUrl = "/api/admin/spreadsheet-sync/backfill";
     const backfillOptions = { method: "POST", headers: { ...headers, Cookie: organizerCookie } };
@@ -282,7 +319,7 @@ test("portable app preserves native login, ownership, immutable uploads and encr
       `${documents[0].objectPath.slice("/objects/".length)}.json`));
     await restoreBackup(backupFile); // Restart is idempotent.
     assert.equal((await postgres.query("SELECT * FROM team_registrations")).rows.length, 1);
-    assert.equal((await postgres.query("SELECT * FROM registration_uploads")).rows.length, 2);
+    assert.equal((await postgres.query("SELECT * FROM registration_uploads")).rows.length, 3);
     assert.deepEqual((await postgres.query<{ profile: unknown }>("SELECT profile FROM treasure_legacy_profile_archive")).rows[0].profile, historical);
     assert.equal((await postgres.query("SELECT * FROM participant_sessions")).rows.length, 0);
     const restoredSignin = await request("/api/participant-auth/signin", {

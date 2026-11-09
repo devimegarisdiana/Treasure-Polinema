@@ -167,6 +167,8 @@ export const GetAdminRegistrationResponse = zod.object({
   "fullName": zod.string()
 })),
   "documents": zod.array(zod.object({
+  "memberPosition": zod.number().int().nullable(),
+  "memberName": zod.string().nullable(),
   "id": zod.string().uuid(),
   "purpose": zod.enum(['student_id', 'payment_proof']),
   "fileName": zod.string(),
@@ -356,6 +358,7 @@ export const CreateTeamRegistrationBody = zod.object({
   "studentIdUploadId": zod.string().uuid(),
   "paymentUploadId": zod.string().uuid(),
   "members": zod.array(zod.object({
+  "studentIdUploadId": zod.string().uuid(),
   "fullName": zod.string().min(createTeamRegistrationBodyMembersItemFullNameMin).max(createTeamRegistrationBodyMembersItemFullNameMax)
 })).min(1),
   "consent": zod.literal(true),

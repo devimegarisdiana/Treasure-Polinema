@@ -39,6 +39,7 @@ export const registrationUploadsTable = pgTable("registration_uploads", {
   ownerId: varchar("owner_id").notNull(),
   submissionKey: uuid("submission_key").notNull(),
   purpose: text("purpose").$type<"student_id" | "payment_proof">().notNull(),
+  memberPosition: integer("member_position"),
   objectPath: text("object_path").notNull().unique(),
   fileName: varchar("file_name", { length: 200 }).notNull(),
   contentType: varchar("content_type", { length: 40 }).notNull(),

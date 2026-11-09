@@ -42,6 +42,7 @@ export interface HealthStatus {
 }
 
 export interface TeamMemberInput {
+  studentIdUploadId: string;
   /**
      * @minLength 2
      * @maxLength 160
@@ -309,6 +310,10 @@ export const AdminRegistrationDocumentPurpose = {
 } as const;
 
 export interface AdminRegistrationDocument {
+  /** @nullable */
+  memberPosition: number | null;
+  /** @nullable */
+  memberName: string | null;
   id: string;
   purpose: AdminRegistrationDocumentPurpose;
   fileName: string;

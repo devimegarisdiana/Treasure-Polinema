@@ -197,6 +197,8 @@ test("correlated projections: details preserve contacts, ordered members, docume
           const offset = purpose === "student_id" ? 0 : 1;
           return {
             id: id(300 + offset), purpose, fileName: `${purpose}.pdf`,
+            memberPosition: purpose === "student_id" ? 1 : null,
+            memberName: purpose === "student_id" ? captainNames[0] : null,
             contentType: "application/pdf", size: 1234 + offset,
             url: `/api/admin/registrations/${id(1)}/documents/${id(300 + offset)}`,
           };

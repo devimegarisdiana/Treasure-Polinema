@@ -7,6 +7,7 @@
  */
 
 export interface TeamMemberInput {
+  studentIdUploadId: string;
   /**
      * @minLength 2
      * @maxLength 160

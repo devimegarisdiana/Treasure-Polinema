@@ -8,6 +8,10 @@
 import type { AdminRegistrationDocumentPurpose } from './adminRegistrationDocumentPurpose';
 
 export interface AdminRegistrationDocument {
+  /** @nullable */
+  memberPosition: number | null;
+  /** @nullable */
+  memberName: string | null;
   id: string;
   purpose: AdminRegistrationDocumentPurpose;
   fileName: string;

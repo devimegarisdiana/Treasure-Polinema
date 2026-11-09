@@ -380,8 +380,11 @@ components:
         - status
     TeamMemberInput:
       type: object
-      required: [fullName]
+      required: [fullName, studentIdUploadId]
       properties:
+        studentIdUploadId:
+          type: string
+          format: uuid
         fullName:
           type: string
           minLength: 2
@@ -601,8 +604,10 @@ components:
         fullName: { type: string }
     AdminRegistrationDocument:
       type: object
-      required: [id, purpose, fileName, contentType, size, url]
+      required: [id, purpose, fileName, contentType, size, url, memberPosition, memberName]
       properties:
+        memberPosition: { type: [integer, "null"] }
+        memberName: { type: [string, "null"] }
         id: { type: string, format: uuid }
         purpose: { type: string, enum: [student_id, payment_proof] }
         fileName: { type: string }
