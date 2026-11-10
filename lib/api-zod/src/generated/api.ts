@@ -266,6 +266,8 @@ export const LogoutMobileSessionResponse = zod.object({
 /**
  * @summary Request an authenticated private registration document upload
  */
+export const requestUploadUrlBodyMemberPositionMin = 0;
+
 export const requestUploadUrlBodyNameMax = 200;
 
 export const requestUploadUrlBodySizeMax = 10485760;
@@ -273,6 +275,8 @@ export const requestUploadUrlBodySizeMax = 10485760;
 
 
 export const RequestUploadUrlBody = zod.object({
+  "registrationId": zod.string().uuid().optional(),
+  "memberPosition": zod.number().int().min(requestUploadUrlBodyMemberPositionMin).optional(),
   "submissionKey": zod.string().uuid(),
   "purpose": zod.enum(['student_id', 'payment_proof']),
   "name": zod.string().min(1).max(requestUploadUrlBodyNameMax),
@@ -306,6 +310,75 @@ export const GetStorageObjectResponse = zod.unknown()
  */
 export const HealthCheckResponse = zod.object({
   "status": zod.string()
+})
+
+
+export const ListParticipantRegistrationsResponse = zod.object({
+  "items": zod.array(zod.object({
+  "id": zod.string().uuid(),
+  "referenceCode": zod.string(),
+  "teamName": zod.string(),
+  "revision": zod.number().int(),
+  "members": zod.array(zod.object({
+  "position": zod.number().int(),
+  "fullName": zod.string(),
+  "studentIdFileName": zod.string().nullable(),
+  "studentIdUrl": zod.string().nullable()
+})),
+  "paymentProofUrl": zod.string().nullable(),
+  "spreadsheetStatus": zod.string()
+}))
+})
+
+
+export const CompleteParticipantRegistrationParams = zod.object({
+  "id": zod.coerce.string().uuid()
+})
+
+export const completeParticipantRegistrationBodyTeamNameMin = 2;
+export const completeParticipantRegistrationBodyTeamNameMax = 120;
+
+export const completeParticipantRegistrationBodyRevisionMin = 0;
+
+export const completeParticipantRegistrationBodyMembersItemPositionMin = 0;
+
+
+
+export const CompleteParticipantRegistrationBody = zod.object({
+  "teamName": zod.string().min(completeParticipantRegistrationBodyTeamNameMin).max(completeParticipantRegistrationBodyTeamNameMax),
+  "revision": zod.number().int().min(completeParticipantRegistrationBodyRevisionMin),
+  "submissionKey": zod.string().uuid(),
+  "members": zod.array(zod.object({
+  "position": zod.number().int().min(completeParticipantRegistrationBodyMembersItemPositionMin),
+  "studentIdUploadId": zod.string().uuid()
+}))
+})
+
+export const CompleteParticipantRegistrationResponse = zod.object({
+  "id": zod.string().uuid(),
+  "referenceCode": zod.string(),
+  "teamName": zod.string(),
+  "revision": zod.number().int(),
+  "members": zod.array(zod.object({
+  "position": zod.number().int(),
+  "fullName": zod.string(),
+  "studentIdFileName": zod.string().nullable(),
+  "studentIdUrl": zod.string().nullable()
+})),
+  "paymentProofUrl": zod.string().nullable(),
+  "spreadsheetStatus": zod.string()
+})
+
+
+export const refreshRegistrationDocumentsResponseQueuedCountMin = 0;
+
+export const refreshRegistrationDocumentsResponseAlreadyQueuedCountMin = 0;
+
+
+
+export const RefreshRegistrationDocumentsResponse = zod.object({
+  "queuedCount": zod.number().int().min(refreshRegistrationDocumentsResponseQueuedCountMin),
+  "alreadyQueuedCount": zod.number().int().min(refreshRegistrationDocumentsResponseAlreadyQueuedCountMin)
 })
 
 

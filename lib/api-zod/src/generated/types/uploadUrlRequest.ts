@@ -9,6 +9,9 @@ import type { UploadUrlRequestContentType } from './uploadUrlRequestContentType'
 import type { UploadUrlRequestPurpose } from './uploadUrlRequestPurpose';
 
 export interface UploadUrlRequest {
+  registrationId?: string;
+  /** @minimum 0 */
+  memberPosition?: number;
   submissionKey: string;
   purpose: UploadUrlRequestPurpose;
   /**

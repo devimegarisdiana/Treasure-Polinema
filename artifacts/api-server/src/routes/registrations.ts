@@ -8,11 +8,13 @@ import { processRegistrationNotifications } from "../lib/registrationNotificatio
 import { processRegistrationSpreadsheetSync } from "../lib/registrationSpreadsheetSync";
 import { registrationOwner, sameSiteRequest } from "../lib/participantAuth";
 import { advisoryLockKey } from "../lib/advisoryLock";
+import { isRegistrationClosed, registrationClosedMessage } from "../lib/registrationPolicy";
 
 const router: IRouter = Router();
 
 router.post("/registrations/teams", async (req, res): Promise<void> => {
   res.setHeader("Cache-Control", "no-store");
+  if (isRegistrationClosed()) { res.status(410).json({ error: registrationClosedMessage }); return; }
   if (!sameSiteRequest(req)) { res.status(403).json({ error: "Please use the TREASURE registration page." }); return; }
   const ownerId = registrationOwner(req);
   if (!ownerId) {

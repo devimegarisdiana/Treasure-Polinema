@@ -92,6 +92,14 @@ async function start() {
     try {
       await client.query("SET lock_timeout = '10s'");
       await client.query("ALTER TABLE public.registration_uploads ADD COLUMN IF NOT EXISTS member_position integer");
+      await client.query("ALTER TABLE public.registration_uploads ADD COLUMN IF NOT EXISTS completion_registration_id uuid");
+      await client.query("ALTER TABLE public.registration_uploads ADD COLUMN IF NOT EXISTS drive_file_id text");
+      await client.query("ALTER TABLE public.registration_uploads ADD COLUMN IF NOT EXISTS drive_file_url text");
+      await client.query("ALTER TABLE public.team_registrations ADD COLUMN IF NOT EXISTS details_revision integer NOT NULL DEFAULT 0");
+      await client.query("ALTER TABLE public.registration_spreadsheet_sync ADD COLUMN IF NOT EXISTS revision integer NOT NULL DEFAULT 1");
+      await client.query("ALTER TABLE public.registration_spreadsheet_sync ADD COLUMN IF NOT EXISTS synced_revision integer NOT NULL DEFAULT 0");
+      await client.query("ALTER TABLE public.registration_spreadsheet_sync ADD COLUMN IF NOT EXISTS claim_token uuid");
+      await client.query("ALTER TABLE public.registration_spreadsheet_sync ADD COLUMN IF NOT EXISTS include_documents boolean NOT NULL DEFAULT false");
     } finally { await client.end(); }
   }
   {

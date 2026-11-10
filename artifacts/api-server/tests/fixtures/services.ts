@@ -9,6 +9,7 @@ function forbidden(): never {
   throw new Error("External email/storage is forbidden in organizer regression tests.");
 }
 export const processRegistrationNotifications = forbidden;
+export const processRegistrationSpreadsheetSync = forbidden;
 export const registrationStorage = {
   getObjectEntityFile: forbidden,
   downloadObject: forbidden,

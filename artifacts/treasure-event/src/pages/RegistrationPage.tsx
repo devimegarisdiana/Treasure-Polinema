@@ -1,70 +1,28 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { FormEvent } from 'react';
-import { ArrowLeft, Plus, Printer, Trash2 } from 'lucide-react';
-import { useCreateTeamRegistration, useRequestUploadUrl } from '@workspace/api-client-react';
-import type { TeamRegistrationInput, TeamRegistrationReceipt } from '@workspace/api-client-react';
+import { ArrowLeft, CheckCircle2, FileLock2, Lock, RefreshCw, Upload } from 'lucide-react';
+import { useQueryClient } from '@tanstack/react-query';
+import {
+  getListParticipantRegistrationsQueryKey,
+  useCompleteParticipantRegistration,
+  useListParticipantRegistrations,
+  useRequestUploadUrl,
+} from '@workspace/api-client-react';
+import type { ParticipantRegistration, ParticipantRegistrationList } from '@workspace/api-client-react';
 import ParticipantAuth from '../components/ParticipantAuth';
 import { useParticipantAuth } from '../hooks/use-participant-auth';
 import './registration.css';
 
-type Purpose = 'student_id' | 'payment_proof';
-type UpStatus = 'idle' | 'uploading' | 'done' | 'error';
-interface Up { status: UpStatus; name: string; uploadId: string; error: string; file: File | null }
-interface Slot { uid: number; fullName: string }
-
 const BASE = (import.meta.env.BASE_URL as string).replace(/\/+$/, '');
 const home = `${BASE}/`;
 const PARTICIPANT_GROUP_URL = 'https://chat.whatsapp.com/JpCQ5ZJIaEvCdou5uNoFrA';
-const COUNTRIES = ['Indonesia', 'Philippines', 'England', 'Malaysia', 'Turkey', 'Vietnam', 'Thailand', 'Taiwan', 'Saudi Arabia', 'Other'] as const;
 const MIME = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'] as const;
 const MAX = 10 * 1024 * 1024;
+const listKey = getListParticipantRegistrationsQueryKey();
 
-const T = {
-  en: {
-    back: 'Home',
-    eyebrow: 'Registration · TREASURE 2026', title: 'Register your team.',
-    intro: 'Limited slots available! Fill in the registration details and upload your documents. Once saved, you get a reference code as a receipt for your data.',
-    period: 'Registration', periodV: '12 Oct — 5 Nov 2026', training: 'Training', trainingV: '16—17 Nov 2026', comp: 'Competition', compV: '23—25 Nov 2026',
-    feeIdn: 'Indonesian students', feeInt: 'International students', contactH: 'Contact', wa: 'WhatsApp Ms. Abryel',
-    gateH: 'Sign in to register', gateP: 'Registration needs a secure sign-in so your documents stay private. The rest of the site stays open without signing in.', signIn: 'Sign in securely',
-    loading: 'Checking your sign-in...', signedAs: 'Signed in as', signOut: 'Sign out',
-    expired: 'Your session expired. Your entries are still in the form. Sign in in the new tab, then return to this tab and resubmit.',
-    leaderH: 'Team leader', membersH: 'Team members (optional)', nameHint: 'Write the correct name; it is used for the e-certificate.',
-    fullName: 'Full name', memberLbl: 'Member name', add: 'Add member', remove: 'Remove',
-    contactT: 'Contact and institution', email: 'Leader email', phone: 'Leader WhatsApp', altPhone: 'Alternative WhatsApp (member)',
-    phoneHint: 'You may use +, digits, spaces, hyphens, dots and parentheses.',
-    institution: 'Institution', faculty: 'Faculty / department', country: 'Country of origin', countryPick: 'Select a country', otherCountry: 'Enter your country',
-    compH: 'Competition and training', competition: 'Competition', bs: 'Business Simulation',
-    edugateQuestion: 'Have you participated in any business simulation training conducted by Edugate before?', yes: 'Yes', no: 'No',
-    docsH: 'Payment document', docsHint: 'JPG, PNG, WebP or PDF. Maximum 10 MB per file.',
-    sid: "Team leader's student ID", pay: 'Registration payment proof', choose: 'Choose file', replace: 'Replace file', retry: 'Retry upload',
-    uploading: 'Uploading', uploaded: 'Uploaded', badType: 'File must be JPG, PNG, WebP or PDF.', tooBig: 'File must be 10 MB or smaller.', upFail: 'Upload failed. Please retry.',
-    consent: 'I am authorized to provide this data and everyone named knows it is used for TREASURE 2026 registration.',
-    submit: 'Submit registration', sending: 'Submitting...', waitUp: 'Wait for uploads to finish.',
-    r: 'This field is required.', min: 'At least 2 characters.', max: (n: number) => `At most ${n} characters.`,
-    badEmail: 'Enter a valid email address.', badPhone: 'Use 7–15 digits; +, spaces, ( ) . - are allowed.', pick: 'Choose one.', needFile: 'This file is required.', needConsent: 'Consent is required.',
-     fixErrors: 'Check the highlighted fields. Your entries are still in the form.', failed: 'We could not confirm your registration. Your entries are safe; please try again.',
-    okTag: 'Data received', okTitle: 'Registration data received.',
-    okNote: 'This is a receipt for your data, not proof of payment or confirmation of acceptance. Keep this reference code and contact the organizers for next steps.',
-    ref: 'Reference code', at: 'Received at', members: 'Names registered', print: 'Print receipt', newReg: 'Register another team', homeL: 'Back to home',
-    contactLine: 'Organizers: Ms. Abryel, WhatsApp +62 852-3076-2534 · Instagram @treasure_polinema',
-  },
-} as const;
+type UpStatus = 'uploading' | 'done' | 'error';
+interface Up { status: UpStatus; name: string; uploadId: string; error: string; file: File | null }
 
-let uid = 0;
-const slot = (): Slot => ({ uid: ++uid, fullName: '' });
-const emptyUp = (): Up => ({ status: 'idle', name: '', uploadId: '', error: '', file: null });
-const emailRe = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-const phoneRe = /^(?=(?:[^0-9]*[0-9]){7,15}[^0-9]*$)[+0-9() .-]+$/;
-const receiptStorageKey = (userId: string) => `treasure-registration-receipt:${userId}`;
-const readReceipt = (userId: string): TeamRegistrationReceipt | null => {
-  try {
-    const s = JSON.parse(sessionStorage.getItem(receiptStorageKey(userId)) ?? 'null');
-    return s && typeof s.referenceCode === 'string' && /^TR26-[0-9A-F]{12}$/.test(s.referenceCode) &&
-      typeof s.submittedAt === 'string' && Number.isFinite(Date.parse(s.submittedAt))
-      ? { referenceCode: s.referenceCode, submittedAt: s.submittedAt } : null;
-  } catch { return null; }
-};
 const newKey = () =>
   typeof crypto !== 'undefined' && 'randomUUID' in crypto
     ? crypto.randomUUID()
@@ -73,478 +31,299 @@ const newKey = () =>
         return (c === 'x' ? r : (r & 3) | 8).toString(16);
       });
 const statusOf = (e: unknown) => (e as { status?: number } | null)?.status;
+const apiMessage = (e: unknown) => {
+  const m = (e as { data?: { error?: unknown } } | null)?.data?.error;
+  return typeof m === 'string' && m ? m : '';
+};
 
-export default function RegistrationPage() {
-  const t = T.en;
-  const auth = useParticipantAuth();
-  const [leader, setLeader] = useState('');
-  const [slots, setSlots] = useState<Slot[]>(() => [slot(), slot(), slot(), slot()]);
-  const [email, setEmail] = useState('');
-  const [phone, setPhone] = useState('');
-  const [altPhone, setAltPhone] = useState('');
-  const [institution, setInstitution] = useState('');
-  const [faculty, setFaculty] = useState('');
-  const [country, setCountry] = useState('');
-  const [otherCountry, setOtherCountry] = useState('');
-  const [training, setTraining] = useState<boolean | null>(null);
-  const [ups, setUps] = useState<Record<string, Up>>({ student_id: emptyUp(), payment_proof: emptyUp() });
-  const [consent, setConsent] = useState(false);
-  const [website, setWebsite] = useState('');
-  const [touched, setTouched] = useState<Record<string, boolean>>({});
-  const [attempted, setAttempted] = useState(false);
-  const [serverError, setServerError] = useState('');
-  const [expired, setExpired] = useState(false);
-  const [receipt, setReceipt] = useState<TeamRegistrationReceipt | null>(null);
-  const [sentCount, setSentCount] = useState(0);
-  const mutation = useCreateTeamRegistration();
+function RegistrationCard({ reg, ownerId, onExpired, onReload }: { reg: ParticipantRegistration; ownerId: string; onExpired: () => void; onReload: () => Promise<unknown> }) {
+  const queryClient = useQueryClient();
   const uploadUrl = useRequestUploadUrl();
-  const formRef = useRef<HTMLFormElement>(null);
-  const keyRef = useRef<string>(newKey());
-  const tokens = useRef<Record<string, number>>({ student_id: 0, payment_proof: 0 });
-  const invalidateUploads = () => {
-    tokens.current = Object.fromEntries(Object.entries(tokens.current).map(([key, value]) => [key, value + 1]));
-  };
-  const clearMemberUpload = (id: number) => {
-    const key = `member-${id}`;
-    tokens.current[key] = (tokens.current[key] ?? 0) + 1;
-    setUps((current) => {
-      const next = { ...current };
-      delete next[key];
-      return next;
-    });
-  };
-  const lastAccountId = useRef<string | null>(null);
+  const complete = useCompleteParticipantRegistration();
+  const confirmedName = reg.revision === 0 && reg.teamName === reg.members[0]?.fullName.slice(0, 120) ? '' : reg.teamName;
+  const [teamName, setTeamName] = useState(confirmedName);
+  const [edited, setEdited] = useState(false);
+  const [baseRevision, setBaseRevision] = useState(reg.revision);
+  const [ups, setUps] = useState<Record<number, Up>>({});
+  const [attempted, setAttempted] = useState(false);
+  const [error, setError] = useState('');
+  const [conflict, setConflict] = useState(false);
+  const [saved, setSaved] = useState(false);
+  const keyRef = useRef(newKey());
+  const tokens = useRef<Record<number, number>>({});
+  const aborts = useRef<Record<number, AbortController>>({});
+
+  useEffect(() => () => {
+    for (const k of Object.keys(tokens.current)) tokens.current[Number(k)] += 1;
+    for (const c of Object.values(aborts.current)) c.abort();
+  }, []);
 
   useEffect(() => {
-    const accountId = auth.user?.id ?? null;
-    if (!accountId) return;
-    const previousId = lastAccountId.current;
-    if (previousId && previousId !== accountId) {
-      auth.clearParticipantCache();
-      try { sessionStorage.removeItem(receiptStorageKey(previousId)); } catch { /* optional */ }
-      try { sessionStorage.removeItem(receiptStorageKey(accountId)); } catch { /* optional */ }
-      setLeader(''); setSlots([slot(), slot(), slot(), slot()]); setEmail(auth.user?.email ?? '');
-      setPhone(''); setAltPhone(''); setInstitution(''); setFaculty(''); setCountry(''); setOtherCountry('');
-      setTraining(null); setUps({ student_id: emptyUp(), payment_proof: emptyUp() });
-      invalidateUploads();
-      setConsent(false); setWebsite(''); setTouched({}); setAttempted(false); setServerError('');
-      setReceipt(null); setSentCount(0); keyRef.current = newKey(); mutation.reset();
-    } else if (!previousId) {
-      setReceipt(readReceipt(accountId));
-      if (!email.trim()) setEmail(auth.user?.email ?? '');
-    }
-    lastAccountId.current = accountId;
-  }, [auth.user?.id, auth.user?.email, auth.clearParticipantCache]);
+    if (!edited && !conflict) { setTeamName(confirmedName); setBaseRevision(reg.revision); }
+  }, [confirmedName, reg.revision, edited, conflict]);
 
-  useEffect(() => {
-    if (!auth.user && !expired) return;
-    if (auth.user?.email && !email.trim()) setEmail(auth.user.email);
-  }, [auth.user?.email, email, expired]);
+  const missing = reg.members.filter((m) => !m.studentIdUrl);
+  const uploading = Object.values(ups).some((u) => u.status === 'uploading');
+  const busy = uploading || complete.isPending;
+  const tn = teamName.trim();
+  const teamErr = !tn ? 'Team name is required.' : tn.length < 2 ? 'At least 2 characters.' : tn.length > 120 ? 'At most 120 characters.' : '';
+  const missingErr = missing.filter((m) => ups[m.position]?.status !== 'done');
+  const complete_ = !reg.paymentProofUrl ? false : true;
 
-  useEffect(() => {
-    document.documentElement.lang = 'en';
-    document.title = 'Registration — TREASURE 2026';
-    for (const s of ['meta[name="description"]', 'meta[property="og:description"]', 'meta[name="twitter:description"]'])
-      document.querySelector(s)?.setAttribute('content', t.intro);
-    for (const s of ['meta[property="og:title"]', 'meta[name="twitter:title"]'])
-      document.querySelector(s)?.setAttribute('content', document.title);
-  }, [t.eyebrow, t.intro]);
-
-  const uploading = Object.values(ups).some((upload) => upload.status === 'uploading');
-  const busy = mutation.isPending || uploading;
-  const dirty = useMemo(
-    () => !!(leader || email || phone || altPhone || institution || faculty || country || training !== null || consent || website) ||
-      slots.some((s) => s.fullName) || Object.values(ups).some((upload) => upload.status !== 'idle'),
-    [leader, email, phone, altPhone, institution, faculty, country, training, consent, website, slots, ups],
-  );
-  useEffect(() => {
-    if (!dirty || receipt) return;
-    const h = (e: BeforeUnloadEvent) => { e.preventDefault(); e.returnValue = ''; };
-    window.addEventListener('beforeunload', h);
-    return () => window.removeEventListener('beforeunload', h);
-  }, [dirty, receipt]);
-
-  const req = (v: string, max: number) => {
-    const s = v.trim();
-    if (!s) return t.r;
-    if (s.length < 2) return t.min;
-    if (s.length > max) return t.max(max);
-    return '';
-  };
-  const phoneErr = (v: string) => {
-    const p = v.trim();
-    if (!p) return t.r;
-    return p.length < 7 || p.length > 40 || !phoneRe.test(p) ? t.badPhone : '';
-  };
-  const errors: Record<string, string> = {};
-  const set = (k: string, v: string) => { if (v) errors[k] = v; };
-  set('leader', req(leader, 160));
-  slots.forEach((s) => { if (s.fullName.trim()) set(`s${s.uid}`, req(s.fullName, 160)); });
-  const em = email.trim();
-  set('email', !em ? t.r : !emailRe.test(em) || em.length > 254 ? t.badEmail : '');
-  set('phone', phoneErr(phone));
-  set('altPhone', phoneErr(altPhone));
-  set('institution', req(institution, 200));
-  set('faculty', req(faculty, 200));
-  if (!country) errors.country = t.pick;
-  if (country === 'Other') set('otherCountry', otherCountry.trim() ? (otherCountry.trim().length > 100 ? t.max(100) : '') : t.r);
-  if (training === null) errors.training = t.pick;
-  (['student_id', 'payment_proof'] as Purpose[]).forEach((p) => { if (ups[p].status !== 'done') errors[p] = ups[p].error || t.needFile; });
-  slots.forEach((s) => {
-    const key = `member-${s.uid}`;
-    if (s.fullName.trim() && ups[key]?.status !== 'done') errors[key] = ups[key]?.error || t.needFile;
-  });
-  if (!consent) errors.consent = t.needConsent;
-
-  const show = (k: string) => ((attempted || touched[k]) && errors[k] ? errors[k] : '');
-  const touch = (k: string) => () => setTouched((s) => ({ ...s, [k]: true }));
-  const fmtDate = (iso: string) => {
-    const d = new Date(iso);
-    return isNaN(d.getTime()) ? iso : new Intl.DateTimeFormat('en-GB', { dateStyle: 'long', timeStyle: 'short' }).format(d);
-  };
-
-  const doUpload = async (purpose: Purpose, file: File, uploadKey: string = purpose) => {
-    const token = tokens.current[uploadKey] = (tokens.current[uploadKey] ?? 0) + 1;
-    const patch = (u: Partial<Up>) => { if (tokens.current[uploadKey] === token) setUps((s) => ({ ...s, [uploadKey]: { ...(s[uploadKey] ?? emptyUp()), ...u } })); };
-    if (!(MIME as readonly string[]).includes(file.type)) return patch({ status: 'error', name: file.name, file, uploadId: '', error: t.badType });
-    if (file.size < 1 || file.size > MAX) return patch({ status: 'error', name: file.name, file, uploadId: '', error: t.tooBig });
+  const doUpload = async (position: number, file: File) => {
+    const token = tokens.current[position] = (tokens.current[position] ?? 0) + 1;
+    aborts.current[position]?.abort();
+    const ctrl = new AbortController();
+    aborts.current[position] = ctrl;
+    const patch = (u: Partial<Up>) => {
+      if (tokens.current[position] === token) setUps((s) => ({ ...s, [position]: { ...(s[position] ?? { status: 'error', name: '', uploadId: '', error: '', file: null }), ...u } }));
+    };
+    setSaved(false);
+    if (!(MIME as readonly string[]).includes(file.type)) return patch({ status: 'error', name: file.name, file, uploadId: '', error: 'File must be JPG, PNG, WebP or PDF.' });
+    if (file.size < 1 || file.size > MAX) return patch({ status: 'error', name: file.name, file, uploadId: '', error: 'File must be 10 MB or smaller.' });
     patch({ status: 'uploading', name: file.name, file, uploadId: '', error: '' });
     try {
       const { uploadId, uploadURL } = await uploadUrl.mutateAsync({
-        data: { submissionKey: keyRef.current, purpose, name: file.name.slice(0, 200), size: file.size, contentType: file.type as (typeof MIME)[number] },
+        data: {
+          submissionKey: keyRef.current, purpose: 'student_id', registrationId: reg.id, memberPosition: position,
+          name: file.name.slice(0, 200), size: file.size, contentType: file.type as (typeof MIME)[number],
+        },
       });
-      const res = await fetch(uploadURL, { method: 'PUT', body: file, headers: { 'Content-Type': file.type }, signal: AbortSignal.timeout(120000) });
+      if (tokens.current[position] !== token) return;
+      const timeout = setTimeout(() => ctrl.abort(), 120000);
+      const res = await fetch(uploadURL, { method: 'PUT', body: file, headers: { 'Content-Type': file.type }, signal: ctrl.signal }).finally(() => clearTimeout(timeout));
       if (!res.ok) throw new Error(`PUT ${res.status}`);
       patch({ status: 'done', uploadId, error: '' });
     } catch (err) {
-      if (statusOf(err) === 401) setExpired(true);
-      patch({ status: 'error', uploadId: '', error: t.upFail });
+      if (tokens.current[position] !== token) return;
+      if (statusOf(err) === 401) onExpired();
+      const m = apiMessage(err);
+      patch({ status: 'error', uploadId: '', error: m ? `Upload failed: ${m}` : 'Upload failed. Please retry.' });
     }
   };
 
-  const onSubmit = async (ev: FormEvent) => {
-    ev.preventDefault();
+  const cancelUpload = (position: number) => {
+    tokens.current[position] = (tokens.current[position] ?? 0) + 1;
+    aborts.current[position]?.abort();
+    setUps((s) => { const n = { ...s }; delete n[position]; return n; });
+  };
+
+  const submit = async (e: FormEvent) => {
+    e.preventDefault();
     if (busy) return;
-    setAttempted(true); setServerError(''); setExpired(false);
-    if (Object.keys(errors).length) {
-      setServerError(t.fixErrors);
-      requestAnimationFrame(() => formRef.current?.querySelector<HTMLElement>('[aria-invalid="true"]')?.focus());
-      return;
-    }
-    const names = [leader, ...slots.map((s) => s.fullName)].map((n) => n.trim()).filter(Boolean);
-    const data: TeamRegistrationInput = {
-      submissionKey: keyRef.current,
-      contactEmail: em,
-      contactPhone: phone.trim(),
-      alternativePhone: altPhone.trim(),
-      institution: institution.trim(),
-      facultyDepartment: faculty.trim(),
-      countryOfOrigin: country as TeamRegistrationInput['countryOfOrigin'],
-      ...(country === 'Other' ? { otherCountry: otherCountry.trim() } : {}),
-      competition: 'business_simulation',
-      hasEdugateTraining: training as boolean,
-      studentIdUploadId: ups.student_id.uploadId,
-      paymentUploadId: ups.payment_proof.uploadId,
-      members: [
-        { fullName: leader.trim(), studentIdUploadId: ups.student_id.uploadId },
-        ...slots.filter((s) => s.fullName.trim()).map((s) => ({
-          fullName: s.fullName.trim(), studentIdUploadId: ups[`member-${s.uid}`].uploadId,
-        })),
-      ],
-      consent: true,
-      ...(website ? { website } : {}),
-    };
+    setAttempted(true); setError(''); setSaved(false);
+    if (teamErr || missingErr.length) { setError('Add a valid team name and upload every missing student ID before saving.'); return; }
     try {
-      const r = await mutation.mutateAsync({ data });
-      setSentCount(names.length);
-      setReceipt(r);
-      if (auth.user) {
-        try { sessionStorage.setItem(receiptStorageKey(auth.user.id), JSON.stringify(r)); } catch { /* optional */ }
-      }
-      window.scrollTo({ top: 0 });
+      const updated = await complete.mutateAsync({
+        id: reg.id,
+        data: {
+          teamName: tn, revision: baseRevision, submissionKey: keyRef.current,
+          members: missing.map((m) => ({ position: m.position, studentIdUploadId: ups[m.position].uploadId })),
+        },
+      });
+      queryClient.setQueryData<ParticipantRegistrationList>([...listKey, ownerId], (old) => old ? { ...old, items: old.items.map((i) => i.id === updated.id ? updated : i) } : old);
+      void queryClient.invalidateQueries({ queryKey: listKey });
+      void queryClient.invalidateQueries({ predicate: (q) => typeof q.queryKey[0] === 'string' && q.queryKey[0].startsWith('/api/admin/registrations') });
+      keyRef.current = newKey();
+      setUps({}); setEdited(false); setAttempted(false); setTeamName(updated.teamName); setBaseRevision(updated.revision); setSaved(true);
     } catch (err) {
-      if (statusOf(err) === 401) { setExpired(true); return; }
-      const msg = (err as { data?: { error?: unknown } } | null)?.data?.error;
-      setServerError(typeof msg === 'string' && msg ? `${t.failed} (${msg})` : t.failed);
+      const s = statusOf(err);
+      if (s === 401) { onExpired(); setError('Your session expired. Sign in again; your entries are still here.'); return; }
+      if (s === 409) { setConflict(true); setError('This registration changed since you opened it. Load the latest version before saving; nothing was overwritten.'); return; }
+      const m = apiMessage(err);
+      setError(m ? `Not saved: ${m}` : 'We could not confirm the save. Your entries are kept; you can safely try again.');
     }
   };
 
-  const reset = () => {
-    if (auth.user) {
-      try { sessionStorage.removeItem(receiptStorageKey(auth.user.id)); } catch { /* optional */ }
-    }
-    setLeader(''); setSlots([slot(), slot(), slot(), slot()]); setEmail(''); setPhone(''); setAltPhone('');
-    setInstitution(''); setFaculty(''); setCountry(''); setOtherCountry('');
-    setTraining(null); setUps({ student_id: emptyUp(), payment_proof: emptyUp() });
-    invalidateUploads();
-    setConsent(false); setWebsite(''); setTouched({}); setAttempted(false); setServerError(''); setExpired(false);
-    setReceipt(null); setSentCount(0); keyRef.current = newKey(); mutation.reset();
+  const loadLatest = async () => {
+    await onReload();
+    const fresh = queryClient.getQueryData<ParticipantRegistrationList>(listKey)?.items.find((i) => i.id === reg.id);
+    if (fresh) { setTeamName(fresh.teamName); setBaseRevision(fresh.revision); }
+    setEdited(false); setConflict(false); setError('');
   };
 
-  const signOutParticipant = async () => {
-    const priorId = auth.user?.id;
-    await auth.logout();
-    if (priorId) {
-      try { sessionStorage.removeItem(receiptStorageKey(priorId)); } catch { /* optional */ }
-    }
-    lastAccountId.current = null;
-    setLeader(''); setSlots([slot(), slot(), slot(), slot()]); setEmail(''); setPhone(''); setAltPhone('');
-    setInstitution(''); setFaculty(''); setCountry(''); setOtherCountry(''); setTraining(null);
-    setUps({ student_id: emptyUp(), payment_proof: emptyUp() });
-    invalidateUploads();
-    setConsent(false); setWebsite(''); setTouched({}); setAttempted(false); setServerError(''); setExpired(false);
-    setReceipt(null); setSentCount(0); keyRef.current = newKey(); mutation.reset();
-  };
-
-  const participantAuth = (expiredState = false) => (
-    <ParticipantAuth
-      user={auth.user}
-      loading={auth.isLoading && !expiredState}
-      checking={auth.isRefreshing}
-      sessionError={auth.hasError && !auth.user}
-      expired={expiredState}
-      busy={auth.isMutating}
-      onSignUp={async (data) => { await auth.signup(data); setExpired(false); }}
-      onSignIn={async (data) => { await auth.signin(data); setExpired(false); }}
-      onSignOut={signOutParticipant}
-      onRetry={auth.refresh}
-    />
-  );
-
-  const top = (
-    <header className="reg-top">
-      <a className="reg-brand" href={home} aria-label={t.homeL}>
-        <img src={`${BASE}/treasure-wordmark.png`} alt="TREASURE 2026" />
-      </a>
-      <a className="reg-back" href={home} data-testid="link-home">
-        <ArrowLeft size={14} style={{ verticalAlign: '-2px' }} /> <span>{t.back}</span>
-      </a>
-    </header>
-  );
-
-  if (receipt) {
-    return (
-      <div className="reg-page">
-        {top}
-        <section className="reg-receipt" aria-labelledby="reg-ok" data-testid="receipt">
-          <div className="reg-eyebrow" style={{ color: 'var(--treasure-blue)' }}>{t.okTag}</div>
-          <h1 id="reg-ok" tabIndex={-1} ref={(el) => el?.focus()}>{t.okTitle}</h1>
-          <div className="reg-note" role="status">{t.okNote}</div>
-          <div>{t.ref}</div>
-          <div className="reg-ref" data-testid="text-reference">{receipt.referenceCode}</div>
-          <dl>
-            <dt>{t.at}</dt><dd data-testid="text-submitted-at">{fmtDate(receipt.submittedAt)}</dd>
-            {sentCount > 0 && <><dt>{t.members}</dt><dd>{sentCount}</dd></>}
-          </dl>
-          <div className="reg-group">
-            <h2>Join the participants’ WhatsApp group</h2>
-            <p>Join the group for TREASURE 2026 announcements and participant updates. Open the invitation below to join yourself.</p>
-            <a className="reg-btn reg-yellow" href={PARTICIPANT_GROUP_URL} target="_blank" rel="noopener noreferrer" data-testid="link-participant-whatsapp-group">
-              Join WAG participants
-            </a>
-            <p className="reg-group-url">{PARTICIPANT_GROUP_URL}</p>
-          </div>
-          <p style={{ fontSize: 13, lineHeight: 1.6, marginTop: 20 }}>{t.contactLine}</p>
-          <div className="reg-actions">
-            <button type="button" className="reg-btn reg-yellow" onClick={() => window.print()} data-testid="button-print"><Printer size={15} /> {t.print}</button>
-            <button type="button" className="reg-btn reg-ghost" onClick={reset} data-testid="button-new">{t.newReg}</button>
-            <a className="reg-btn reg-ghost" href={home} data-testid="link-home-success">{t.homeL}</a>
-          </div>
-        </section>
-      </div>
-    );
-  }
-
-  const field = (
-    k: string, id: string, label: string, value: string, setV: (v: string) => void,
-    o: { type?: string; auto?: string; hint?: string; full?: boolean; max?: number; required?: boolean } = {},
-  ) => {
-    const err = show(k);
-    const req = o.required !== false;
-    return (
-      <div className={`reg-field${o.full ? ' full' : ''}`}>
-        <label htmlFor={id}>{label}{req ? ' *' : ''}</label>
-        <input id={id} type={o.type ?? 'text'} value={value} autoComplete={o.auto ?? 'off'} maxLength={o.max} required={req} aria-required={req}
-          onChange={(e) => setV(e.target.value)} onBlur={touch(k)} aria-invalid={err ? true : undefined}
-          aria-describedby={[err ? `${id}-e` : '', o.hint ? `${id}-h` : ''].filter(Boolean).join(' ') || undefined} data-testid={`input-${id}`} />
-        {o.hint && <span className="reg-hint" id={`${id}-h`}>{o.hint}</span>}
-        {err && <span className="reg-err" id={`${id}-e`} role="alert">{err}</span>}
-      </div>
-    );
-  };
-
-  const radios = (k: string, label: string, value: string, opts: [string, string][], onPick: (v: string) => void) => {
-    const err = show(k);
-    return (
-      <div className="reg-field full">
-        <span className="lbl" id={`${k}-l`}>{label} *</span>
-        <div className="reg-seg" role="radiogroup" tabIndex={-1} aria-labelledby={`${k}-l`} aria-required="true" aria-invalid={err ? true : undefined} aria-describedby={err ? `${k}-e` : undefined}>
-          {opts.map(([v, l]) => (
-            <label key={v}>
-              <input type="radio" name={k} value={v} checked={value === v} onChange={() => onPick(v)} onBlur={touch(k)} data-testid={`radio-${k}-${v}`} />
-              {l}
-            </label>
-          ))}
+  const sheetQueued = /queue|pending/i.test(reg.spreadsheetStatus);
+  const pid = `reg-${reg.id}`;
+  return (
+    <form className="pt-card" onSubmit={submit} noValidate aria-labelledby={`${pid}-t`} data-testid={`card-registration-${reg.id}`}>
+      <header className="pt-card-head">
+        <div>
+          <span className="pt-kicker">Reference</span>
+          <strong className="pt-ref" data-testid={`text-reference-${reg.id}`}>{reg.referenceCode}</strong>
         </div>
-        {err && <span className="reg-err" id={`${k}-e`} role="alert">{err}</span>}
-      </div>
-    );
-  };
+        <span className={`pt-pill${missing.length ? ' warn' : ''}`} data-testid={`status-completeness-${reg.id}`}>
+          {missing.length ? `${missing.length} student ID${missing.length > 1 ? 's' : ''} missing` : 'Documents complete'}
+        </span>
+      </header>
+      <h2 id={`${pid}-t`} className="pt-title">{reg.teamName || 'Untitled team'}</h2>
 
-  const fileBox = (p: Purpose, label: string, uploadKey: string = p) => {
-    const u = ups[uploadKey] ?? emptyUp();
-    const err = u.status === 'error' ? u.error : show(uploadKey);
-    const inputId = `file-${uploadKey}`;
-    return (
+      {saved && <div className="pt-ok" role="status" data-testid={`status-saved-${reg.id}`}>
+        <CheckCircle2 size={17} aria-hidden="true" />
+        <div><strong>Saved.</strong> Your private files are kept. The Google Sheets update is queued: {reg.spreadsheetStatus}{sheetQueued ? ' (not yet delivered).' : '.'}</div>
+      </div>}
+      {error && <div className="reg-alert" role="alert" data-testid={`text-error-${reg.id}`}>
+        {error}
+        {conflict && <button type="button" className="reg-btn reg-ghost pt-mini" onClick={() => void loadLatest()} data-testid={`button-reload-${reg.id}`}><RefreshCw size={13} /> Load latest</button>}
+      </div>}
+
       <div className="reg-field full">
-        <label htmlFor={inputId}>{label} *</label>
-        <div className="reg-file">
-          <input id={inputId} type="file" accept=".jpg,.jpeg,.png,.webp,.pdf,image/jpeg,image/png,image/webp,application/pdf"
-            disabled={u.status === 'uploading' || mutation.isPending} required aria-required="true"
-            aria-invalid={err ? true : undefined} aria-describedby={`${inputId}-s`} data-testid={`input-${inputId}`}
-            onChange={(e) => { const f = e.target.files?.[0]; if (f) void doUpload(p, f, uploadKey); e.target.value = ''; }} />
-          <div id={`${inputId}-s`} aria-live="polite">
-            {u.status === 'uploading' && <div className="row"><span>{t.uploading}: {u.name}</span><div className="reg-bar" style={{ flex: '1 1 100%' }} role="progressbar" aria-label={t.uploading}><i /></div></div>}
-            {u.status === 'done' && <div className="row"><span className="reg-ok">{t.uploaded}: {u.name}</span></div>}
-            {u.status === 'error' && u.file && (
-              <div className="row">
-                <span className="reg-err">{u.name}</span>
-                {u.error === t.upFail && <button type="button" className="reg-btn reg-ghost" onClick={() => u.file && void doUpload(p, u.file, uploadKey)} disabled={busy} data-testid={`button-retry-${uploadKey}`}>{t.retry}</button>}
+        <label htmlFor={`${pid}-name`}>Team name *</label>
+        <input id={`${pid}-name`} value={teamName} maxLength={120} disabled={complete.isPending}
+          onChange={(e) => { setTeamName(e.target.value); setEdited(true); setSaved(false); }}
+          aria-invalid={attempted && teamErr ? true : undefined} aria-describedby={attempted && teamErr ? `${pid}-name-e` : `${pid}-name-h`} data-testid={`input-team-name-${reg.id}`} />
+        <span className="reg-hint" id={`${pid}-name-h`}>2 to 120 characters.</span>
+        {attempted && teamErr && <span className="reg-err" id={`${pid}-name-e`} role="alert">{teamErr}</span>}
+      </div>
+
+      <ol className="pt-members">
+        {reg.members.map((m) => {
+          const u = ups[m.position];
+          const inputId = `${pid}-m${m.position}`;
+          const err = u?.status === 'error' ? u.error : attempted && !m.studentIdUrl && u?.status !== 'done' ? 'Student ID is required.' : '';
+          return (
+            <li key={m.position} className="pt-member" data-testid={`row-member-${reg.id}-${m.position}`}>
+              <div className="pt-member-name">
+                <span className="pt-pos">{String(m.position + 1).padStart(2, '0')}</span>
+                <strong>{m.fullName}</strong>
+                {m.position === 0 && <em>Leader</em>}
               </div>
-            )}
-          </div>
-          {u.status === 'done' && <span className="reg-hint">{t.replace}: {t.choose.toLowerCase()}</span>}
-        </div>
-        <span className="reg-hint">{t.docsHint}</span>
-        {err && <span className="reg-err" role="alert">{err}</span>}
+              {m.studentIdUrl ? (
+                <a className="pt-doc" href={m.studentIdUrl} target="_blank" rel="noreferrer" data-testid={`link-student-id-${reg.id}-${m.position}`}>
+                  <FileLock2 size={14} aria-hidden="true" /> {m.studentIdFileName ?? 'Student ID'} <small>private, read-only</small>
+                </a>
+              ) : (
+                <div className="pt-upload">
+                  <label htmlFor={inputId} className={`pt-drop${u?.status === 'done' ? ' done' : ''}`}>
+                    <Upload size={14} aria-hidden="true" />
+                    {u?.status === 'done' ? `Uploaded: ${u.name}` : u?.status === 'uploading' ? `Uploading ${u.name}` : 'Upload student ID'}
+                  </label>
+                  <input id={inputId} className="pt-file" type="file" accept=".jpg,.jpeg,.png,.webp,.pdf,image/jpeg,image/png,image/webp,application/pdf"
+                    disabled={u?.status === 'uploading' || complete.isPending} aria-invalid={err ? true : undefined}
+                    aria-describedby={`${inputId}-s`} data-testid={`input-file-${reg.id}-${m.position}`}
+                    onChange={(e) => { const f = e.target.files?.[0]; if (f) void doUpload(m.position, f); e.target.value = ''; }} />
+                  <div id={`${inputId}-s`} aria-live="polite" className="pt-upstate">
+                    {u?.status === 'uploading' && <><div className="reg-bar" role="progressbar" aria-label="Uploading"><i /></div>
+                      <button type="button" className="pt-link" onClick={() => cancelUpload(m.position)} data-testid={`button-cancel-${reg.id}-${m.position}`}>Cancel</button></>}
+                    {err && <span className="reg-err" role="alert">{err}</span>}
+                    {u?.status === 'error' && u.file && <button type="button" className="pt-link" disabled={complete.isPending} onClick={() => u.file && void doUpload(m.position, u.file)} data-testid={`button-retry-${reg.id}-${m.position}`}>Retry upload</button>}
+                    {!u && <span className="reg-hint">JPG, PNG, WebP or PDF, up to 10 MB.</span>}
+                  </div>
+                </div>
+              )}
+            </li>
+          );
+        })}
+      </ol>
+
+      <div className="pt-payment">
+        <span className="pt-kicker">Payment proof</span>
+        {reg.paymentProofUrl
+          ? <a className="pt-doc" href={reg.paymentProofUrl} target="_blank" rel="noreferrer" data-testid={`link-payment-${reg.id}`}><FileLock2 size={14} aria-hidden="true" /> View payment proof <small>private, read-only</small></a>
+          : <span className="reg-hint">{complete_ ? '' : 'No payment proof on file. Contact the organizers.'}</span>}
       </div>
-    );
+
+      <div className="pt-foot">
+        <span className="reg-hint">Google Sheets: <b data-testid={`status-sheet-${reg.id}`}>{reg.spreadsheetStatus}</b> · revision {reg.revision}</span>
+        <button type="submit" className="reg-btn reg-primary" disabled={busy || conflict} aria-busy={complete.isPending} data-testid={`button-save-${reg.id}`}>
+          {complete.isPending ? 'Saving...' : uploading ? 'Wait for uploads' : 'Save team details'}
+        </button>
+      </div>
+    </form>
+  );
+}
+
+export default function RegistrationPage() {
+  const auth = useParticipantAuth();
+  const queryClient = useQueryClient();
+  const [expired, setExpired] = useState(false);
+  const userId = auth.user?.id ?? null;
+  const list = useListParticipantRegistrations({
+    query: { queryKey: [...listKey, userId], enabled: !!userId && !expired, staleTime: 30_000, refetchOnMount: 'always', refetchOnWindowFocus: true, retry: false },
+  });
+  const lastUser = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (lastUser.current && lastUser.current !== userId) {
+      const previousKey = [...listKey, lastUser.current];
+      void queryClient.cancelQueries({ queryKey: previousKey });
+      queryClient.removeQueries({ queryKey: previousKey });
+    }
+    lastUser.current = userId;
+  }, [userId, auth.clearParticipantCache, queryClient]);
+
+  useEffect(() => { if (statusOf(list.error) === 401) setExpired(true); }, [list.error]);
+
+  useEffect(() => {
+    document.documentElement.lang = 'en';
+    document.title = 'Participant portal — TREASURE 2026';
+  }, []);
+
+  const signOut = async () => {
+    queryClient.removeQueries({ queryKey: listKey });
+    await auth.logout();
+    lastUser.current = null;
+    setExpired(false);
   };
+
+  const authBlock = (exp = false) => (
+    <ParticipantAuth user={auth.user} loading={auth.isLoading && !exp} checking={auth.isRefreshing}
+      sessionError={auth.hasError && !auth.user} expired={exp} busy={auth.isMutating} signInOnly
+      onSignIn={async (d) => { await auth.signin(d); setExpired(false); }} onSignOut={signOut} onRetry={auth.refresh} />
+  );
 
   let body;
-  if (auth.isLoading && !expired) {
-    body = participantAuth();
-  } else if (!auth.user && !expired) {
-    body = participantAuth();
-  } else {
+  if (auth.isLoading || !auth.user) body = authBlock();
+  else if (expired) body = authBlock(true);
+  else {
+    const items = list.data?.items ?? [];
     body = (
-      <div className="reg-journey">
-      {expired && participantAuth(true)}
-      <form className="reg-card" ref={formRef} onSubmit={onSubmit} noValidate data-testid="form-registration">
-        {!expired && participantAuth()}
-        {serverError && <div className="reg-alert" role="alert" data-testid="text-form-error">{serverError}</div>}
-
-        <fieldset disabled={mutation.isPending}>
-          <legend>{t.leaderH}</legend>
-          <div className="reg-grid">
-            {field('leader', 'leader-name', t.fullName, leader, setLeader, { full: true, hint: t.nameHint, max: 160, auto: 'name' })}
-            {fileBox('student_id', t.sid)}
+      <div className="reg-journey pt-journey">
+        {authBlock()}
+        {list.isLoading ? (
+          <div className="pt-card" role="status" aria-label="Loading your registrations"><div className="reg-skel" /><div className="reg-skel" /><div className="reg-skel" /></div>
+        ) : list.isError ? (
+          <div className="reg-alert" role="alert">
+            We could not load your registrations{apiMessage(list.error) ? `: ${apiMessage(list.error)}` : '.'}
+            <button type="button" className="reg-btn reg-ghost pt-mini" onClick={() => void list.refetch()} data-testid="button-retry-list">Try again</button>
           </div>
-        </fieldset>
-
-        <fieldset disabled={mutation.isPending}>
-          <legend>{t.membersH}</legend>
-          <p className="reg-hint">A separate student ID is required for every named member. Leave unused member fields blank.</p>
-          <div className="reg-grid">
-            {slots.map((s, i) => (
-              <div key={s.uid} className="reg-field full" style={{ flexDirection: 'row', gap: 8, alignItems: 'flex-end' }}>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  {field(`s${s.uid}`, `member-${s.uid}`, `${t.memberLbl} ${i + 1}`, s.fullName,
-                    (v) => {
-                      setSlots((a) => a.map((x) => (x.uid === s.uid ? { ...x, fullName: v } : x)));
-                      if (!v.trim()) clearMemberUpload(s.uid);
-                    }, { full: true, hint: t.nameHint, max: 160, required: false })}
-                  {s.fullName.trim() && fileBox('student_id', `Student ID — ${s.fullName.trim()}`, `member-${s.uid}`)}
-                </div>
-                {i >= 4 && (
-                  <button type="button" className="reg-btn reg-ghost" style={{ minHeight: 50, padding: '0 14px' }} aria-label={`${t.remove} ${i + 1}`}
-                    onClick={() => { clearMemberUpload(s.uid); setSlots((a) => a.filter((x) => x.uid !== s.uid)); }} data-testid={`button-remove-${i}`}><Trash2 size={14} /></button>
-                )}
-              </div>
-            ))}
-          </div>
-          <button type="button" className="reg-btn reg-ghost reg-add" style={{ marginTop: 14 }} onClick={() => setSlots((a) => [...a, slot()])} data-testid="button-add-member">
-            <Plus size={15} /> {t.add}
-          </button>
-        </fieldset>
-
-        <fieldset disabled={mutation.isPending}>
-          <legend>{t.contactT}</legend>
-          <div className="reg-grid">
-            {field('email', 'contact-email', t.email, email, setEmail, { type: 'email', auto: 'email', max: 254 })}
-            {field('phone', 'contact-phone', t.phone, phone, setPhone, { type: 'tel', auto: 'tel', hint: t.phoneHint, max: 40 })}
-            {field('altPhone', 'alt-phone', t.altPhone, altPhone, setAltPhone, { type: 'tel', auto: 'off', hint: t.phoneHint, max: 40, full: true })}
-            {field('institution', 'institution', t.institution, institution, setInstitution, { max: 200, auto: 'organization' })}
-            {field('faculty', 'faculty', t.faculty, faculty, setFaculty, { max: 200 })}
-            <div className="reg-field full">
-              <label htmlFor="country">{t.country} *</label>
-              <select id="country" value={country} required aria-required="true" onChange={(e) => setCountry(e.target.value)} onBlur={touch('country')}
-                aria-invalid={show('country') ? true : undefined} aria-describedby={show('country') ? 'country-e' : undefined} data-testid="select-country">
-                <option value="">{t.countryPick}</option>
-                {COUNTRIES.map((c) => <option key={c} value={c}>{c}</option>)}
-              </select>
-              {show('country') && <span className="reg-err" id="country-e" role="alert">{show('country')}</span>}
+        ) : items.length === 0 ? (
+          <section className="pt-empty" data-testid="status-empty">
+            <Lock size={22} aria-hidden="true" />
+            <h2>No registration on this account.</h2>
+            <p>New registration closed on 10 November 2026, so teams can no longer be added. If your team registered with another account, sign out and sign in with that one, or contact the organizers.</p>
+          </section>
+        ) : (
+          <>
+            <p className="pt-lede">Complete your team name and any missing student IDs. Files already on record stay private and cannot be changed here.</p>
+            {items.map((r) => <RegistrationCard key={`${userId}-${r.id}`} reg={r} ownerId={userId!} onExpired={() => setExpired(true)} onReload={() => list.refetch()} />)}
+            <div className="reg-group">
+              <h2>Participants’ WhatsApp group</h2>
+              <p>Announcements and participant updates for TREASURE 2026.</p>
+              <a className="reg-btn reg-yellow" href={PARTICIPANT_GROUP_URL} target="_blank" rel="noopener noreferrer" data-testid="link-participant-whatsapp-group">Join WAG participants</a>
             </div>
-            {country === 'Other' && field('otherCountry', 'other-country', t.otherCountry, otherCountry, setOtherCountry, { full: true, max: 100 })}
-          </div>
-        </fieldset>
-
-        <fieldset disabled={mutation.isPending}>
-          <legend>{t.compH}</legend>
-          <div className="reg-grid">
-            <div className="reg-field full">
-              <label htmlFor="registration-competition">{t.competition}</label>
-              <input id="registration-competition" type="text" value={t.bs} readOnly />
-            </div>
-            {radios('training', t.edugateQuestion, training === null ? '' : training ? 'yes' : 'no', [['yes', t.yes], ['no', t.no]], (v) => setTraining(v === 'yes'))}
-          </div>
-        </fieldset>
-
-        <fieldset>
-          <legend>{t.docsH}</legend>
-          <div className="reg-grid">
-            {fileBox('payment_proof', t.pay)}
-          </div>
-        </fieldset>
-
-        <div className="reg-hp" aria-hidden="true">
-          <label htmlFor="reg-website">Website</label>
-          <input id="reg-website" type="text" tabIndex={-1} autoComplete="off" value={website} onChange={(e) => setWebsite(e.target.value)} />
-        </div>
-
-        <div className="reg-field" style={{ marginBottom: 20 }}>
-          <label className="reg-consent" htmlFor="consent" style={{ textTransform: 'none', letterSpacing: 0, fontFamily: 'var(--app-font-sans)', fontSize: 14, color: '#39373F' }}>
-            <input id="consent" type="checkbox" checked={consent} required aria-required="true" onChange={(e) => setConsent(e.target.checked)} onBlur={touch('consent')}
-              disabled={mutation.isPending} aria-invalid={show('consent') ? true : undefined} aria-describedby={show('consent') ? 'consent-e' : undefined} data-testid="checkbox-consent" />
-            <span>{t.consent}</span>
-          </label>
-          {show('consent') && <span className="reg-err" id="consent-e" role="alert">{show('consent')}</span>}
-        </div>
-
-        <button type="submit" className="reg-btn reg-primary" disabled={busy} aria-busy={mutation.isPending} data-testid="button-submit">
-          {mutation.isPending && <span className="spin" aria-hidden="true" />}
-          {mutation.isPending ? t.sending : uploading ? t.waitUp : t.submit}
-        </button>
-      </form>
+          </>
+        )}
       </div>
     );
   }
 
   return (
     <div className="reg-page">
-      {top}
+      <header className="reg-top">
+        <a className="reg-brand" href={home} aria-label="Back to home"><img src={`${BASE}/treasure-wordmark.png`} alt="TREASURE 2026" /></a>
+        <a className="reg-back" href={home} data-testid="link-home"><ArrowLeft size={14} style={{ verticalAlign: '-2px' }} /> <span>Home</span></a>
+      </header>
       <main className="reg-wrap">
         <aside className="reg-aside">
-          <div className="reg-eyebrow">{t.eyebrow}</div>
-          <h1>{t.title}</h1>
-          <p>{t.intro}</p>
+          <div className="pt-seal" aria-hidden="true"><Lock size={26} /></div>
+          <div className="reg-eyebrow">Registration · TREASURE 2026</div>
+          <h1>Registration is closed.</h1>
+          <p>Thank you to every team that registered. The extended final date was 10 November 2026 and no new teams or accounts can be created. Registered participants can sign in below to finish their private documents.</p>
           <div className="reg-facts">
-            <div><span>{t.period}</span><span>{t.periodV}</span></div>
-            <div><span>{t.training}</span><span>{t.trainingV}</span></div>
-            <div><span>{t.comp}</span><span>{t.compV}</span></div>
-            <div><span>{t.feeIdn}</span><span>IDR 300,000</span></div>
-            <div><span>{t.feeInt}</span><span>USD 20</span></div>
-            <div><span>{t.contactH}</span><a href="https://wa.me/6285230762534" style={{ color: 'var(--treasure-blue)' }} target="_blank" rel="noreferrer">{t.wa}</a></div>
+            <div><span>Registration</span><span>Closed · 10 Nov 2026</span></div>
+            <div><span>Training</span><span>16—17 Nov 2026</span></div>
+            <div><span>Competition</span><span>23—25 Nov 2026</span></div>
+            <div><span>Contact</span><a href="https://wa.me/6285230762534" style={{ color: 'var(--treasure-blue)' }} target="_blank" rel="noreferrer">WhatsApp Ms. Abryel</a></div>
             <div><span>Instagram</span><a href="https://www.instagram.com/treasure_polinema/" style={{ color: 'var(--treasure-blue)' }} target="_blank" rel="noreferrer">@treasure_polinema</a></div>
           </div>
         </aside>

@@ -1,4 +1,5 @@
 import { Router, type IRouter } from "express";
+import { isRegistrationClosed, registrationClosedMessage } from "../lib/registrationPolicy";
 import { eq, or, sql } from "drizzle-orm";
 import { db, participantAccountsTable as accounts, participantSessionsTable as sessions } from "@workspace/db";
 import { CreateParticipantAccountBody, CreateParticipantAccountResponse, GetParticipantSessionResponse, SignInParticipantBody, SignInParticipantResponse } from "@workspace/api-zod";
@@ -17,6 +18,7 @@ router.get("/participant-auth/me", (req, res) => {
 });
 
 router.post("/participant-auth/signup", async (req, res) => {
+  if (isRegistrationClosed()) { res.status(410).json({ error: registrationClosedMessage }); return; }
   const parsed = CreateParticipantAccountBody.safeParse({
     ...req.body,
     username: typeof req.body?.username === "string" ? req.body.username.trim().toLowerCase() : req.body?.username,

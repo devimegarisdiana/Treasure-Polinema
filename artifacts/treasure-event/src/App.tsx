@@ -19,9 +19,9 @@ const copy = {
     navEligibility: 'Who can compete',
     navContact: 'Contact',
     navArchive: '2025 archive',
-    register: 'Register',
+    register: 'Participant portal',
     edition: 'The 4th International Business Competition',
-    claim: 'Claim your place',
+    claim: 'Returning participants',
     exploreDates: 'Explore the dates',
     host: 'Accounting Department · Politeknik Negeri Malang',
     collaboration: 'In collaboration with Edugate',
@@ -62,15 +62,15 @@ const copy = {
     posterTitle: 'All the details.',
     posterTitleSecond: 'One poster.',
     posterText:
-      'Dates, registration fees, eligibility and contact information for the TREASURE 2026 competition.',
+      'The original event poster shows the initial deadline. Registration was extended to 10 November 2026 and is now closed. Training and competition dates remain unchanged.',
     viewPoster: 'View full poster',
     openPoster: 'Open the TREASURE 2026 event poster',
-    registrationPeriod: 'Registration · 12 Oct—5 Nov 2026',
-    finalTitle: 'Make your',
-    finalTitleSecond: 'move count.',
+    registrationPeriod: 'Registration closed · final date 10 Nov 2026',
+    finalTitle: 'Registration',
+    finalTitleSecond: 'is closed.',
     finalText:
-      'Limited slots available! Register for TREASURE 2026 during the registration period and take your place in the challenge.',
-    registerAt: 'Register your team',
+      'Registration for TREASURE 2026 closed after the extended final date of 10 November 2026. No new teams can be added. Registered teams can sign in to complete missing student IDs and their team name.',
+    registerAt: 'Complete your registration',
     furtherInfo: 'Further information',
     contact: 'Contact',
     instagram: 'Instagram',
@@ -147,7 +147,7 @@ function App() {
         <div className="hero-facts" aria-label="TREASURE 2026 at a glance">
           <article className="hero-fact hero-fact-date">
             <span className="hero-fact-label">{t.registration}</span>
-            <strong>12 Oct—5 Nov 2026</strong>
+            <strong>Closed · ended 10 Nov 2026</strong>
             <small>Training 16—17 Nov · Competition 23—25 Nov</small>
           </article>
           <article className="hero-fact hero-fact-eligibility">
@@ -176,7 +176,7 @@ function App() {
         <div className="ticker-track">
           {[0, 1].map((copy) => (
             <span key={copy}>
-              <i /> {t.registration} · 12 Oct — 5 Nov 2026
+              <i /> {t.registration} · Closed · Extended to 10 Nov 2026
               <i /> {t.training} · 16—17 Nov 2026
               <i /> {t.competition} · 23—25 Nov 2026 <i /> TREASURE 2026
             </span>
@@ -218,7 +218,7 @@ function App() {
             <div className="timeline-row">
               <span className="timeline-num">01</span>
               <h3>{t.registration}</h3>
-              <time dateTime="2026-10-12">12 Oct — 5 Nov 2026</time>
+              <time dateTime="2026-11-10">Closed · 12 Oct — 10 Nov 2026</time>
             </div>
             <div className="timeline-row">
               <span className="timeline-num">02</span>

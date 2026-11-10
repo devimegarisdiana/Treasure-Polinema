@@ -18,6 +18,7 @@ try {
     plugins: [{
       name: "isolated-portable-fixtures",
       setup(builder) {
+        builder.onResolve({ filter: /registrationPolicy$/ }, () => ({ path: join(root, "tests/fixtures/registrationPolicy.ts") }));
         builder.onResolve({ filter: /^@workspace\/db$/ }, () => ({ path: join(root, "tests/fixtures/portableDatabase.ts") }));
         builder.onResolve({ filter: /^@workspace\/db\/schema$/ }, () => ({ path: join(root, "../../lib/db/src/schema/index.ts") }));
         builder.onResolve({ filter: /^@workspace\/api-zod$/ }, () => ({ path: join(root, "../../lib/api-zod/src/index.ts") }));

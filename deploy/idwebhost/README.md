@@ -1,5 +1,11 @@
 # TREASURE — IDwebhost deployment
 
+**Current event update:** registration closed after the extended final date of
+10 November 2026. Existing participants can sign in to complete missing student
+IDs and their team name. See [COMPLETION-UPDATE.md](COMPLETION-UPDATE.md) for the
+code-only update and private Google Drive setup. Do not run the optional
+historical migration/import steps below for this update.
+
 This distribution serves the complete website and `/api` from one Node.js app.
 It uses PostgreSQL, native participant/organizer login, and private files on the
 hosting disk. Replit login, the Replit storage sidecar, and the Replit connector

@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import type { ParticipantRegistrationList, ParticipantRegistration } from "@workspace/api-zod";
 import { test } from "node:test";
 import { createCipheriv, createHash, randomBytes, randomUUID, scryptSync } from "node:crypto";
 import { mkdtemp, readFile, writeFile, rm, symlink, unlink } from "node:fs/promises";
@@ -13,6 +14,7 @@ import app from "../src/app";
 import { advisoryLockKey } from "../src/lib/advisoryLock";
 import { processRegistrationSpreadsheetSync } from "../src/lib/registrationSpreadsheetSync";
 import { queueExistingRegistrationSpreadsheets } from "../src/lib/registrationSpreadsheetBackfill";
+import { setTestRegistrationClosed } from "./fixtures/registrationPolicy";
 
 const hash = (bytes: Buffer) => createHash("sha256").update(bytes).digest("hex");
 const headers = { Origin: "https://synthetic.example.invalid", "Content-Type": "application/json" };
@@ -143,26 +145,86 @@ test("portable app preserves native login, ownership, immutable uploads and encr
     assert.equal((await postgres.query<{ count: number }>("SELECT count(*)::int AS count FROM team_registrations")).rows[0].count, 1);
     assert.equal((await postgres.query<{ status: string }>("SELECT status FROM registration_notifications")).rows[0].status, "pending");
     assert.equal((await postgres.query<{ status: string }>("SELECT status FROM registration_spreadsheet_sync")).rows[0].status, "pending");
+    // Simulate a historical team with one already-uploaded leader ID and a
+    // missing member ID. All changes stay in this isolated in-memory fixture.
+    const savedId = (await postgres.query<{ id: string }>("SELECT id FROM team_registrations")).rows[0].id;
+    const completionKey = randomUUID();
+    await postgres.query("UPDATE registration_uploads SET registration_id = NULL, member_position = 1, completion_registration_id = $1, submission_key = $2 WHERE id = $3",
+      [savedId, completionKey, uploads[2]]);
+    setTestRegistrationClosed(true);
+    try {
+      assert.equal((await submit(payload)).status, 410, "closed intake rejects even old new-registration form retries");
+      assert.equal((await request("/api/participant-auth/signup", { method: "POST", headers, body: "{}" })).status, 410);
+      assert.equal((await request("/api/participant-registrations", { headers })).status, 401);
+      const own = await request("/api/participant-registrations", { headers: { ...headers, Cookie: cookie } });
+      assert.equal(own.status, 200);
+      const before = (await own.json() as ParticipantRegistrationList).items[0];
+      assert.ok(before.members[0].studentIdUrl);
+      assert.equal(before.members[1].studentIdUrl, null);
+      const complete = (body: unknown, origin = headers.Origin) => request(`/api/participant-registrations/${savedId}/complete`, {
+        method: "POST", headers: { ...headers, Origin: origin, Cookie: cookie }, body: JSON.stringify(body),
+      });
+      const update = { teamName: "Synthetic completed team", revision: 0, submissionKey: completionKey,
+        members: [{ position: 1, studentIdUploadId: uploads[2] }] };
+      assert.equal((await complete({ ...update, members: [] })).status, 400);
+      assert.equal((await complete({ ...update, members: [{ position: 0, studentIdUploadId: uploads[0] }] })).status, 400);
+      assert.equal((await complete({ ...update, revision: 9 })).status, 409);
+      assert.equal((await complete(update, "https://foreign.example.invalid")).status, 403);
+      const completed = await complete(update);
+      assert.equal(completed.status, 200, await completed.clone().text());
+      const after = await completed.json() as ParticipantRegistration;
+      assert.equal(after.teamName, update.teamName);
+      assert.equal(after.revision, 1);
+      assert.ok(after.members[1].studentIdUrl);
+      assert.equal((await complete(update)).status, 200, "lost response retries are idempotent");
+      const rename = await complete({ ...update, revision: 1, teamName: "Synthetic team renamed", members: [] });
+      assert.equal(rename.status, 200);
+      assert.equal((await complete({ ...update, teamName: "Stale team" })).status, 409);
+      assert.equal((await postgres.query("SELECT * FROM team_registrations")).rows.length, 1);
+      assert.equal((await postgres.query("SELECT * FROM registration_notifications")).rows.length, 1);
+      assert.equal((await postgres.query("SELECT * FROM registration_spreadsheet_sync")).rows.length, 1);
+      assert.equal((await request("/api/storage/uploads/request-url", { method: "POST", headers: { ...headers, Cookie: cookie },
+        body: JSON.stringify({ submissionKey: randomUUID(), purpose: "student_id", name: "late.png", size: 10, contentType: "image/png" }) })).status, 410);
+    } finally { setTestRegistrationClosed(false); }
     const oldSheetsEnabled = process.env.GOOGLE_SHEETS_SYNC_ENABLED;
     const oldSheetsUrl = process.env.GOOGLE_SHEETS_WEBHOOK_URL;
     const oldSheetsToken = process.env.GOOGLE_SHEETS_SYNC_TOKEN;
     const originalFetch = globalThis.fetch;
     let sheetRequests = 0;
     let failSheetRequest = true;
+    let documentUploads = 0;
+    let reviseDuringDriveSync = false;
+    const oldDriveEnabled = process.env.GOOGLE_DRIVE_SYNC_ENABLED;
     process.env.GOOGLE_SHEETS_SYNC_ENABLED = "true";
     process.env.GOOGLE_SHEETS_WEBHOOK_URL = "https://script.google.com/macros/s/synthetic/exec";
     process.env.GOOGLE_SHEETS_SYNC_TOKEN = "synthetic-secret-not-for-production";
     globalThis.fetch = async (_input, init) => {
-      sheetRequests++;
       const sent = JSON.parse(String(init?.body));
       assert.equal(sent.token, "synthetic-secret-not-for-production");
+      if (sent.action === "upload_document") {
+        documentUploads++;
+        assert.equal(Buffer.from(sent.document.base64, "base64").length, sent.document.size);
+        const fileId = sent.document.uploadId.replaceAll("-", "");
+        return new Response(JSON.stringify({ ok: true, fileId, url: `https://drive.google.com/file/d/${fileId}/view` }), { status: 200 });
+      }
+      sheetRequests++;
       assert.deepEqual(sent.registration.memberNames, ["Synthetic participant", "Synthetic member"]);
+      assert.equal(sent.registration.teamName, "Synthetic team renamed");
       assert.equal(sent.registration.contactEmail, "synthetic-native@example.invalid");
       assert.equal(sent.registration.contactPhone, "+620000000001");
       assert.equal(sent.registration.alternativePhone, "+620000000002");
       assert.ok(!JSON.stringify(sent).includes("student_id"));
       assert.ok(!JSON.stringify(sent).includes("payment_proof"));
       assert.ok(!JSON.stringify(sent).includes("passwordHash"));
+      if (sent.registration.documentsSynced) {
+        assert.equal(sent.registration.studentIds.filter((person: { url: string | null }) => person.url).length, 2);
+        assert.match(sent.registration.paymentProofUrl, /^https:\/\/drive\.google\.com\/file\/d\//);
+        assert.ok(!JSON.stringify(sent).includes("base64"));
+        if (reviseDuringDriveSync) {
+          reviseDuringDriveSync = false;
+          await postgres.exec("UPDATE registration_spreadsheet_sync SET revision = revision + 1");
+        }
+      }
       const ok = !failSheetRequest;
       failSheetRequest = false;
       return new Response(JSON.stringify({ ok }), { status: 200, headers: { "Content-Type": "application/json" } });
@@ -177,6 +239,17 @@ test("portable app preserves native login, ownership, immutable uploads and encr
       assert.equal((await postgres.query<{ status: string }>("SELECT status FROM registration_spreadsheet_sync")).rows[0].status, "sent");
       await processRegistrationSpreadsheetSync();
       assert.equal(sheetRequests, 2, "a successful retry must not resend an already synced registration");
+      process.env.GOOGLE_DRIVE_SYNC_ENABLED = "true";
+      await postgres.exec("UPDATE registration_spreadsheet_sync SET status = 'pending', revision = revision + 1, next_attempt_at = now()");
+      reviseDuringDriveSync = true;
+      await processRegistrationSpreadsheetSync();
+      assert.equal(documentUploads, 3, "one private Drive copy per saved document, reused on newer revisions");
+      assert.equal(sheetRequests, 4, "a team update during processing gets its own latest-row delivery");
+      const synchronized = (await postgres.query<{ status: string; revision: number; synced_revision: number }>(
+        "SELECT status, revision, synced_revision FROM registration_spreadsheet_sync")).rows[0];
+      assert.equal(synchronized.status, "sent");
+      assert.equal(synchronized.synced_revision, synchronized.revision);
+      assert.equal((await postgres.query("SELECT id FROM registration_uploads WHERE drive_file_id IS NOT NULL")).rows.length, 3);
     } finally {
       globalThis.fetch = originalFetch;
       if (oldSheetsEnabled === undefined) delete process.env.GOOGLE_SHEETS_SYNC_ENABLED;
@@ -185,6 +258,8 @@ test("portable app preserves native login, ownership, immutable uploads and encr
       else process.env.GOOGLE_SHEETS_WEBHOOK_URL = oldSheetsUrl;
       if (oldSheetsToken === undefined) delete process.env.GOOGLE_SHEETS_SYNC_TOKEN;
       else process.env.GOOGLE_SHEETS_SYNC_TOKEN = oldSheetsToken;
+      if (oldDriveEnabled === undefined) delete process.env.GOOGLE_DRIVE_SYNC_ENABLED;
+      else process.env.GOOGLE_DRIVE_SYNC_ENABLED = oldDriveEnabled;
     }
 
     const registered = (await postgres.query<Record<string, unknown>>("SELECT * FROM registration_uploads ORDER BY purpose DESC")).rows;
@@ -212,6 +287,12 @@ test("portable app preserves native login, ownership, immutable uploads and encr
     });
     assert.equal(ambiguous.status, 409, "A username must not shadow another participant's email");
     const otherCookie = (other.headers.get("set-cookie") || "").split(";")[0];
+    const foreignList = await request("/api/participant-registrations", { headers: { ...headers, Cookie: otherCookie } });
+    assert.deepEqual(await foreignList.json(), { items: [] });
+    assert.equal((await request(`/api/participant-registrations/${savedId}/complete`, {
+      method: "POST", headers: { ...headers, Cookie: otherCookie },
+      body: JSON.stringify({ teamName: "Synthetic intruder", revision: 2, submissionKey: randomUUID(), members: [] }),
+    })).status, 404);
     assert.equal((await request(`/api/storage${registered[0].object_path}`, { headers: { Cookie: otherCookie, Origin: headers.Origin } })).status, 404);
     const organizer = await request("/api/organizer-auth/signin", {
       method: "POST", headers, body: JSON.stringify({ username: "synthetic-organizer", password: "Synthetic-organizer-password-2026" }),

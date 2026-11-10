@@ -5,6 +5,48 @@
  * API specification
  * OpenAPI spec version: 0.1.0
  */
+export interface ParticipantRegistrationMember {
+  position: number;
+  fullName: string;
+  /** @nullable */
+  studentIdFileName: string | null;
+  /** @nullable */
+  studentIdUrl: string | null;
+}
+
+export interface ParticipantRegistration {
+  id: string;
+  referenceCode: string;
+  teamName: string;
+  revision: number;
+  members: ParticipantRegistrationMember[];
+  /** @nullable */
+  paymentProofUrl: string | null;
+  spreadsheetStatus: string;
+}
+
+export interface ParticipantRegistrationList {
+  items: ParticipantRegistration[];
+}
+
+export interface ParticipantStudentIdInput {
+  /** @minimum 0 */
+  position: number;
+  studentIdUploadId: string;
+}
+
+export interface ParticipantRegistrationUpdate {
+  /**
+     * @minLength 2
+     * @maxLength 120
+     */
+  teamName: string;
+  /** @minimum 0 */
+  revision: number;
+  submissionKey: string;
+  members: ParticipantStudentIdInput[];
+}
+
 export interface ParticipantUser {
   id: string;
   username: string;
@@ -146,6 +188,9 @@ export const UploadUrlRequestContentType = {
 } as const;
 
 export interface UploadUrlRequest {
+  registrationId?: string;
+  /** @minimum 0 */
+  memberPosition?: number;
   submissionKey: string;
   purpose: UploadUrlRequestPurpose;
   /**

@@ -36,7 +36,7 @@ async function run(mutate = false) {
         build.onResolve({ filter: /^@workspace\/api-zod$/ }, () => ({
           path: join(root, "../../lib/api-zod/src/index.ts"),
         }));
-        build.onResolve({ filter: /^(?:\.\.\/lib\/registrationNotifications|\.\/storage)$/ }, () => ({
+        build.onResolve({ filter: /^(?:\.\.\/lib\/registrationNotifications|\.\.\/lib\/registrationSpreadsheetSync|\.\/storage)$/ }, () => ({
           path: join(root, "tests/fixtures/services.ts"),
         }));
         if (mutate) build.onLoad({ filter: /src\/routes\/admin\.ts$/ }, async ({ path }) => ({

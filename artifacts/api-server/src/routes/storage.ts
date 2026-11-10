@@ -1,7 +1,8 @@
 import { Readable } from "node:stream";
 import { Router, raw as rawBody, type IRouter, type Response } from "express";
 import { and, eq } from "drizzle-orm";
-import { db, registrationUploadsTable } from "@workspace/db";
+import { db, registrationUploadsTable, teamRegistrationsTable, teamRegistrationMembersTable } from "@workspace/db";
+import { isRegistrationClosed, registrationClosedMessage } from "../lib/registrationPolicy";
 import { RequestUploadUrlBody, RequestUploadUrlResponse } from "@workspace/api-zod";
 import { ObjectStorageService } from "../lib/objectStorage";
 import { registrationOwner, sameSiteRequest } from "../lib/participantAuth";
@@ -67,11 +68,32 @@ router.post("/storage/uploads/request-url", async (req, res): Promise<void> => {
   }
   try {
     const data = parsed.data;
+    if (data.registrationId) {
+      const [registration] = await db.select({ id: teamRegistrationsTable.id, studentIdUploadId: teamRegistrationsTable.studentIdUploadId }).from(teamRegistrationsTable)
+        .where(and(eq(teamRegistrationsTable.id, data.registrationId), eq(teamRegistrationsTable.ownerId, ownerId))).limit(1);
+      const [member] = await db.select({ id: teamRegistrationMembersTable.id }).from(teamRegistrationMembersTable)
+        .where(and(eq(teamRegistrationMembersTable.registrationId, data.registrationId), eq(teamRegistrationMembersTable.position, data.memberPosition ?? -1))).limit(1);
+      if (!registration || !member || data.purpose !== "student_id") {
+        res.status(400).json({ error: "Only missing student IDs for your existing team can be uploaded." }); return;
+      }
+      const [firstMember] = await db.select({ position: teamRegistrationMembersTable.position }).from(teamRegistrationMembersTable)
+        .where(eq(teamRegistrationMembersTable.registrationId, registration.id)).orderBy(teamRegistrationMembersTable.position).limit(1);
+      const saved = await db.select().from(registrationUploadsTable)
+        .where(and(eq(registrationUploadsTable.registrationId, registration.id), eq(registrationUploadsTable.purpose, "student_id")));
+      if (saved.some((file) => file.memberPosition === data.memberPosition ||
+        (firstMember?.position === data.memberPosition && file.id === registration.studentIdUploadId && file.memberPosition === null))) {
+        res.status(409).json({ error: "A student ID is already on file for this person. Reload your team details." }); return;
+      }
+    } else if (isRegistrationClosed()) {
+      res.status(410).json({ error: registrationClosedMessage }); return;
+    }
     const uploadURL = await registrationStorage.getObjectEntityUploadURL();
     const [upload] = await db.insert(registrationUploadsTable).values({
       ownerId,
       submissionKey: data.submissionKey,
       purpose: data.purpose,
+      completionRegistrationId: data.registrationId ?? null,
+      memberPosition: data.registrationId ? data.memberPosition : null,
       objectPath: registrationStorage.normalizeObjectEntityPath(uploadURL),
       fileName: data.name,
       contentType: data.contentType,

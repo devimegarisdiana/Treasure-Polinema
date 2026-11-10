@@ -189,3 +189,40 @@
   .reg-member,.reg-err,.reg-ref,.reg-skel,.reg-bar i { animation:none; }
   .reg-btn,.reg-seg label,.reg-lang button { transition:none; }
 }
+.pt-seal{width:58px;height:58px;display:grid;place-items:center;border-radius:50%;color:var(--treasure-soft-red);background:var(--treasure-blush);border:1px solid rgba(169,101,112,.3);box-shadow:0 0 0 10px rgba(169,101,112,.06),0 0 0 20px rgba(99,119,143,.05);margin-bottom:26px}
+.pt-journey{display:flex;flex-direction:column;gap:18px;min-width:0}
+.pt-lede{margin:0;color:#5c5860;font-size:14px;line-height:1.7}
+.pt-card{background:rgba(252,250,247,.9);border:1px solid #e0dad5;padding:clamp(18px,4vw,30px);box-shadow:0 14px 34px rgba(64,68,82,.05);display:flex;flex-direction:column;gap:16px;min-width:0}
+.pt-card-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap}
+.pt-kicker{display:block;font:500 9px var(--app-font-mono);letter-spacing:.14em;text-transform:uppercase;color:var(--treasure-soft-red);margin-bottom:4px}
+.pt-ref{font:500 14px var(--app-font-mono);color:var(--treasure-blue-deep);word-break:break-all}
+.pt-pill{font:500 10px var(--app-font-mono);letter-spacing:.06em;text-transform:uppercase;padding:6px 10px;background:var(--treasure-light-blue);color:var(--treasure-blue-deep);border:1px solid var(--treasure-pale-blue)}
+.pt-pill.warn{background:var(--treasure-blush);color:#8a4f59;border-color:#e6cfd0}
+.pt-title{margin:0;font:500 clamp(26px,4vw,36px)/1.05 var(--app-font-serif);letter-spacing:-.03em;overflow-wrap:anywhere}
+.pt-ok{display:flex;gap:10px;align-items:flex-start;padding:12px 14px;background:var(--treasure-light-blue);border:1px solid var(--treasure-pale-blue);color:var(--treasure-blue-deep);font-size:13px;line-height:1.55}
+.pt-ok svg{flex:none;margin-top:2px}
+.pt-mini{min-height:36px!important;padding:0 12px!important;margin-left:10px;margin-top:6px}
+.pt-members{list-style:none;margin:0;padding:0;border-top:1px solid #e3ddd8}
+.pt-member{display:grid;grid-template-columns:1fr 1fr;gap:12px;align-items:center;padding:13px 0;border-bottom:1px solid #e3ddd8}
+.pt-member-name{display:flex;gap:10px;align-items:baseline;min-width:0}
+.pt-member-name strong{font-weight:600;font-size:14px;overflow-wrap:anywhere}
+.pt-member-name em{font:normal 9px var(--app-font-mono);text-transform:uppercase;letter-spacing:.1em;color:var(--treasure-soft-red)}
+.pt-pos{font:500 11px var(--app-font-mono);color:var(--treasure-blue)}
+.pt-doc{display:inline-flex;gap:7px;align-items:center;flex-wrap:wrap;font-size:13px;color:var(--treasure-blue-deep);text-decoration:none;overflow-wrap:anywhere}
+.pt-doc small{font:9px var(--app-font-mono);text-transform:uppercase;letter-spacing:.08em;color:#8a868c}
+.pt-doc:hover{text-decoration:underline}
+.pt-doc:focus-visible,.pt-link:focus-visible{outline:2px solid var(--treasure-blue);outline-offset:3px}
+.pt-upload{display:flex;flex-direction:column;gap:6px;min-width:0;position:relative}
+.pt-file{position:absolute;width:1px;height:1px;opacity:0}
+.pt-drop{display:flex;gap:8px;align-items:center;min-height:42px;padding:0 12px;border:1px dashed #b9a2a6;background:#fbf4f3;color:#8a4f59;font:500 11px var(--app-font-mono);cursor:pointer;overflow-wrap:anywhere}
+.pt-drop.done{border-style:solid;border-color:var(--treasure-pale-blue);background:var(--treasure-light-blue);color:var(--treasure-blue-deep)}
+.pt-file:focus-visible+.pt-upstate,.pt-upload:focus-within .pt-drop{outline:2px solid var(--treasure-blue);outline-offset:2px}
+.pt-upstate{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.pt-upstate .reg-bar{flex:1 1 100%}
+.pt-link{background:none;border:0;padding:0;color:var(--treasure-blue-deep);font:500 11px var(--app-font-mono);text-decoration:underline;cursor:pointer}
+.pt-payment{display:flex;flex-direction:column;gap:4px}
+.pt-foot{display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap}
+.pt-empty{padding:40px clamp(20px,5vw,44px);text-align:center;background:rgba(252,250,247,.9);border:1px solid #e0dad5;color:var(--treasure-soft-red)}
+.pt-empty h2{font:500 28px var(--app-font-serif);color:#393940;margin:14px 0 10px}
+.pt-empty p{color:#5c5860;font-size:14px;line-height:1.7;max-width:420px;margin:0 auto}
+@media(max-width:620px){.pt-member{grid-template-columns:1fr}.pt-foot .reg-btn{width:100%}}

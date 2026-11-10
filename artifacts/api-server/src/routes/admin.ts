@@ -14,7 +14,7 @@ import { isTreasureAdmin } from "../lib/adminAccess";
 import { notificationSetup, processRegistrationNotifications } from "../lib/registrationNotifications";
 import { registrationStorage, streamFile } from "./storage";
 import { sameSiteRequest } from "../lib/participantAuth";
-import { queueExistingRegistrationSpreadsheets } from "../lib/registrationSpreadsheetBackfill";
+import { queueExistingRegistrationSpreadsheets, refreshExistingRegistrationDocuments } from "../lib/registrationSpreadsheetBackfill";
 import { processRegistrationSpreadsheetSync } from "../lib/registrationSpreadsheetSync";
 
 const router: IRouter = Router();
@@ -36,6 +36,19 @@ router.use("/admin", (req, res, next) => {
   if (!req.organizer) { res.status(401).json({ error: "Please sign in." }); return; }
   if (!isTreasureAdmin(req)) { res.status(403).json({ error: "This dashboard is restricted to authorized organizers." }); return; }
   next();
+});
+
+router.post("/admin/spreadsheet-sync/refresh-documents", async (req, res) => {
+  if (process.env.RUNTIME_HOST !== "cpanel" || process.env.GOOGLE_DRIVE_SYNC_ENABLED !== "true") {
+    res.status(503).json({ error: "Enable private Google Drive sync on live hosting after updating the Apps Script deployment." }); return;
+  }
+  try {
+    res.status(202).json(BackfillRegistrationSpreadsheetResponse.parse(await refreshExistingRegistrationDocuments()));
+    void processRegistrationSpreadsheetSync();
+  } catch {
+    req.log.error("Unable to queue private document refresh");
+    res.status(500).json({ error: "The private document refresh could not be queued. Please retry." });
+  }
 });
 
 router.post("/admin/spreadsheet-sync/backfill", async (req, res) => {

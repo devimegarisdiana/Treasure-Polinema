@@ -10,7 +10,8 @@ type Props = {
   sessionError: boolean;
   expired?: boolean;
   busy: boolean;
-  onSignUp: (data: { username: string; email: string; password: string }) => Promise<unknown>;
+  signInOnly?: boolean;
+  onSignUp?: (data: { username: string; email: string; password: string }) => Promise<unknown>;
   onSignIn: (data: { identifier: string; password: string }) => Promise<unknown>;
   onSignOut: () => Promise<unknown>;
   onRetry: () => Promise<unknown>;
@@ -26,9 +27,9 @@ function readableError(error: unknown) {
 }
 
 export default function ParticipantAuth({
-  user, loading, checking, sessionError, expired, busy, onSignUp, onSignIn, onSignOut, onRetry,
+  user, loading, checking, sessionError, expired, busy, signInOnly, onSignUp, onSignIn, onSignOut, onRetry,
 }: Props) {
-  const [mode, setMode] = useState<'signin' | 'signup'>('signup');
+  const [mode, setMode] = useState<'signin' | 'signup'>(signInOnly ? 'signin' : 'signup');
   const [username, setUsername] = useState('');
   const [identifier, setIdentifier] = useState('');
   const [email, setEmail] = useState('');
@@ -52,7 +53,7 @@ export default function ParticipantAuth({
   const confirmationError = confirmation !== password ? 'Passwords do not match.' : '';
   const identifierError = !identifier.trim() ? 'Enter your username or email.' : '';
   const signInPasswordError = !password ? 'Enter your password.' : '';
-  const isSignup = mode === 'signup';
+  const isSignup = !signInOnly && !!onSignUp && mode === 'signup';
 
   const submit = async (event: FormEvent) => {
     event.preventDefault();
@@ -64,7 +65,7 @@ export default function ParticipantAuth({
     if (invalid) return;
     try {
       if (isSignup) {
-        await onSignUp({ username: username.trim(), email: email.trim(), password });
+        await onSignUp?.({ username: username.trim(), email: email.trim(), password });
       } else {
         await onSignIn({ identifier: identifier.trim(), password });
       }
@@ -102,20 +103,20 @@ export default function ParticipantAuth({
       <span className="reg-auth-icon"><LockKeyhole size={19} aria-hidden="true" /></span>
       <div>
         <div className="reg-auth-kicker">Private participant access</div>
-        <h2 id="participant-auth-title">{expired ? 'Sign in to continue' : 'Your team starts here.'}</h2>
+        <h2 id="participant-auth-title">{expired ? 'Sign in to continue' : signInOnly ? 'Returning participants' : 'Your team starts here.'}</h2>
       </div>
     </div>
-    <p className="reg-auth-intro">Create a participant account or sign in to keep your team details and uploaded documents private.</p>
+    <p className="reg-auth-intro">{signInOnly ? 'Sign in with the participant account you used to register. New accounts and new teams cannot be created.' : 'Create a participant account or sign in to keep your team details and uploaded documents private.'}</p>
     {sessionError && <div className="reg-alert" role="alert">
       We could not check your session. Try again before continuing.
       <button type="button" className="reg-btn reg-yellow reg-auth-retry" onClick={() => void onRetry()} disabled={checking} data-testid="button-retry-session">
         {checking ? 'Checking…' : 'Try again'}
       </button>
     </div>}
-    <div className="reg-auth-tabs" role="tablist" aria-label="Participant account access">
+    {!signInOnly && onSignUp && <div className="reg-auth-tabs" role="tablist" aria-label="Participant account access">
       <button type="button" role="tab" aria-selected={isSignup} className={isSignup ? 'active' : ''} onClick={() => { setMode('signup'); setError(''); setAttempted(false); setPassword(''); }} data-testid="tab-create-account">Create account</button>
       <button type="button" role="tab" aria-selected={!isSignup} className={!isSignup ? 'active' : ''} onClick={() => { setMode('signin'); setError(''); setAttempted(false); setPassword(''); }} data-testid="tab-sign-in">Sign in</button>
-    </div>
+    </div>}
     {error && <div className="reg-alert" role="alert" data-testid="text-auth-error">{error}</div>}
     <form className="reg-auth-form" onSubmit={submit} noValidate>
       {isSignup ? <>
@@ -167,6 +168,6 @@ export default function ParticipantAuth({
         {busy ? 'Please wait…' : isSignup ? 'Create participant account' : 'Sign in and continue'}
       </button>
     </form>
-    <p className="reg-auth-foot">No email verification or password reset is part of this registration journey.</p>
+    <p className="reg-auth-foot">Lost access? Contact Ms. Abryel on WhatsApp +62 852-3076-2534.</p>
   </section>;
 }

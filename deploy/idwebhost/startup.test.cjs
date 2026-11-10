@@ -42,11 +42,11 @@ test("Hosting startup widens only the legacy username column and preserves accou
     await context.finished;
     assert.deepEqual(errors, []);
     assert.equal(context.serverLoaded, true);
-    assert.equal(queries.filter(sql => sql.startsWith("ALTER TABLE")).length, dataType === "character varying" ? 2 : 1);
+    assert.equal(queries.filter(sql => sql.startsWith("ALTER TABLE")).length, dataType === "character varying" ? 10 : 9);
     assert.ok(queries.every(sql => !/(?:^|;)\s*(DROP|DELETE|TRUNCATE)\b/i.test(sql)));
     assert.ok(queries.filter(sql => sql.startsWith("ALTER TABLE")).every(sql =>
       sql === "ALTER TABLE public.participant_accounts ALTER COLUMN username TYPE text" ||
-      sql === "ALTER TABLE public.registration_uploads ADD COLUMN IF NOT EXISTS member_position integer"));
+      /^ALTER TABLE public\.(registration_uploads|team_registrations|registration_spreadsheet_sync) ADD COLUMN IF NOT EXISTS (member_position integer|completion_registration_id uuid|drive_file_id text|drive_file_url text|details_revision integer NOT NULL DEFAULT 0|revision integer NOT NULL DEFAULT 1|synced_revision integer NOT NULL DEFAULT 0|claim_token uuid|include_documents boolean NOT NULL DEFAULT false)$/.test(sql)));
     assert.equal(queries.filter(sql => sql === "ALTER TABLE public.registration_uploads ADD COLUMN IF NOT EXISTS member_position integer").length, 1);
     assert.equal(queries.filter(sql => sql.includes("CREATE TABLE IF NOT EXISTS public.registration_spreadsheet_sync")).length, 1);
   }

@@ -1,54 +1,18 @@
-import { eq, sql } from "drizzle-orm";
-import {
-  db,
-  registrationSpreadsheetSyncTable,
-  teamRegistrationsTable,
-  teamRegistrationMembersTable,
-} from "@workspace/db";
+import { randomUUID } from "node:crypto";
+import { and, eq, sql } from "drizzle-orm";
+import { db, registrationSpreadsheetSyncTable as sync, teamRegistrationsTable as registrations, teamRegistrationMembersTable as members } from "@workspace/db";
 import { logger } from "./logger";
-
-type SheetRegistration = {
-  referenceCode: string;
-  teamName: string;
-  competition: string | null;
-  institution: string | null;
-  submittedAt: string;
-  memberNames: string[];
-  contactEmail: string;
-  contactPhone: string;
-  alternativePhone: string | null;
-};
+import { spreadsheetRequest, syncPrivateDriveDocuments } from "./registrationDriveSync";
 
 let running = false;
 
-async function sendToSpreadsheet(data: SheetRegistration): Promise<void> {
-  const endpoint = process.env.GOOGLE_SHEETS_WEBHOOK_URL?.trim();
-  const token = process.env.GOOGLE_SHEETS_SYNC_TOKEN;
-  if (!endpoint || !token) throw new Error("Spreadsheet sync is not configured.");
-
-  const parsedUrl = new URL(endpoint);
-  if (parsedUrl.protocol !== "https:" || parsedUrl.hostname !== "script.google.com") {
-    throw new Error("Spreadsheet sync endpoint is not an approved HTTPS Apps Script URL.");
-  }
-
-  const response = await fetch(parsedUrl, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ token, registration: data }),
-    signal: AbortSignal.timeout(20_000),
-  });
-  const result = await response.json().catch(() => null) as { ok?: boolean } | null;
-  if (!response.ok || result?.ok !== true) throw new Error("Spreadsheet rejected the registration update.");
-}
-
 export async function processRegistrationSpreadsheetSync(): Promise<void> {
-  if (process.env.GOOGLE_SHEETS_SYNC_ENABLED !== "true" ||
-      !process.env.GOOGLE_SHEETS_WEBHOOK_URL?.trim() ||
-      !process.env.GOOGLE_SHEETS_SYNC_TOKEN) return;
-  if (running) return;
+  if (process.env.GOOGLE_SHEETS_SYNC_ENABLED !== "true" || !process.env.GOOGLE_SHEETS_WEBHOOK_URL?.trim() ||
+      !process.env.GOOGLE_SHEETS_SYNC_TOKEN || running) return;
   running = true;
   try {
     for (let count = 0; count < 5; count++) {
+      const token = randomUUID();
       const result = await db.execute(sql`
         WITH candidate AS (
           SELECT id FROM registration_spreadsheet_sync
@@ -57,53 +21,54 @@ export async function processRegistrationSpreadsheetSync(): Promise<void> {
           ORDER BY created_at FOR UPDATE SKIP LOCKED LIMIT 1
         )
         UPDATE registration_spreadsheet_sync AS s
-        SET status = 'processing', locked_at = now(), attempts = attempts + 1
+        SET status = 'processing', locked_at = now(), claim_token = ${token}::uuid, attempts = attempts + 1
         FROM candidate WHERE s.id = candidate.id
-        RETURNING s.id, s.registration_id, s.attempts
+        RETURNING s.id, s.registration_id, s.attempts, s.revision, s.include_documents
       `);
-      const job = result.rows[0] as { id: string; registration_id: string; attempts: number } | undefined;
+      const job = result.rows[0] as { id: string; registration_id: string; attempts: number; revision: number; include_documents: boolean } | undefined;
       if (!job) break;
+      const claim = and(eq(sync.id, job.id), eq(sync.claimToken, token));
       try {
-        const [registration] = await db.select().from(teamRegistrationsTable)
-          .where(eq(teamRegistrationsTable.id, job.registration_id)).limit(1);
-        if (!registration) throw new Error("The registration could not be found.");
-        const members = await db.select({ name: teamRegistrationMembersTable.fullName })
-          .from(teamRegistrationMembersTable)
-          .where(eq(teamRegistrationMembersTable.registrationId, registration.id))
-          .orderBy(teamRegistrationMembersTable.position);
-
-        await sendToSpreadsheet({
-          referenceCode: registration.referenceCode,
-          teamName: registration.teamName,
-          competition: registration.competition,
-          institution: registration.institution,
-          submittedAt: registration.createdAt.toISOString(),
-          memberNames: members.map((member) => member.name),
-          // The current registration form stores a shared team contact,
-          // not a separate email or phone for every member.
-          contactEmail: registration.contactEmail,
-          contactPhone: registration.contactPhone,
-          alternativePhone: registration.alternativePhone,
+        const [registration] = await db.select().from(registrations).where(eq(registrations.id, job.registration_id)).limit(1);
+        if (!registration) throw new Error("Registration not found.");
+        const people = await db.select({ name: members.fullName, position: members.position }).from(members)
+          .where(eq(members.registrationId, registration.id)).orderBy(members.position);
+        const documentsSynced = process.env.GOOGLE_DRIVE_SYNC_ENABLED === "true" && job.include_documents;
+        const documents = documentsSynced ? await syncPrivateDriveDocuments(registration.id, registration.referenceCode) : [];
+        const legacyStudentIds = documents.filter((file) => file.purpose === "student_id" && file.memberPosition === null);
+        const studentIds = people.map((person) => {
+          const doc = documents.find((file) => file.purpose === "student_id" && file.memberPosition === person.position)
+            ?? (person.position === people[0]?.position
+              ? documents.find((file) => file.purpose === "student_id" && file.uploadId === registration.studentIdUploadId)
+                ?? (legacyStudentIds.length === 1 ? legacyStudentIds[0] : undefined) : undefined);
+          return { name: person.name, url: doc?.url ?? null };
         });
-        await db.update(registrationSpreadsheetSyncTable).set({
-          status: "sent", syncedAt: new Date(), lockedAt: null, lastError: null,
-        }).where(eq(registrationSpreadsheetSyncTable.id, job.id));
+        await spreadsheetRequest({ protocolVersion: 2, registration: {
+          referenceCode: registration.referenceCode, revision: job.revision,
+          teamName: registration.teamName, competition: registration.competition, institution: registration.institution,
+          submittedAt: registration.createdAt.toISOString(), memberNames: people.map((person) => person.name),
+          contactEmail: registration.contactEmail, contactPhone: registration.contactPhone, alternativePhone: registration.alternativePhone,
+          documentsSynced, studentIds, paymentProofUrl: documents.find((file) => file.purpose === "payment_proof")?.url ?? null,
+        } });
+        await db.update(sync).set({
+          status: sql`CASE WHEN ${sync.revision} = ${job.revision} THEN 'sent' ELSE 'pending' END`,
+          syncedRevision: sql`GREATEST(${sync.syncedRevision}, ${job.revision})`,
+          syncedAt: new Date(), lockedAt: null, claimToken: null, lastError: null, nextAttemptAt: new Date(),
+        }).where(claim);
       } catch {
         const delay = Math.min(15 * 60_000, 60_000 * 2 ** Math.min(job.attempts - 1, 4));
-        await db.update(registrationSpreadsheetSyncTable).set({
-          status: "failed",
-          lastError: "Spreadsheet update failed. Check the Apps Script endpoint, token, and sheet access; automatic retry is scheduled.",
-          lockedAt: null,
-          nextAttemptAt: new Date(Date.now() + delay),
-        }).where(eq(registrationSpreadsheetSyncTable.id, job.id));
-        logger.warn("A registration spreadsheet update failed; it remains queued for retry");
+        await db.update(sync).set({
+          status: sql`CASE WHEN ${sync.revision} = ${job.revision} THEN 'failed' ELSE 'pending' END`,
+          lastError: "Google Sheets / private Drive update failed. Check the Apps Script deployment and permissions; automatic retry is scheduled.",
+          lockedAt: null, claimToken: null,
+          nextAttemptAt: sql`CASE WHEN ${sync.revision} = ${job.revision} THEN ${new Date(Date.now() + delay)}::timestamptz ELSE now() END`,
+        }).where(claim);
+        logger.warn("A private registration spreadsheet update failed and remains queued");
       }
     }
   } catch {
     logger.error("Unable to process the registration spreadsheet queue");
-  } finally {
-    running = false;
-  }
+  } finally { running = false; }
 }
 
 export function startRegistrationSpreadsheetSyncWorker() {

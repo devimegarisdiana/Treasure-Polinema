@@ -304,6 +304,41 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+  /participant-registrations:
+    get:
+      operationId: listParticipantRegistrations
+      responses:
+        "200":
+          description: Registrations owned by the signed-in participant
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ParticipantRegistrationList"
+  /participant-registrations/{id}/complete:
+    post:
+      operationId: completeParticipantRegistration
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ParticipantRegistrationUpdate" }
+      responses:
+        "200":
+          description: Updated registration
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ParticipantRegistration" }
+  /admin/spreadsheet-sync/refresh-documents:
+    post:
+      operationId: refreshRegistrationDocuments
+      responses:
+        "202":
+          description: Latest registration details and private Drive documents queued
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/SpreadsheetBackfillResult" }
   /registrations/teams:
     post:
       operationId: createTeamRegistration
@@ -341,6 +376,50 @@ paths:
                 $ref: "#/components/schemas/ErrorResponse"
 components:
   schemas:
+    ParticipantRegistrationMember:
+      type: object
+      required: [position, fullName, studentIdFileName, studentIdUrl]
+      properties:
+        position: { type: integer }
+        fullName: { type: string }
+        studentIdFileName: { type: ["string", "null"] }
+        studentIdUrl: { type: ["string", "null"] }
+    ParticipantRegistration:
+      type: object
+      required: [id, referenceCode, teamName, revision, members, paymentProofUrl, spreadsheetStatus]
+      properties:
+        id: { type: string, format: uuid }
+        referenceCode: { type: string }
+        teamName: { type: string }
+        revision: { type: integer }
+        members:
+          type: array
+          items: { $ref: "#/components/schemas/ParticipantRegistrationMember" }
+        paymentProofUrl: { type: ["string", "null"] }
+        spreadsheetStatus: { type: string }
+    ParticipantRegistrationList:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items: { $ref: "#/components/schemas/ParticipantRegistration" }
+    ParticipantStudentIdInput:
+      type: object
+      required: [position, studentIdUploadId]
+      properties:
+        position: { type: integer, minimum: 0 }
+        studentIdUploadId: { type: string, format: uuid }
+    ParticipantRegistrationUpdate:
+      type: object
+      required: [teamName, revision, submissionKey, members]
+      properties:
+        teamName: { type: string, minLength: 2, maxLength: 120 }
+        revision: { type: integer, minimum: 0 }
+        submissionKey: { type: string, format: uuid }
+        members:
+          type: array
+          items: { $ref: "#/components/schemas/ParticipantStudentIdInput" }
     ParticipantUser:
       type: object
       required: [id, username, email]
@@ -469,6 +548,8 @@ components:
       type: object
       required: [submissionKey, purpose, name, size, contentType]
       properties:
+        registrationId: { type: string, format: uuid }
+        memberPosition: { type: integer, minimum: 0 }
         submissionKey: { type: string, format: uuid }
         purpose: { type: string, enum: [student_id, payment_proof] }
         name: { type: string, minLength: 1, maxLength: 200 }
