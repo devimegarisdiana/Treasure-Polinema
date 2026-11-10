@@ -56,3 +56,4 @@ Thumbs.db
 *.treasure-backup
 *.treasure-backup.zip
 private-storage/
+/artifacts/treasure-event/public/documents/

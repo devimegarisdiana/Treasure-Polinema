@@ -28,6 +28,10 @@ const ddl = execFileSync("pnpm", ["--filter", "@workspace/db", "exec", "drizzle-
   "--dialect", "postgresql", "--schema", "./src/schema/index.ts"], { cwd: root, encoding: "utf8" });
 if (!ddl.trim().startsWith("CREATE TABLE")) throw new Error("The schema export did not contain valid SQL.");
 await writeFile(path.join(output, "schema.sql"), ddl);
+// The large public guidebook is retained outside Git. A source build must
+// supply it explicitly rather than produce a broken download link.
+await readFile(path.join(root, "artifacts/treasure-event/public/documents/treasure-2026-official-guidebook.pdf"))
+  .catch(() => { throw new Error("Provide the official guidebook PDF in artifacts/treasure-event/public/documents before building. See COMPLETION-UPDATE.md."); });
 await cp(path.join(root, "artifacts/treasure-event/dist/public"), path.join(output, "public"), { recursive: true });
 await cp(path.join(root, "deploy/idwebhost/app.js"), path.join(output, "app.js"));
 await cp(path.join(root, "deploy/idwebhost/README.md"), path.join(output, "README.md"));

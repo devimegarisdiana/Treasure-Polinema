@@ -1,5 +1,21 @@
 # Closed registration and returning-participant update
 
+## Official guidebook and next agenda
+
+The homepage includes the technical meeting on Friday, 13 November 2026.
+No meeting time or joining URL has been announced in the supplied information.
+
+The official PDF is approximately 12.3 MB and is excluded from Git history.
+When installing from GitHub, separately upload the original supplied PDF through
+cPanel File Manager as:
+
+`~/treasure-app/public/documents/treasure-2026-official-guidebook.pdf`
+
+Create the `documents` directory if needed. This is the public official
+guidebook, **not** the private KTM/payment folder. Do not change the privacy of
+participant documents. The preview/build package includes the PDF locally;
+the GitHub code branch does not include its large binary.
+
 Registration ended on **10 November 2026**. New participant accounts and new team
 registrations are rejected by the server, independent of server/browser clocks.
 Existing native accounts can still sign in at `/register`.

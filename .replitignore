@@ -3,3 +3,10 @@
 
 # No need to store the pnpm store twice.
 .local
+
+# Private migration exports must never be included in a published application.
+tmp
+*.treasure-backup
+*.treasure-backup.zip
+private-storage
+/artifacts/treasure-event/public/documents/

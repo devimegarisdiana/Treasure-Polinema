@@ -1,0 +1,22 @@
+.upcoming-agenda{background:rgba(244,240,235,.65)}
+.agenda-grid{display:grid;grid-template-columns:1.12fr 1fr;gap:24px}
+.agenda-meeting,.agenda-booklet{border:1px solid #dcd6d2;min-width:0;position:relative}
+.agenda-meeting{display:flex;gap:30px;align-items:flex-start;padding:34px;background:linear-gradient(125deg,#f2e5e4,#f7f2ed)}
+.agenda-date{flex:0 0 88px;text-align:center;color:var(--treasure-soft-red);padding:14px 8px;border:1px solid rgba(169,101,112,.28);background:rgba(255,255,255,.35)}
+.agenda-date span{display:block;font:10px var(--app-font-mono);letter-spacing:.09em}
+.agenda-date strong{display:block;font:500 62px/.95 var(--app-font-serif);margin:10px 0}
+.agenda-content{min-width:0}
+.agenda-content .section-label{display:flex;gap:7px;align-items:center;line-height:1.6}
+.agenda-content h3,.agenda-booklet h3{font:500 34px/1.08 var(--app-font-serif);letter-spacing:-.035em;margin:15px 0}
+.agenda-content time{display:block;font-weight:500;font-size:14px;color:#554b53;line-height:1.6}
+.agenda-content p,.agenda-booklet p{font-size:13px;line-height:1.75;color:#716973}
+.agenda-text-link{display:inline-flex;align-items:center;gap:7px;font-size:12px;color:var(--treasure-blue-deep);text-underline-offset:4px;line-height:1.6}
+.agenda-booklet{padding:34px;background:linear-gradient(120deg,#eaf0f4,#f7f4ef)}
+.agenda-booklet-icon{float:right;margin:0 0 12px 14px;color:var(--treasure-blue-deep)}
+.agenda-booklet-actions{display:flex;flex-wrap:wrap;gap:15px;align-items:center;margin:22px 0 17px}
+.agenda-open{display:inline-flex;gap:9px;align-items:center;padding:12px 15px;background:var(--treasure-blue-deep);color:#fff;text-decoration:none;font-size:12px;border:1px solid transparent;transition:background .2s}
+.agenda-open:hover{background:#3d5068}
+.agenda-booklet small{display:block;color:#7a737a;font-size:10px;line-height:1.7}
+.agenda-open:focus-visible,.agenda-text-link:focus-visible{outline:2px solid var(--treasure-soft-red);outline-offset:4px}
+@media(max-width:850px){.agenda-grid{grid-template-columns:1fr}.agenda-meeting,.agenda-booklet{padding:28px}}
+@media(max-width:480px){.agenda-meeting{gap:18px;padding:23px 20px}.agenda-date{flex-basis:65px;padding:12px 4px}.agenda-date strong{font-size:49px}.agenda-date span{font-size:8px}.agenda-content h3,.agenda-booklet h3{font-size:29px}.agenda-content time{font-size:12px}.agenda-booklet{padding:25px 22px}}
