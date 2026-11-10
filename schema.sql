@@ -4,6 +4,9 @@ CREATE TABLE "registration_uploads" (
 	"submission_key" uuid NOT NULL,
 	"purpose" text NOT NULL,
 	"member_position" integer,
+	"completion_registration_id" uuid,
+	"drive_file_id" text,
+	"drive_file_url" text,
 	"object_path" text NOT NULL,
 	"file_name" varchar(200) NOT NULL,
 	"content_type" varchar(40) NOT NULL,
@@ -29,6 +32,7 @@ CREATE TABLE "team_registrations" (
 	"submission_key" uuid NOT NULL,
 	"reference_code" varchar(24) NOT NULL,
 	"team_name" varchar(120) NOT NULL,
+	"details_revision" integer DEFAULT 0 NOT NULL,
 	"contact_email" varchar(254) NOT NULL,
 	"contact_phone" varchar(40) NOT NULL,
 	"owner_id" varchar,
@@ -65,6 +69,10 @@ CREATE TABLE "registration_spreadsheet_sync" (
 	"registration_id" uuid NOT NULL,
 	"status" text DEFAULT 'pending' NOT NULL,
 	"attempts" integer DEFAULT 0 NOT NULL,
+	"revision" integer DEFAULT 1 NOT NULL,
+	"synced_revision" integer DEFAULT 0 NOT NULL,
+	"claim_token" uuid,
+	"include_documents" boolean DEFAULT false NOT NULL,
 	"next_attempt_at" timestamp with time zone DEFAULT now() NOT NULL,
 	"locked_at" timestamp with time zone,
 	"synced_at" timestamp with time zone,
@@ -126,6 +134,7 @@ CREATE TABLE "organizer_sessions" (
 	"expires_at" timestamp with time zone NOT NULL
 );
 
+ALTER TABLE "registration_uploads" ADD CONSTRAINT "registration_uploads_completion_registration_id_team_registrations_id_fk" FOREIGN KEY ("completion_registration_id") REFERENCES "public"."team_registrations"("id") ON DELETE no action ON UPDATE no action;
 ALTER TABLE "registration_uploads" ADD CONSTRAINT "registration_uploads_registration_id_team_registrations_id_fk" FOREIGN KEY ("registration_id") REFERENCES "public"."team_registrations"("id") ON DELETE no action ON UPDATE no action;
 ALTER TABLE "team_registration_members" ADD CONSTRAINT "team_registration_members_registration_id_team_registrations_id_fk" FOREIGN KEY ("registration_id") REFERENCES "public"."team_registrations"("id") ON DELETE cascade ON UPDATE no action;
 ALTER TABLE "registration_notifications" ADD CONSTRAINT "registration_notifications_registration_id_team_registrations_id_fk" FOREIGN KEY ("registration_id") REFERENCES "public"."team_registrations"("id") ON DELETE cascade ON UPDATE no action;

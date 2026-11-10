@@ -20724,27 +20724,27 @@ var require_router = __commonJS({
     var slice = Array.prototype.slice;
     var flatten = Array.prototype.flat;
     var methods = METHODS.map((method) => method.toLowerCase());
-    module.exports = Router9;
+    module.exports = Router10;
     module.exports.Route = Route;
-    function Router9(options) {
-      if (!(this instanceof Router9)) {
-        return new Router9(options);
+    function Router10(options) {
+      if (!(this instanceof Router10)) {
+        return new Router10(options);
       }
       const opts = options || {};
-      function router9(req, res, next) {
-        router9.handle(req, res, next);
+      function router10(req, res, next) {
+        router10.handle(req, res, next);
       }
-      Object.setPrototypeOf(router9, this);
-      router9.caseSensitive = opts.caseSensitive;
-      router9.mergeParams = opts.mergeParams;
-      router9.params = {};
-      router9.strict = opts.strict;
-      router9.stack = [];
-      return router9;
+      Object.setPrototypeOf(router10, this);
+      router10.caseSensitive = opts.caseSensitive;
+      router10.mergeParams = opts.mergeParams;
+      router10.params = {};
+      router10.strict = opts.strict;
+      router10.stack = [];
+      return router10;
     }
-    Router9.prototype = function() {
+    Router10.prototype = function() {
     };
-    Router9.prototype.param = function param(name, fn) {
+    Router10.prototype.param = function param(name, fn) {
       if (!name) {
         throw new TypeError("argument name is required");
       }
@@ -20764,7 +20764,7 @@ var require_router = __commonJS({
       params.push(fn);
       return this;
     };
-    Router9.prototype.handle = function handle(req, res, callback) {
+    Router10.prototype.handle = function handle(req, res, callback) {
       if (!callback) {
         throw new TypeError("argument callback is required");
       }
@@ -20891,7 +20891,7 @@ var require_router = __commonJS({
         }
       }
     };
-    Router9.prototype.use = function use(handler) {
+    Router10.prototype.use = function use(handler) {
       let offset = 0;
       let path3 = "/";
       if (typeof handler !== "function") {
@@ -20924,7 +20924,7 @@ var require_router = __commonJS({
       }
       return this;
     };
-    Router9.prototype.route = function route(path3) {
+    Router10.prototype.route = function route(path3) {
       const route2 = new Route(path3);
       const layer = new Layer(path3, {
         sensitive: this.caseSensitive,
@@ -20939,7 +20939,7 @@ var require_router = __commonJS({
       return route2;
     };
     methods.concat("all").forEach(function(method) {
-      Router9.prototype[method] = function(path3) {
+      Router10.prototype[method] = function(path3) {
         const route = this.route(path3);
         route[method].apply(route, slice.call(arguments, 1));
         return this;
@@ -21122,13 +21122,13 @@ var require_application = __commonJS({
     var compileTrust = require_utils3().compileTrust;
     var resolve = __require("node:path").resolve;
     var once = require_once();
-    var Router9 = require_router();
+    var Router10 = require_router();
     var slice = Array.prototype.slice;
     var flatten = Array.prototype.flat;
     var app2 = exports = module.exports = {};
     var trustProxyDefaultSymbol = "@@symbol:trust_proxy_default";
     app2.init = function init() {
-      var router9 = null;
+      var router10 = null;
       this.cache = /* @__PURE__ */ Object.create(null);
       this.engines = /* @__PURE__ */ Object.create(null);
       this.settings = /* @__PURE__ */ Object.create(null);
@@ -21137,13 +21137,13 @@ var require_application = __commonJS({
         configurable: true,
         enumerable: true,
         get: function getrouter() {
-          if (router9 === null) {
-            router9 = new Router9({
+          if (router10 === null) {
+            router10 = new Router10({
               caseSensitive: this.enabled("case sensitive routing"),
               strict: this.enabled("strict routing")
             });
           }
-          return router9;
+          return router10;
         }
       });
     };
@@ -21214,15 +21214,15 @@ var require_application = __commonJS({
       if (fns.length === 0) {
         throw new TypeError("app.use() requires a middleware function");
       }
-      var router9 = this.router;
+      var router10 = this.router;
       fns.forEach(function(fn2) {
         if (!fn2 || !fn2.handle || !fn2.set) {
-          return router9.use(path3, fn2);
+          return router10.use(path3, fn2);
         }
         debug(".use app under %s", path3);
         fn2.mountpath = path3;
         fn2.parent = this;
-        router9.use(path3, function mounted_app(req, res, next) {
+        router10.use(path3, function mounted_app(req, res, next) {
           var orig = req.app;
           fn2.handle(req, res, function(err) {
             Object.setPrototypeOf(req, orig.request);
@@ -23731,7 +23731,7 @@ var require_express = __commonJS({
     var EventEmitter = __require("node:events").EventEmitter;
     var mixin = require_merge_descriptors();
     var proto = require_application();
-    var Router9 = require_router();
+    var Router10 = require_router();
     var req = require_request();
     var res = require_response();
     exports = module.exports = createApplication;
@@ -23753,8 +23753,8 @@ var require_express = __commonJS({
     exports.application = proto;
     exports.request = req;
     exports.response = res;
-    exports.Route = Router9.Route;
-    exports.Router = Router9;
+    exports.Route = Router10.Route;
+    exports.Router = Router10;
     exports.json = bodyParser.json;
     exports.raw = bodyParser.raw;
     exports.static = require_serve_static();
@@ -34364,12 +34364,12 @@ var require_cookie_parser = __commonJS({
 });
 
 // src/app.ts
-var import_express9 = __toESM(require_express2(), 1);
+var import_express10 = __toESM(require_express2(), 1);
 var import_cors = __toESM(require_lib3(), 1);
 var import_pino_http = __toESM(require_logger(), 1);
 
 // src/routes/index.ts
-var import_express8 = __toESM(require_express2(), 1);
+var import_express9 = __toESM(require_express2(), 1);
 
 // src/routes/health.ts
 var import_express = __toESM(require_express2(), 1);
@@ -38439,9 +38439,12 @@ var ExchangeMobileAuthorizationCodeResponse = objectType({
 var LogoutMobileSessionResponse = objectType({
   "success": literalType(true)
 });
+var requestUploadUrlBodyMemberPositionMin = 0;
 var requestUploadUrlBodyNameMax = 200;
 var requestUploadUrlBodySizeMax = 10485760;
 var RequestUploadUrlBody = objectType({
+  "registrationId": stringType().uuid().optional(),
+  "memberPosition": numberType().int().min(requestUploadUrlBodyMemberPositionMin).optional(),
   "submissionKey": stringType().uuid(),
   "purpose": enumType(["student_id", "payment_proof"]),
   "name": stringType().min(1).max(requestUploadUrlBodyNameMax),
@@ -38462,6 +38465,58 @@ var GetStorageObjectParams = objectType({
 var GetStorageObjectResponse = unknownType();
 var HealthCheckResponse = objectType({
   "status": stringType()
+});
+var ListParticipantRegistrationsResponse = objectType({
+  "items": arrayType(objectType({
+    "id": stringType().uuid(),
+    "referenceCode": stringType(),
+    "teamName": stringType(),
+    "revision": numberType().int(),
+    "members": arrayType(objectType({
+      "position": numberType().int(),
+      "fullName": stringType(),
+      "studentIdFileName": stringType().nullable(),
+      "studentIdUrl": stringType().nullable()
+    })),
+    "paymentProofUrl": stringType().nullable(),
+    "spreadsheetStatus": stringType()
+  }))
+});
+var CompleteParticipantRegistrationParams = objectType({
+  "id": coerce.string().uuid()
+});
+var completeParticipantRegistrationBodyTeamNameMin = 2;
+var completeParticipantRegistrationBodyTeamNameMax = 120;
+var completeParticipantRegistrationBodyRevisionMin = 0;
+var completeParticipantRegistrationBodyMembersItemPositionMin = 0;
+var CompleteParticipantRegistrationBody = objectType({
+  "teamName": stringType().min(completeParticipantRegistrationBodyTeamNameMin).max(completeParticipantRegistrationBodyTeamNameMax),
+  "revision": numberType().int().min(completeParticipantRegistrationBodyRevisionMin),
+  "submissionKey": stringType().uuid(),
+  "members": arrayType(objectType({
+    "position": numberType().int().min(completeParticipantRegistrationBodyMembersItemPositionMin),
+    "studentIdUploadId": stringType().uuid()
+  }))
+});
+var CompleteParticipantRegistrationResponse = objectType({
+  "id": stringType().uuid(),
+  "referenceCode": stringType(),
+  "teamName": stringType(),
+  "revision": numberType().int(),
+  "members": arrayType(objectType({
+    "position": numberType().int(),
+    "fullName": stringType(),
+    "studentIdFileName": stringType().nullable(),
+    "studentIdUrl": stringType().nullable()
+  })),
+  "paymentProofUrl": stringType().nullable(),
+  "spreadsheetStatus": stringType()
+});
+var refreshRegistrationDocumentsResponseQueuedCountMin = 0;
+var refreshRegistrationDocumentsResponseAlreadyQueuedCountMin = 0;
+var RefreshRegistrationDocumentsResponse = objectType({
+  "queuedCount": numberType().int().min(refreshRegistrationDocumentsResponseQueuedCountMin),
+  "alreadyQueuedCount": numberType().int().min(refreshRegistrationDocumentsResponseAlreadyQueuedCountMin)
 });
 var createTeamRegistrationBodyTeamNameMin = 2;
 var createTeamRegistrationBodyTeamNameMax = 120;
@@ -38516,7 +38571,7 @@ var health_default = router;
 
 // src/routes/registrations.ts
 var import_express2 = __toESM(require_express2(), 1);
-import { randomUUID as randomUUID10 } from "node:crypto";
+import { randomUUID as randomUUID11 } from "node:crypto";
 
 // ../../node_modules/.pnpm/drizzle-orm@0.45.2_@electric-sql+pglite@0.3.16_@types+pg@8.23.1_pg@8.23.0/node_modules/drizzle-orm/entity.js
 var entityKind = /* @__PURE__ */ Symbol.for("drizzle:entityKind");
@@ -57009,6 +57064,7 @@ var teamRegistrationsTable = pgTable("team_registrations", {
   submissionKey: uuid("submission_key").notNull().unique(),
   referenceCode: varchar("reference_code", { length: 24 }).notNull().unique(),
   teamName: varchar("team_name", { length: 120 }).notNull(),
+  detailsRevision: integer("details_revision").notNull().default(0),
   contactEmail: varchar("contact_email", { length: 254 }).notNull(),
   contactPhone: varchar("contact_phone", { length: 40 }).notNull(),
   ownerId: varchar("owner_id"),
@@ -57039,6 +57095,9 @@ var registrationUploadsTable = pgTable("registration_uploads", {
   submissionKey: uuid("submission_key").notNull(),
   purpose: text("purpose").$type().notNull(),
   memberPosition: integer("member_position"),
+  completionRegistrationId: uuid("completion_registration_id").references(() => teamRegistrationsTable.id),
+  driveFileId: text("drive_file_id"),
+  driveFileUrl: text("drive_file_url"),
   objectPath: text("object_path").notNull().unique(),
   fileName: varchar("file_name", { length: 200 }).notNull(),
   contentType: varchar("content_type", { length: 40 }).notNull(),
@@ -57071,6 +57130,10 @@ var registrationSpreadsheetSyncTable = pgTable("registration_spreadsheet_sync", 
   registrationId: uuid("registration_id").notNull().unique().references(() => teamRegistrationsTable.id, { onDelete: "cascade" }),
   status: text("status").$type().notNull().default("pending"),
   attempts: integer("attempts").notNull().default(0),
+  revision: integer("revision").notNull().default(1),
+  syncedRevision: integer("synced_revision").notNull().default(0),
+  claimToken: uuid("claim_token"),
+  includeDocuments: boolean("include_documents").notNull().default(false),
   nextAttemptAt: timestamp("next_attempt_at", { withTimezone: true }).notNull().defaultNow(),
   lockedAt: timestamp("locked_at", { withTimezone: true }),
   syncedAt: timestamp("synced_at", { withTimezone: true }),
@@ -57827,30 +57890,65 @@ function startRegistrationNotificationWorker() {
 }
 
 // src/lib/registrationSpreadsheetSync.ts
-var running2 = false;
-async function sendToSpreadsheet(data) {
+import { randomUUID as randomUUID10 } from "node:crypto";
+
+// src/lib/registrationDriveSync.ts
+async function spreadsheetRequest(payload) {
   const endpoint = process.env.GOOGLE_SHEETS_WEBHOOK_URL?.trim();
   const token = process.env.GOOGLE_SHEETS_SYNC_TOKEN;
   if (!endpoint || !token) throw new Error("Spreadsheet sync is not configured.");
-  const parsedUrl = new URL(endpoint);
-  if (parsedUrl.protocol !== "https:" || parsedUrl.hostname !== "script.google.com") {
-    throw new Error("Spreadsheet sync endpoint is not an approved HTTPS Apps Script URL.");
+  const url2 = new URL(endpoint);
+  if (url2.protocol !== "https:" || url2.hostname !== "script.google.com" || !url2.pathname.endsWith("/exec")) {
+    throw new Error("Spreadsheet endpoint must be an approved Apps Script URL.");
   }
-  const response = await fetch(parsedUrl, {
+  const response = await fetch(url2, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ token, registration: data }),
-    signal: AbortSignal.timeout(2e4)
+    body: JSON.stringify({ ...payload, token }),
+    signal: AbortSignal.timeout(6e4)
   });
   const result = await response.json().catch(() => null);
-  if (!response.ok || result?.ok !== true) throw new Error("Spreadsheet rejected the registration update.");
+  if (!response.ok || result?.ok !== true) throw new Error("The spreadsheet or private Drive rejected the update.");
+  return result;
 }
+async function syncPrivateDriveDocuments(registrationId, referenceCode) {
+  const files = await db.select().from(registrationUploadsTable).where(eq(registrationUploadsTable.registrationId, registrationId));
+  const storage2 = new ObjectStorageService();
+  const links = [];
+  for (const document2 of files) {
+    let url2 = document2.driveFileUrl;
+    if (!url2 || !document2.driveFileId) {
+      const file2 = await storage2.getObjectEntityFile(document2.objectPath);
+      const [bytes] = await file2.download();
+      if (bytes.length > 10 * 1024 * 1024 || bytes.length !== document2.fileSize) throw new Error("Invalid private document size.");
+      const result = await spreadsheetRequest({
+        action: "upload_document",
+        referenceCode,
+        document: {
+          uploadId: document2.id,
+          fileName: document2.fileName,
+          contentType: document2.contentType,
+          size: bytes.length,
+          base64: bytes.toString("base64")
+        }
+      });
+      if (!result.fileId || !/^[A-Za-z0-9_-]+$/.test(result.fileId) || result.url !== `https://drive.google.com/file/d/${result.fileId}/view`) throw new Error("Invalid private Drive response.");
+      url2 = result.url;
+      await db.update(registrationUploadsTable).set({ driveFileId: result.fileId, driveFileUrl: url2 }).where(and(eq(registrationUploadsTable.id, document2.id), eq(registrationUploadsTable.registrationId, registrationId)));
+    }
+    links.push({ uploadId: document2.id, purpose: document2.purpose, memberPosition: document2.memberPosition, url: url2 });
+  }
+  return links;
+}
+
+// src/lib/registrationSpreadsheetSync.ts
+var running2 = false;
 async function processRegistrationSpreadsheetSync() {
-  if (process.env.GOOGLE_SHEETS_SYNC_ENABLED !== "true" || !process.env.GOOGLE_SHEETS_WEBHOOK_URL?.trim() || !process.env.GOOGLE_SHEETS_SYNC_TOKEN) return;
-  if (running2) return;
+  if (process.env.GOOGLE_SHEETS_SYNC_ENABLED !== "true" || !process.env.GOOGLE_SHEETS_WEBHOOK_URL?.trim() || !process.env.GOOGLE_SHEETS_SYNC_TOKEN || running2) return;
   running2 = true;
   try {
     for (let count = 0; count < 5; count++) {
+      const token = randomUUID10();
       const result = await db.execute(sql`
         WITH candidate AS (
           SELECT id FROM registration_spreadsheet_sync
@@ -57859,44 +57957,58 @@ async function processRegistrationSpreadsheetSync() {
           ORDER BY created_at FOR UPDATE SKIP LOCKED LIMIT 1
         )
         UPDATE registration_spreadsheet_sync AS s
-        SET status = 'processing', locked_at = now(), attempts = attempts + 1
+        SET status = 'processing', locked_at = now(), claim_token = ${token}::uuid, attempts = attempts + 1
         FROM candidate WHERE s.id = candidate.id
-        RETURNING s.id, s.registration_id, s.attempts
+        RETURNING s.id, s.registration_id, s.attempts, s.revision, s.include_documents
       `);
       const job = result.rows[0];
       if (!job) break;
+      const claim = and(eq(registrationSpreadsheetSyncTable.id, job.id), eq(registrationSpreadsheetSyncTable.claimToken, token));
       try {
         const [registration] = await db.select().from(teamRegistrationsTable).where(eq(teamRegistrationsTable.id, job.registration_id)).limit(1);
-        if (!registration) throw new Error("The registration could not be found.");
-        const members = await db.select({ name: teamRegistrationMembersTable.fullName }).from(teamRegistrationMembersTable).where(eq(teamRegistrationMembersTable.registrationId, registration.id)).orderBy(teamRegistrationMembersTable.position);
-        await sendToSpreadsheet({
+        if (!registration) throw new Error("Registration not found.");
+        const people = await db.select({ name: teamRegistrationMembersTable.fullName, position: teamRegistrationMembersTable.position }).from(teamRegistrationMembersTable).where(eq(teamRegistrationMembersTable.registrationId, registration.id)).orderBy(teamRegistrationMembersTable.position);
+        const documentsSynced = process.env.GOOGLE_DRIVE_SYNC_ENABLED === "true" && job.include_documents;
+        const documents = documentsSynced ? await syncPrivateDriveDocuments(registration.id, registration.referenceCode) : [];
+        const legacyStudentIds = documents.filter((file2) => file2.purpose === "student_id" && file2.memberPosition === null);
+        const studentIds = people.map((person) => {
+          const doc = documents.find((file2) => file2.purpose === "student_id" && file2.memberPosition === person.position) ?? (person.position === people[0]?.position ? documents.find((file2) => file2.purpose === "student_id" && file2.uploadId === registration.studentIdUploadId) ?? (legacyStudentIds.length === 1 ? legacyStudentIds[0] : void 0) : void 0);
+          return { name: person.name, url: doc?.url ?? null };
+        });
+        await spreadsheetRequest({ protocolVersion: 2, registration: {
           referenceCode: registration.referenceCode,
+          revision: job.revision,
           teamName: registration.teamName,
           competition: registration.competition,
           institution: registration.institution,
           submittedAt: registration.createdAt.toISOString(),
-          memberNames: members.map((member) => member.name),
-          // The current registration form stores a shared team contact,
-          // not a separate email or phone for every member.
+          memberNames: people.map((person) => person.name),
           contactEmail: registration.contactEmail,
           contactPhone: registration.contactPhone,
-          alternativePhone: registration.alternativePhone
-        });
+          alternativePhone: registration.alternativePhone,
+          documentsSynced,
+          studentIds,
+          paymentProofUrl: documents.find((file2) => file2.purpose === "payment_proof")?.url ?? null
+        } });
         await db.update(registrationSpreadsheetSyncTable).set({
-          status: "sent",
+          status: sql`CASE WHEN ${registrationSpreadsheetSyncTable.revision} = ${job.revision} THEN 'sent' ELSE 'pending' END`,
+          syncedRevision: sql`GREATEST(${registrationSpreadsheetSyncTable.syncedRevision}, ${job.revision})`,
           syncedAt: /* @__PURE__ */ new Date(),
           lockedAt: null,
-          lastError: null
-        }).where(eq(registrationSpreadsheetSyncTable.id, job.id));
+          claimToken: null,
+          lastError: null,
+          nextAttemptAt: /* @__PURE__ */ new Date()
+        }).where(claim);
       } catch {
         const delay = Math.min(15 * 6e4, 6e4 * 2 ** Math.min(job.attempts - 1, 4));
         await db.update(registrationSpreadsheetSyncTable).set({
-          status: "failed",
-          lastError: "Spreadsheet update failed. Check the Apps Script endpoint, token, and sheet access; automatic retry is scheduled.",
+          status: sql`CASE WHEN ${registrationSpreadsheetSyncTable.revision} = ${job.revision} THEN 'failed' ELSE 'pending' END`,
+          lastError: "Google Sheets / private Drive update failed. Check the Apps Script deployment and permissions; automatic retry is scheduled.",
           lockedAt: null,
-          nextAttemptAt: new Date(Date.now() + delay)
-        }).where(eq(registrationSpreadsheetSyncTable.id, job.id));
-        logger.warn("A registration spreadsheet update failed; it remains queued for retry");
+          claimToken: null,
+          nextAttemptAt: sql`CASE WHEN ${registrationSpreadsheetSyncTable.revision} = ${job.revision} THEN ${new Date(Date.now() + delay)}::timestamptz ELSE now() END`
+        }).where(claim);
+        logger.warn("A private registration spreadsheet update failed and remains queued");
       }
     }
   } catch {
@@ -58017,10 +58129,20 @@ function advisoryLockKey(value) {
   return createHash3("sha256").update("treasure-advisory-lock-v1:").update(value).digest().readBigInt64BE(0).toString();
 }
 
+// src/lib/registrationPolicy.ts
+var registrationClosedMessage = "Registration closed on 10 November 2026. Existing participants can sign in to complete their team name and student IDs.";
+function isRegistrationClosed() {
+  return true;
+}
+
 // src/routes/registrations.ts
 var router2 = (0, import_express2.Router)();
 router2.post("/registrations/teams", async (req, res) => {
   res.setHeader("Cache-Control", "no-store");
+  if (isRegistrationClosed()) {
+    res.status(410).json({ error: registrationClosedMessage });
+    return;
+  }
   if (!sameSiteRequest(req)) {
     res.status(403).json({ error: "Please use the TREASURE registration page." });
     return;
@@ -58087,7 +58209,7 @@ router2.post("/registrations/teams", async (req, res) => {
       for (const document2 of documents) frozen.push(await freezeDocument(document2));
       const [created] = await tx.insert(teamRegistrationsTable).values({
         submissionKey: data.submissionKey,
-        referenceCode: `TR26-${randomUUID10().replaceAll("-", "").slice(0, 12).toUpperCase()}`,
+        referenceCode: `TR26-${randomUUID11().replaceAll("-", "").slice(0, 12).toUpperCase()}`,
         teamName: data.teamName ?? data.members[0].fullName.slice(0, 120),
         contactEmail: data.contactEmail.toLowerCase(),
         contactPhone: data.contactPhone,
@@ -60053,11 +60175,30 @@ router4.post("/storage/uploads/request-url", async (req, res) => {
   }
   try {
     const data = parsed.data;
+    if (data.registrationId) {
+      const [registration] = await db.select({ id: teamRegistrationsTable.id, studentIdUploadId: teamRegistrationsTable.studentIdUploadId }).from(teamRegistrationsTable).where(and(eq(teamRegistrationsTable.id, data.registrationId), eq(teamRegistrationsTable.ownerId, ownerId))).limit(1);
+      const [member] = await db.select({ id: teamRegistrationMembersTable.id }).from(teamRegistrationMembersTable).where(and(eq(teamRegistrationMembersTable.registrationId, data.registrationId), eq(teamRegistrationMembersTable.position, data.memberPosition ?? -1))).limit(1);
+      if (!registration || !member || data.purpose !== "student_id") {
+        res.status(400).json({ error: "Only missing student IDs for your existing team can be uploaded." });
+        return;
+      }
+      const [firstMember] = await db.select({ position: teamRegistrationMembersTable.position }).from(teamRegistrationMembersTable).where(eq(teamRegistrationMembersTable.registrationId, registration.id)).orderBy(teamRegistrationMembersTable.position).limit(1);
+      const saved = await db.select().from(registrationUploadsTable).where(and(eq(registrationUploadsTable.registrationId, registration.id), eq(registrationUploadsTable.purpose, "student_id")));
+      if (saved.some((file2) => file2.memberPosition === data.memberPosition || firstMember?.position === data.memberPosition && file2.id === registration.studentIdUploadId && file2.memberPosition === null)) {
+        res.status(409).json({ error: "A student ID is already on file for this person. Reload your team details." });
+        return;
+      }
+    } else if (isRegistrationClosed()) {
+      res.status(410).json({ error: registrationClosedMessage });
+      return;
+    }
     const uploadURL = await registrationStorage.getObjectEntityUploadURL();
     const [upload] = await db.insert(registrationUploadsTable).values({
       ownerId,
       submissionKey: data.submissionKey,
       purpose: data.purpose,
+      completionRegistrationId: data.registrationId ?? null,
+      memberPosition: data.registrationId ? data.memberPosition : null,
       objectPath: registrationStorage.normalizeObjectEntityPath(uploadURL),
       fileName: data.name,
       contentType: data.contentType,
@@ -60151,6 +60292,22 @@ async function queueExistingRegistrationSpreadsheets() {
     return { queuedCount, alreadyQueuedCount: registrations.length - queuedCount };
   });
 }
+async function refreshExistingRegistrationDocuments() {
+  return db.transaction(async (tx) => {
+    const registrations = await tx.select({ id: teamRegistrationsTable.id }).from(teamRegistrationsTable);
+    for (const registration of registrations) {
+      await tx.insert(registrationSpreadsheetSyncTable).values({ registrationId: registration.id, includeDocuments: true }).onConflictDoUpdate({ target: registrationSpreadsheetSyncTable.registrationId, set: {
+        revision: sql`${registrationSpreadsheetSyncTable.revision} + 1`,
+        status: sql`CASE WHEN ${registrationSpreadsheetSyncTable.status} = 'processing' THEN 'processing' ELSE 'pending' END`,
+        includeDocuments: true,
+        nextAttemptAt: /* @__PURE__ */ new Date(),
+        attempts: 0,
+        lastError: null
+      } });
+    }
+    return { queuedCount: registrations.length, alreadyQueuedCount: 0 };
+  });
+}
 
 // src/routes/admin.ts
 var router5 = (0, import_express5.Router)();
@@ -60181,6 +60338,19 @@ router5.use("/admin", (req, res, next) => {
     return;
   }
   next();
+});
+router5.post("/admin/spreadsheet-sync/refresh-documents", async (req, res) => {
+  if (process.env.RUNTIME_HOST !== "cpanel" || process.env.GOOGLE_DRIVE_SYNC_ENABLED !== "true") {
+    res.status(503).json({ error: "Enable private Google Drive sync on live hosting after updating the Apps Script deployment." });
+    return;
+  }
+  try {
+    res.status(202).json(BackfillRegistrationSpreadsheetResponse.parse(await refreshExistingRegistrationDocuments()));
+    void processRegistrationSpreadsheetSync();
+  } catch {
+    req.log.error("Unable to queue private document refresh");
+    res.status(500).json({ error: "The private document refresh could not be queued. Please retry." });
+  }
 });
 router5.post("/admin/spreadsheet-sync/backfill", async (req, res) => {
   if (process.env.RUNTIME_HOST !== "cpanel") {
@@ -60364,6 +60534,10 @@ router6.get("/participant-auth/me", (req, res) => {
   res.json(GetParticipantSessionResponse.parse({ user: req.participant ?? null }));
 });
 router6.post("/participant-auth/signup", async (req, res) => {
+  if (isRegistrationClosed()) {
+    res.status(410).json({ error: registrationClosedMessage });
+    return;
+  }
   const parsed = CreateParticipantAccountBody.safeParse({
     ...req.body,
     username: typeof req.body?.username === "string" ? req.body.username.trim().toLowerCase() : req.body?.username,
@@ -60593,16 +60767,160 @@ router7.post("/organizer-auth/signout", async (req, res) => {
 });
 var organizerAuth_default = router7;
 
-// src/routes/index.ts
+// src/routes/participantRegistrations.ts
+var import_express8 = __toESM(require_express2(), 1);
 var router8 = (0, import_express8.Router)();
-router8.use(health_default);
-if (process.env.AUTH_REPLIT_ENABLED !== "false") router8.use(auth_default);
-router8.use(storage_default);
-router8.use(registrations_default);
-router8.use(admin_default);
-router8.use(participantAuth_default);
-router8.use(organizerAuth_default);
-var routes_default = router8;
+function studentIdFor(position, firstPosition, files, registration) {
+  const linked = files.find((file2) => file2.purpose === "student_id" && file2.memberPosition === position);
+  if (linked || position !== firstPosition) return linked;
+  const legacy = files.filter((file2) => file2.purpose === "student_id" && file2.memberPosition === null);
+  return legacy.find((file2) => file2.id === registration.studentIdUploadId) ?? (legacy.length === 1 ? legacy[0] : void 0);
+}
+async function detail(registration) {
+  const [people, files, [job]] = await Promise.all([
+    db.select().from(teamRegistrationMembersTable).where(eq(teamRegistrationMembersTable.registrationId, registration.id)).orderBy(teamRegistrationMembersTable.position),
+    db.select().from(registrationUploadsTable).where(eq(registrationUploadsTable.registrationId, registration.id)),
+    db.select().from(registrationSpreadsheetSyncTable).where(eq(registrationSpreadsheetSyncTable.registrationId, registration.id)).limit(1)
+  ]);
+  const payment = files.find((file2) => file2.purpose === "payment_proof");
+  return {
+    id: registration.id,
+    referenceCode: registration.referenceCode,
+    teamName: registration.teamName,
+    revision: registration.detailsRevision,
+    members: people.map((person) => {
+      const file2 = studentIdFor(person.position, people[0]?.position, files, registration);
+      return {
+        position: person.position,
+        fullName: person.fullName,
+        studentIdFileName: file2?.fileName ?? null,
+        studentIdUrl: file2 ? `/api/storage${file2.objectPath}` : null
+      };
+    }),
+    paymentProofUrl: payment ? `/api/storage${payment.objectPath}` : null,
+    spreadsheetStatus: job?.status ?? "not_requested"
+  };
+}
+router8.use("/participant-registrations", (req, res, next) => {
+  res.setHeader("Cache-Control", "private, no-store");
+  if (!sameSiteRequest(req)) {
+    res.status(403).json({ error: "Use the TREASURE participant page." });
+    return;
+  }
+  if (!registrationOwner(req)) {
+    res.status(401).json({ error: "Please sign in." });
+    return;
+  }
+  next();
+});
+router8.get("/participant-registrations", async (req, res) => {
+  try {
+    const own = await db.select().from(teamRegistrationsTable).where(eq(teamRegistrationsTable.ownerId, registrationOwner(req)));
+    res.json(ListParticipantRegistrationsResponse.parse({ items: await Promise.all(own.map(detail)) }));
+  } catch {
+    req.log.error("Unable to load participant registrations");
+    res.status(500).json({ error: "Your registrations could not be loaded. Please retry." });
+  }
+});
+router8.post("/participant-registrations/:id/complete", async (req, res) => {
+  const params = CompleteParticipantRegistrationParams.safeParse(req.params);
+  const parsed = CompleteParticipantRegistrationBody.safeParse({
+    ...req.body,
+    teamName: typeof req.body?.teamName === "string" ? req.body.teamName.trim() : req.body?.teamName
+  });
+  if (!params.success || !parsed.success) {
+    res.status(400).json({ error: "Enter a team name and check the student ID uploads." });
+    return;
+  }
+  const ownerId = registrationOwner(req);
+  const id = params.data.id;
+  const data = parsed.data;
+  const frozen = [];
+  try {
+    const result = await db.transaction(async (tx) => {
+      await tx.execute(sql`SELECT pg_advisory_xact_lock(${advisoryLockKey(`complete:${id}`)}::bigint)`);
+      const [registration] = await tx.select().from(teamRegistrationsTable).where(and(eq(teamRegistrationsTable.id, id), eq(teamRegistrationsTable.ownerId, ownerId))).limit(1);
+      if (!registration) return { status: 404, error: "Registration not found." };
+      const people = await tx.select().from(teamRegistrationMembersTable).where(eq(teamRegistrationMembersTable.registrationId, id)).orderBy(teamRegistrationMembersTable.position);
+      const files = await tx.select().from(registrationUploadsTable).where(eq(registrationUploadsTable.registrationId, id));
+      const ids = data.members.map((person) => person.studentIdUploadId);
+      if (new Set(ids).size !== ids.length || new Set(data.members.map((person) => person.position)).size !== data.members.length || data.members.some((person) => !people.some((saved2) => saved2.position === person.position))) {
+        return { status: 400, error: "Upload a separate student ID for each existing team member." };
+      }
+      if (registration.detailsRevision === data.revision + 1 && registration.teamName === data.teamName && data.members.every((person) => files.some((file2) => file2.id === person.studentIdUploadId && file2.memberPosition === person.position && file2.submissionKey === data.submissionKey))) {
+        return { status: 200 };
+      }
+      if (registration.detailsRevision !== data.revision) return { status: 409, error: "This team was updated in another session. Reload its latest details before saving." };
+      if (!people.length) return { status: 409, error: "The saved member list is unavailable. Contact the organizers." };
+      const missing = people.filter((person) => !studentIdFor(person.position, people[0].position, files, registration));
+      if (missing.length !== data.members.length || missing.some((person) => !data.members.some((input) => input.position === person.position))) {
+        return { status: 400, error: "Supply a student ID for each missing member. Existing documents cannot be replaced here." };
+      }
+      const drafts = ids.length ? await tx.select().from(registrationUploadsTable).where(and(
+        inArray(registrationUploadsTable.id, ids),
+        eq(registrationUploadsTable.ownerId, ownerId),
+        eq(registrationUploadsTable.submissionKey, data.submissionKey),
+        eq(registrationUploadsTable.completionRegistrationId, id)
+      )) : [];
+      for (const person of data.members) {
+        const draft = drafts.find((file2) => file2.id === person.studentIdUploadId && file2.purpose === "student_id" && file2.memberPosition === person.position && !file2.registrationId);
+        if (!draft) return { status: 400, error: "A student ID upload is invalid or belongs to a different team. Select the file again." };
+      }
+      for (const person of data.members) frozen.push(await freezeDocument(drafts.find((file2) => file2.id === person.studentIdUploadId)));
+      for (const [index2, person] of data.members.entries()) {
+        await tx.update(registrationUploadsTable).set({ objectPath: frozen[index2].objectPath, registrationId: id, memberPosition: person.position }).where(eq(registrationUploadsTable.id, person.studentIdUploadId));
+      }
+      await tx.update(teamRegistrationsTable).set({ teamName: data.teamName, detailsRevision: registration.detailsRevision + 1 }).where(eq(teamRegistrationsTable.id, id));
+      await tx.insert(registrationSpreadsheetSyncTable).values({ registrationId: id, includeDocuments: true }).onConflictDoUpdate({
+        target: registrationSpreadsheetSyncTable.registrationId,
+        set: {
+          revision: sql`${registrationSpreadsheetSyncTable.revision} + 1`,
+          status: sql`CASE WHEN ${registrationSpreadsheetSyncTable.status} = 'processing' THEN 'processing' ELSE 'pending' END`,
+          includeDocuments: true,
+          attempts: 0,
+          lastError: null,
+          nextAttemptAt: /* @__PURE__ */ new Date()
+        }
+      });
+      return { status: 200 };
+    });
+    if (result.status !== 200) {
+      res.status(result.status).json({ error: result.error });
+      return;
+    }
+    const [saved] = await db.select().from(teamRegistrationsTable).where(and(eq(teamRegistrationsTable.id, id), eq(teamRegistrationsTable.ownerId, ownerId)));
+    res.json(CompleteParticipantRegistrationResponse.parse(await detail(saved)));
+    void processRegistrationSpreadsheetSync();
+  } catch (error40) {
+    if (error40 instanceof RegistrationDocumentError) {
+      res.status(400).json({ error: error40.message });
+      return;
+    }
+    req.log.error("Unable to complete participant registration");
+    res.status(500).json({ error: "The update could not be confirmed. Your original registration is safe. Retry with the same form." });
+  } finally {
+    for (const file2 of frozen) {
+      try {
+        const [saved] = await db.select({ id: registrationUploadsTable.id }).from(registrationUploadsTable).where(eq(registrationUploadsTable.objectPath, file2.objectPath)).limit(1);
+        if (!saved) await file2.file.delete({ ignoreNotFound: true });
+      } catch {
+      }
+    }
+  }
+});
+var participantRegistrations_default = router8;
+
+// src/routes/index.ts
+var router9 = (0, import_express9.Router)();
+router9.use(health_default);
+if (process.env.AUTH_REPLIT_ENABLED !== "false") router9.use(auth_default);
+router9.use(storage_default);
+router9.use(registrations_default);
+router9.use(admin_default);
+router9.use(participantAuth_default);
+router9.use(participantRegistrations_default);
+router9.use(organizerAuth_default);
+var routes_default = router9;
 
 // src/app.ts
 var import_cookie_parser = __toESM(require_cookie_parser(), 1);
@@ -60691,7 +61009,7 @@ async function organizerMiddleware(req, res, next) {
 
 // src/app.ts
 import path2 from "node:path";
-var app = (0, import_express9.default)();
+var app = (0, import_express10.default)();
 if (process.env.RUNTIME_HOST === "cpanel") app.set("trust proxy", 1);
 app.use(
   (0, import_pino_http.default)({
@@ -60714,8 +61032,8 @@ app.use(
 );
 app.use((0, import_cors.default)({ credentials: true, origin: process.env.PUBLIC_APP_ORIGIN || true }));
 app.use((0, import_cookie_parser.default)());
-app.use(import_express9.default.json());
-app.use(import_express9.default.urlencoded({ extended: true }));
+app.use(import_express10.default.json());
+app.use(import_express10.default.urlencoded({ extended: true }));
 app.use(authMiddleware);
 app.use(participantMiddleware);
 app.use(["/api/admin", "/api/organizer-auth"], organizerMiddleware);
@@ -60733,7 +61051,7 @@ app.use("/api", (_req, res) => {
 });
 if (process.env.STATIC_SITE_DIR) {
   const site = path2.resolve(process.env.STATIC_SITE_DIR);
-  app.use(import_express9.default.static(site, { index: false, dotfiles: "deny" }));
+  app.use(import_express10.default.static(site, { index: false, dotfiles: "deny" }));
   app.get(["/", "/register", "/admin", "/archive/2025"], (_req, res) => {
     res.setHeader("Cache-Control", "no-store");
     res.sendFile(path2.join(site, "index.html"));
