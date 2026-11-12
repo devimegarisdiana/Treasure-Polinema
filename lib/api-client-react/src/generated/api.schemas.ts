@@ -51,6 +51,42 @@ export interface ParticipantUser {
   id: string;
   username: string;
   email: string;
+  mustChangePassword?: boolean;
+}
+
+export interface ParticipantPasswordChange {
+  /**
+     * @minLength 1
+     * @maxLength 128
+     */
+  currentPassword: string;
+  /**
+     * @minLength 12
+     * @maxLength 128
+     */
+  newPassword: string;
+}
+
+export interface ParticipantRecoveryAccount {
+  id: string;
+  username: string;
+  email: string;
+  mustChangePassword: boolean;
+}
+
+export interface ParticipantRecoveryAccountResult {
+  account: ParticipantRecoveryAccount | null;
+}
+
+export interface ParticipantPasswordResetConfirmation {
+  accountId: string;
+  confirmed: true;
+}
+
+export interface ParticipantTemporaryPassword {
+  username: string;
+  temporaryPassword: string;
+  expiresAt: string;
 }
 
 export interface ParticipantSession {

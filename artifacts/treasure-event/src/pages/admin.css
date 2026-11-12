@@ -1,3 +1,6 @@
+.recovery-secret,.recovery-confirm{padding:16px;border:1px solid #c5ccd5;background:#edf0f3;margin:16px 0}
+.recovery-secret code{display:block;padding:12px;background:#fff;color:#273447;font-size:16px;overflow-wrap:anywhere;user-select:all}
+.recovery-secret p,.recovery-confirm p{font-size:12px;line-height:1.7}
 .admin-page{min-height:100dvh;color:#3b3b43;background-color:#f7f4f0;background-image:var(--treasure-paper-texture);background-size:180px 180px;font-family:var(--app-font-sans)}
 .admin-top{height:66px;padding:0 clamp(18px,5vw,72px);display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #dce0e3;background:rgba(248,245,241,.94)}
 .admin-wordmark img{width:146px;display:block}.admin-top-right{display:flex;align-items:center;gap:22px}.admin-private{display:flex;align-items:center;gap:7px;color:#73727a;font:10px var(--app-font-mono);letter-spacing:.07em;text-transform:uppercase}.admin-logout,.admin-back{display:inline-flex;align-items:center;gap:8px;color:#566981;background:none;border:0;font:11px var(--app-font-mono);text-decoration:none;cursor:pointer}.admin-logout:hover,.admin-back:hover{color:#a96570}

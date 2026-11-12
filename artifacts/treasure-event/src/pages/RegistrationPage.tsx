@@ -10,6 +10,7 @@ import {
 } from '@workspace/api-client-react';
 import type { ParticipantRegistration, ParticipantRegistrationList } from '@workspace/api-client-react';
 import ParticipantAuth from '../components/ParticipantAuth';
+import ChangeParticipantPassword from '../components/ChangeParticipantPassword';
 import { useParticipantAuth } from '../hooks/use-participant-auth';
 import './registration.css';
 
@@ -238,7 +239,7 @@ export default function RegistrationPage() {
   const [expired, setExpired] = useState(false);
   const userId = auth.user?.id ?? null;
   const list = useListParticipantRegistrations({
-    query: { queryKey: [...listKey, userId], enabled: !!userId && !expired, staleTime: 30_000, refetchOnMount: 'always', refetchOnWindowFocus: true, retry: false },
+    query: { queryKey: [...listKey, userId], enabled: !!userId && !expired && !auth.user?.mustChangePassword, staleTime: 30_000, refetchOnMount: 'always', refetchOnWindowFocus: true, retry: false },
   });
   const lastUser = useRef<string | null>(null);
 
@@ -274,6 +275,7 @@ export default function RegistrationPage() {
   let body;
   if (auth.isLoading || !auth.user) body = authBlock();
   else if (expired) body = authBlock(true);
+  else if (auth.user.mustChangePassword) body = <ChangeParticipantPassword onChange={auth.changePassword} onSignOut={signOut} />;
   else {
     const items = list.data?.items ?? [];
     body = (

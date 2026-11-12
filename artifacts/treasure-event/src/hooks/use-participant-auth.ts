@@ -2,6 +2,7 @@ import { useCallback } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import {
   getGetParticipantSessionQueryKey,
+  changeParticipantPassword,
   useCreateParticipantAccount,
   useGetParticipantSession,
   useSignInParticipant,
@@ -58,6 +59,14 @@ export function useParticipantAuth() {
     await session.refetch();
   }, [clearParticipantCache, queryClient, session.refetch, sessionKey, signOut.mutateAsync]);
 
+  const changePassword = useCallback(async (data: { currentPassword: string; newPassword: string }) => {
+    const result = await changeParticipantPassword(data);
+    clearParticipantCache();
+    queryClient.setQueryData(sessionKey, result);
+    await queryClient.invalidateQueries({ queryKey: sessionKey });
+    return result;
+  }, [clearParticipantCache, queryClient, sessionKey]);
+
   return {
     user: session.data?.user ?? null,
     isLoading: session.isLoading,
@@ -68,6 +77,7 @@ export function useParticipantAuth() {
     signup,
     signin,
     logout,
+    changePassword,
     clearParticipantCache,
     isMutating: createAccount.isPending || signIn.isPending || signOut.isPending,
   };

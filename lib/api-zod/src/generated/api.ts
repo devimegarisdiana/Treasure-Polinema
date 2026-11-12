@@ -44,7 +44,8 @@ export const GetParticipantSessionResponse = zod.object({
   "user": zod.union([zod.object({
   "id": zod.string(),
   "username": zod.string(),
-  "email": zod.string().email()
+  "email": zod.string().email(),
+  "mustChangePassword": zod.boolean().optional()
 }),zod.null()])
 })
 
@@ -68,7 +69,8 @@ export const CreateParticipantAccountResponse = zod.object({
   "user": zod.union([zod.object({
   "id": zod.string(),
   "username": zod.string(),
-  "email": zod.string().email()
+  "email": zod.string().email(),
+  "mustChangePassword": zod.boolean().optional()
 }),zod.null()])
 })
 
@@ -88,7 +90,30 @@ export const SignInParticipantResponse = zod.object({
   "user": zod.union([zod.object({
   "id": zod.string(),
   "username": zod.string(),
-  "email": zod.string().email()
+  "email": zod.string().email(),
+  "mustChangePassword": zod.boolean().optional()
+}),zod.null()])
+})
+
+
+export const changeParticipantPasswordBodyCurrentPasswordMax = 128;
+
+export const changeParticipantPasswordBodyNewPasswordMin = 12;
+export const changeParticipantPasswordBodyNewPasswordMax = 128;
+
+
+
+export const ChangeParticipantPasswordBody = zod.object({
+  "currentPassword": zod.string().min(1).max(changeParticipantPasswordBodyCurrentPasswordMax),
+  "newPassword": zod.string().min(changeParticipantPasswordBodyNewPasswordMin).max(changeParticipantPasswordBodyNewPasswordMax)
+})
+
+export const ChangeParticipantPasswordResponse = zod.object({
+  "user": zod.union([zod.object({
+  "id": zod.string(),
+  "username": zod.string(),
+  "email": zod.string().email(),
+  "mustChangePassword": zod.boolean().optional()
 }),zod.null()])
 })
 
@@ -183,6 +208,36 @@ export const GetAdminRegistrationResponse = zod.object({
   "lastError": zod.string().nullable(),
   "nextAttemptAt": zod.coerce.date().nullable()
 })
+})
+
+
+export const GetRegistrationParticipantAccountParams = zod.object({
+  "id": zod.coerce.string().uuid()
+})
+
+export const GetRegistrationParticipantAccountResponse = zod.object({
+  "account": zod.union([zod.object({
+  "id": zod.string().uuid(),
+  "username": zod.string(),
+  "email": zod.string().email(),
+  "mustChangePassword": zod.boolean()
+}),zod.null()])
+})
+
+
+export const ResetRegistrationPasswordParams = zod.object({
+  "id": zod.coerce.string().uuid()
+})
+
+export const ResetRegistrationPasswordBody = zod.object({
+  "accountId": zod.string().uuid(),
+  "confirmed": zod.literal(true)
+})
+
+export const ResetRegistrationPasswordResponse = zod.object({
+  "username": zod.string(),
+  "temporaryPassword": zod.string(),
+  "expiresAt": zod.coerce.date()
 })
 
 

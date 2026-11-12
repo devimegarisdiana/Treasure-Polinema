@@ -12,6 +12,7 @@ import { useOrganizerAuth } from '../hooks/use-organizer-auth';
 import { OrganizerSignIn } from '../components/OrganizerSignIn';
 import { SpreadsheetBackfill } from '../components/SpreadsheetBackfill';
 import MemberStudentIds from '../components/MemberStudentIds';
+import ParticipantPasswordRecovery from '../components/ParticipantPasswordRecovery';
 import type { NotificationStatus } from '@workspace/api-client-react';
 import './admin.css';
 
@@ -36,10 +37,13 @@ export default function AdminPage() {
   const [retryError, setRetryError] = useState('');
   const [retryNotice, setRetryNotice] = useState('');
   const [verifiedUser, setVerifiedUser] = useState('');
+  const [accessUser, setAccessUser] = useState('');
   const [logoutError, setLogoutError] = useState('');
   const userKey = auth.user?.id ?? '';
   const accessKey = [...getGetAdminAccessQueryKey(), userKey];
-  const access = useGetAdminAccess({ query: { enabled: !!auth.user && !auth.isLoading, queryKey: accessKey, retry: false, refetchOnMount: 'always' } });
+  // Identity-change effects clear private queries. Start this probe only after
+  // that cleanup, otherwise removing its active query can leave the gate pending.
+  const access = useGetAdminAccess({ query: { enabled: !!auth.user && !auth.isLoading && accessUser === userKey, queryKey: accessKey, retry: false, refetchOnMount: 'always' } });
   const authorized = !!auth.user && verifiedUser === userKey && !access.isFetching && access.isSuccess && access.data?.isAdmin === true;
   const listParams = useMemo(() => ({ page, ...(search ? { search } : {}) }), [page, search]);
   const list = useListAdminRegistrations(listParams, {
@@ -73,6 +77,7 @@ export default function AdminPage() {
     setPage(1);
     setVerifiedUser('');
     clearPrivateCache();
+    setAccessUser(userKey);
     // Reset private state whenever a different account signs in.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userKey]);
@@ -217,6 +222,7 @@ export default function AdminPage() {
                     <div className="detail-team"><span>{detail.data.registration.referenceCode}</span><h3>{detail.data.registration.teamName || detail.data.registration.captainName}</h3><p>{detail.data.registration.institution || 'Institution not provided'} · {detail.data.registration.countryOfOrigin || 'Origin not provided'}</p><small>Submitted {fmtDate(detail.data.registration.createdAt)}</small></div>
                     <div className="detail-section"><h3>Contact</h3><dl><dt>Email</dt><dd><a href={`mailto:${detail.data.contact.email}`}>{detail.data.contact.email}</a></dd><dt>Phone</dt><dd>{detail.data.contact.phone || '—'}</dd><dt>Alternative phone</dt><dd>{detail.data.contact.alternativePhone || '—'}</dd><dt>Faculty / department</dt><dd>{detail.data.contact.facultyDepartment || '—'}</dd><dt>Edugate training</dt><dd>{detail.data.contact.hasEdugateTraining === null ? '—' : detail.data.contact.hasEdugateTraining ? 'Yes' : 'No'}</dd></dl></div>
                     <MemberStudentIds members={detail.data.members} documents={detail.data.documents} />
+                    <ParticipantPasswordRecovery key={selectedId} registrationId={selectedId} />
                     <div className="detail-section"><h3>Private documents <span>{detail.data.documents.length}</span></h3>{detail.data.documents.length ? <div className="document-list">{detail.data.documents.map((doc) => <a href={doc.url} target="_blank" rel="noreferrer" key={doc.id}><FileText size={17} /><span><strong>{doc.purpose === 'student_id' ? `Student ID — ${doc.memberName ?? 'Team leader'}` : 'Payment proof'}</strong><small>{doc.fileName} · {readableSize(doc.size)}</small></span><ArrowUpRight size={15} /></a>)}</div> : <p className="detail-muted">No documents attached.</p>}</div>
                     <div className="detail-section notification-section"><div className="notification-title"><div><h3>Email notification</h3><StatusPill status={detail.data.notification.status} /></div><button className="retry-button" type="button" disabled={!mayRetry || retry.isPending} onClick={() => void onRetry()}><RefreshCw size={14} className={retry.isPending ? 'spin-icon' : ''} />{retry.isPending ? 'Queueing…' : retryLabel}</button></div>
                       <p className="delivery-note">“Accepted by Resend” means the provider accepted the message; it does not confirm inbox delivery.</p>

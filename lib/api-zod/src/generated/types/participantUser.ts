@@ -10,4 +10,5 @@ export interface ParticipantUser {
   id: string;
   username: string;
   email: string;
+  mustChangePassword?: boolean;
 }

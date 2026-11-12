@@ -91,6 +91,8 @@ async function start() {
     await client.connect();
     try {
       await client.query("SET lock_timeout = '10s'");
+      await client.query("ALTER TABLE public.participant_accounts ADD COLUMN IF NOT EXISTS must_change_password boolean NOT NULL DEFAULT false");
+      await client.query("ALTER TABLE public.participant_accounts ADD COLUMN IF NOT EXISTS temporary_password_expires_at timestamptz");
       await client.query("ALTER TABLE public.registration_uploads ADD COLUMN IF NOT EXISTS member_position integer");
       await client.query("ALTER TABLE public.registration_uploads ADD COLUMN IF NOT EXISTS completion_registration_id uuid");
       await client.query("ALTER TABLE public.registration_uploads ADD COLUMN IF NOT EXISTS drive_file_id text");

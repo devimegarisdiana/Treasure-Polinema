@@ -1,5 +1,25 @@
 # Closed registration and returning-participant update
 
+## Organizer-assisted participant password recovery
+
+In a team's admin details, **Participant account** displays the native username
+linked by the registration's existing owner ID. **Reset password** requires a
+confirmation and generates a random temporary password displayed only once.
+It expires after 24 hours. Share it privately after verifying the participant.
+The participant must set a new 12–128 character password at `/register`.
+All old sessions are revoked; registrations and private documents are unchanged.
+Reset affects every team owned by that account, not only the selected record.
+
+Existing passwords cannot be viewed. Only password hashes are stored; temporary
+passwords are not saved in plaintext or sent to email/Sheets. Closing the record
+or hiding the password removes its display; if lost, perform a new reset.
+Historical records without a linked native account cannot be reset by matching
+their contact email.
+
+Install the complete latest package, including `app.js`, `schema.sql`, `server/`
+and `public/`. Startup adds the recovery columns without deleting existing data.
+Do not change hosting configuration, import dummy data, or reset the database.
+
 ## Official guidebook and next agenda
 
 The homepage includes the technical meeting on Friday, 13 November 2026.

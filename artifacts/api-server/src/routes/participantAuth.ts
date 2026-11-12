@@ -1,8 +1,8 @@
 import { Router, type IRouter } from "express";
 import { isRegistrationClosed, registrationClosedMessage } from "../lib/registrationPolicy";
-import { eq, or, sql } from "drizzle-orm";
+import { and, eq, gt, or, sql } from "drizzle-orm";
 import { db, participantAccountsTable as accounts, participantSessionsTable as sessions } from "@workspace/db";
-import { CreateParticipantAccountBody, CreateParticipantAccountResponse, GetParticipantSessionResponse, SignInParticipantBody, SignInParticipantResponse } from "@workspace/api-zod";
+import { ChangeParticipantPasswordBody, ChangeParticipantPasswordResponse, CreateParticipantAccountBody, CreateParticipantAccountResponse, GetParticipantSessionResponse, SignInParticipantBody, SignInParticipantResponse } from "@workspace/api-zod";
 import { AuthBusyError, clearParticipantCookie, hashPassword, limitAuthentication, newParticipantSession, participantToken, sameSiteRequest, setParticipantCookie, tokenHash, verifyPassword } from "../lib/participantAuth";
 import { advisoryLockKey } from "../lib/advisoryLock";
 
@@ -77,17 +77,63 @@ router.post("/participant-auth/signin", async (req, res) => {
     if (!await verifyPassword(password, account?.passwordHash) || !account) {
       res.status(401).json({ error: "The username/email or password is incorrect." }); return;
     }
+    if (account.mustChangePassword && (!account.temporaryPasswordExpiresAt || account.temporaryPasswordExpiresAt <= new Date())) {
+      res.status(401).json({ error: "Your temporary password has expired. Ask the organizer to reset it again." }); return;
+    }
     const session = newParticipantSession(account.id);
-    await db.transaction(async (tx) => {
+    const signedIn = await db.transaction(async (tx) => {
+      const [current] = await tx.select().from(accounts).where(eq(accounts.id, account.id)).for("update");
+      // Serialize with organizer resets: a verified old password must not create
+      // a new session after its credential has been replaced.
+      if (!current || current.passwordHash !== account.passwordHash ||
+        (current.mustChangePassword && (!current.temporaryPasswordExpiresAt || current.temporaryPasswordExpiresAt <= new Date()))) return false;
       const oldToken = participantToken(req);
       if (oldToken) await tx.delete(sessions).where(eq(sessions.tokenHash, tokenHash(oldToken)));
       await tx.insert(sessions).values(session.row);
+      return true;
     });
+    if (!signedIn) { res.status(401).json({ error: "Your password changed. Sign in again with your latest password." }); return; }
     setParticipantCookie(req, res, session.token);
-    res.json(SignInParticipantResponse.parse({ user: { id: `participant:${account.id}`, username: account.username, email: account.email } }));
+    res.json(SignInParticipantResponse.parse({ user: { id: `participant:${account.id}`, username: account.username, email: account.email, mustChangePassword: account.mustChangePassword } }));
   } catch (error) {
     req.log.error("Participant sign-in failed");
     res.status(503).json({ error: error instanceof AuthBusyError ? error.message : "Sign-in is temporarily unavailable. Please retry shortly." });
+  }
+});
+
+router.post("/participant-auth/change-password", async (req, res) => {
+  const parsed = ChangeParticipantPasswordBody.safeParse(req.body);
+  if (!parsed.success) { res.status(400).json({ error: "Enter your current password and a new password with 12–128 characters." }); return; }
+  const token = participantToken(req);
+  if (!req.participant || !token) { res.status(401).json({ error: "Please sign in again." }); return; }
+  if (parsed.data.currentPassword === parsed.data.newPassword) { res.status(400).json({ error: "Choose a new password different from your current password." }); return; }
+  try {
+    if (!await limitAuthentication(req, `password-change:${req.participant.id}`)) {
+      res.setHeader("Retry-After", "900");
+      res.status(429).json({ error: "Too many attempts. Try again in 15 minutes." }); return;
+    }
+    const accountId = req.participant.id.replace(/^participant:/, "");
+    const passwordHash = await hashPassword(parsed.data.newPassword);
+    const result = await db.transaction(async (tx) => {
+      const [account] = await tx.select().from(accounts).where(eq(accounts.id, accountId)).for("update");
+      const [active] = await tx.select().from(sessions).where(and(
+        eq(sessions.accountId, accountId), eq(sessions.tokenHash, tokenHash(token)), gt(sessions.expiresAt, new Date()),
+      )).limit(1);
+      if (!account || !active ||
+        (account.mustChangePassword && (!account.temporaryPasswordExpiresAt || account.temporaryPasswordExpiresAt <= new Date())) ||
+        !await verifyPassword(parsed.data.currentPassword, account.passwordHash)) return null;
+      await tx.update(accounts).set({ passwordHash, mustChangePassword: false, temporaryPasswordExpiresAt: null }).where(eq(accounts.id, accountId));
+      await tx.delete(sessions).where(eq(sessions.accountId, accountId));
+      const session = newParticipantSession(accountId);
+      await tx.insert(sessions).values(session.row);
+      return { token: session.token, user: { id: `participant:${accountId}`, username: account.username, email: account.email, mustChangePassword: false } };
+    });
+    if (!result) { res.status(401).json({ error: "Your current password or session is no longer valid. Sign in again if the organizer reset your password." }); return; }
+    setParticipantCookie(req, res, result.token);
+    res.json(ChangeParticipantPasswordResponse.parse({ user: result.user }));
+  } catch (error) {
+    req.log.error("Participant password change failed");
+    res.status(503).json({ error: error instanceof AuthBusyError ? error.message : "Password change could not be confirmed. Try signing in with your new password before retrying." });
   }
 });
 

@@ -3,7 +3,7 @@ import { and, eq, gt, lt, sql } from "drizzle-orm";
 import { type Request, type Response } from "express";
 import { db, participantAccountsTable as accounts, participantSessionsTable as sessions, participantAuthLimitsTable as limits } from "@workspace/db";
 
-export interface ParticipantIdentity { id: string; username: string; email: string }
+export interface ParticipantIdentity { id: string; username: string; email: string; mustChangePassword?: boolean }
 export const PARTICIPANT_COOKIE = "treasure_participant_session";
 const SESSION_TTL = 7 * 24 * 60 * 60_000;
 const KDF = { N: 32768, r: 8, p: 3, maxmem: 64 * 1024 * 1024 };
@@ -64,10 +64,14 @@ export async function verifyPassword(password: string, encoded?: string): Promis
 export async function loadParticipant(req: Request): Promise<ParticipantIdentity | null> {
   const token = participantToken(req);
   if (!token) return null;
-  const [row] = await db.select({ id: accounts.id, username: accounts.username, email: accounts.email })
+  const [row] = await db.select({
+    id: accounts.id, username: accounts.username, email: accounts.email,
+    mustChangePassword: accounts.mustChangePassword, temporaryPasswordExpiresAt: accounts.temporaryPasswordExpiresAt,
+  })
     .from(sessions).innerJoin(accounts, eq(accounts.id, sessions.accountId))
     .where(and(eq(sessions.tokenHash, tokenHash(token)), gt(sessions.expiresAt, new Date()))).limit(1);
-  return row ? { ...row, id: `participant:${row.id}` } : null;
+  if (!row || (row.mustChangePassword && (!row.temporaryPasswordExpiresAt || row.temporaryPasswordExpiresAt <= new Date()))) return null;
+  return { id: `participant:${row.id}`, username: row.username, email: row.email, mustChangePassword: row.mustChangePassword };
 }
 export function newParticipantSession(accountId: string) {
   const token = randomBytes(32).toString("hex");

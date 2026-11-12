@@ -90,6 +90,23 @@ paths:
               schema: { $ref: "#/components/schemas/ParticipantSession" }
         "401": { description: Invalid credentials }
         "429": { description: Too many attempts }
+  /participant-auth/change-password:
+    post:
+      operationId: changeParticipantPassword
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ParticipantPasswordChange" }
+      responses:
+        "200":
+          description: Password changed and all prior sessions revoked
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ParticipantSession" }
+        "400": { description: Invalid or reused password }
+        "401": { description: Current session or password invalid }
+        "429": { description: Too many attempts }
   /participant-auth/signout:
     post:
       operationId: signOutParticipant
@@ -144,6 +161,47 @@ paths:
         "401": { description: Sign in required }
         "403": { description: Administrator access required }
         "404": { description: Registration not found }
+  /admin/registrations/{id}/participant-account:
+    get:
+      operationId: getRegistrationParticipantAccount
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: Native account linked by registration ownership, never by email
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ParticipantRecoveryAccountResult" }
+        "401": { description: Sign in required }
+        "403": { description: Organizer access required }
+        "404": { description: Registration not found }
+  /admin/registrations/{id}/reset-password:
+    post:
+      operationId: resetRegistrationPassword
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ParticipantPasswordResetConfirmation" }
+      responses:
+        "200":
+          description: One-time display of generated temporary password, not retrievable later
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ParticipantTemporaryPassword" }
+        "400": { description: Invalid confirmation }
+        "401": { description: Sign in required }
+        "403": { description: Organizer access required }
+        "409": { description: Account is no longer linked }
+        "429": { description: Too many attempts }
   /admin/registrations/{id}/retry-email:
     post:
       operationId: retryRegistrationEmail
@@ -427,6 +485,42 @@ components:
         id: { type: string }
         username: { type: string }
         email: { type: string, format: email }
+        mustChangePassword: { type: boolean }
+    ParticipantPasswordChange:
+      type: object
+      required: [currentPassword, newPassword]
+      properties:
+        currentPassword: { type: string, minLength: 1, maxLength: 128 }
+        newPassword: { type: string, minLength: 12, maxLength: 128 }
+    ParticipantRecoveryAccount:
+      type: object
+      required: [id, username, email, mustChangePassword]
+      properties:
+        id: { type: string, format: uuid }
+        username: { type: string }
+        email: { type: string, format: email }
+        mustChangePassword: { type: boolean }
+    ParticipantRecoveryAccountResult:
+      type: object
+      required: [account]
+      properties:
+        account:
+          oneOf:
+            - { $ref: "#/components/schemas/ParticipantRecoveryAccount" }
+            - { type: "null" }
+    ParticipantPasswordResetConfirmation:
+      type: object
+      required: [accountId, confirmed]
+      properties:
+        accountId: { type: string, format: uuid }
+        confirmed: { type: boolean, enum: [true] }
+    ParticipantTemporaryPassword:
+      type: object
+      required: [username, temporaryPassword, expiresAt]
+      properties:
+        username: { type: string }
+        temporaryPassword: { type: string }
+        expiresAt: { type: string, format: date-time }
     ParticipantSession:
       type: object
       required: [user]

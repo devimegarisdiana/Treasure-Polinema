@@ -16,6 +16,7 @@ import { registrationStorage, streamFile } from "./storage";
 import { sameSiteRequest } from "../lib/participantAuth";
 import { queueExistingRegistrationSpreadsheets, refreshExistingRegistrationDocuments } from "../lib/registrationSpreadsheetBackfill";
 import { processRegistrationSpreadsheetSync } from "../lib/registrationSpreadsheetSync";
+import participantRecoveryRouter from "./participantRecovery";
 
 const router: IRouter = Router();
 
@@ -37,6 +38,8 @@ router.use("/admin", (req, res, next) => {
   if (!isTreasureAdmin(req)) { res.status(403).json({ error: "This dashboard is restricted to authorized organizers." }); return; }
   next();
 });
+
+router.use(participantRecoveryRouter);
 
 router.post("/admin/spreadsheet-sync/refresh-documents", async (req, res) => {
   if (process.env.RUNTIME_HOST !== "cpanel" || process.env.GOOGLE_DRIVE_SYNC_ENABLED !== "true") {
