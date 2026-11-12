@@ -23922,6 +23922,8 @@ var participantAccountsTable = pgTable("participant_accounts", {
   username: text("username").notNull().unique(),
   email: varchar("email", { length: 254 }).notNull().unique(),
   passwordHash: text("password_hash").notNull(),
+  mustChangePassword: boolean("must_change_password").notNull().default(false),
+  temporaryPasswordExpiresAt: timestamp("temporary_password_expires_at", { withTimezone: true }),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow()
 });
 var participantSessionsTable = pgTable("participant_sessions", {

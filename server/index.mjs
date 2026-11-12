@@ -20724,27 +20724,27 @@ var require_router = __commonJS({
     var slice = Array.prototype.slice;
     var flatten = Array.prototype.flat;
     var methods = METHODS.map((method) => method.toLowerCase());
-    module.exports = Router10;
+    module.exports = Router11;
     module.exports.Route = Route;
-    function Router10(options) {
-      if (!(this instanceof Router10)) {
-        return new Router10(options);
+    function Router11(options) {
+      if (!(this instanceof Router11)) {
+        return new Router11(options);
       }
       const opts = options || {};
-      function router10(req, res, next) {
-        router10.handle(req, res, next);
+      function router11(req, res, next) {
+        router11.handle(req, res, next);
       }
-      Object.setPrototypeOf(router10, this);
-      router10.caseSensitive = opts.caseSensitive;
-      router10.mergeParams = opts.mergeParams;
-      router10.params = {};
-      router10.strict = opts.strict;
-      router10.stack = [];
-      return router10;
+      Object.setPrototypeOf(router11, this);
+      router11.caseSensitive = opts.caseSensitive;
+      router11.mergeParams = opts.mergeParams;
+      router11.params = {};
+      router11.strict = opts.strict;
+      router11.stack = [];
+      return router11;
     }
-    Router10.prototype = function() {
+    Router11.prototype = function() {
     };
-    Router10.prototype.param = function param(name, fn) {
+    Router11.prototype.param = function param(name, fn) {
       if (!name) {
         throw new TypeError("argument name is required");
       }
@@ -20764,7 +20764,7 @@ var require_router = __commonJS({
       params.push(fn);
       return this;
     };
-    Router10.prototype.handle = function handle(req, res, callback) {
+    Router11.prototype.handle = function handle(req, res, callback) {
       if (!callback) {
         throw new TypeError("argument callback is required");
       }
@@ -20891,7 +20891,7 @@ var require_router = __commonJS({
         }
       }
     };
-    Router10.prototype.use = function use(handler) {
+    Router11.prototype.use = function use(handler) {
       let offset = 0;
       let path3 = "/";
       if (typeof handler !== "function") {
@@ -20924,7 +20924,7 @@ var require_router = __commonJS({
       }
       return this;
     };
-    Router10.prototype.route = function route(path3) {
+    Router11.prototype.route = function route(path3) {
       const route2 = new Route(path3);
       const layer = new Layer(path3, {
         sensitive: this.caseSensitive,
@@ -20939,7 +20939,7 @@ var require_router = __commonJS({
       return route2;
     };
     methods.concat("all").forEach(function(method) {
-      Router10.prototype[method] = function(path3) {
+      Router11.prototype[method] = function(path3) {
         const route = this.route(path3);
         route[method].apply(route, slice.call(arguments, 1));
         return this;
@@ -21122,13 +21122,13 @@ var require_application = __commonJS({
     var compileTrust = require_utils3().compileTrust;
     var resolve = __require("node:path").resolve;
     var once = require_once();
-    var Router10 = require_router();
+    var Router11 = require_router();
     var slice = Array.prototype.slice;
     var flatten = Array.prototype.flat;
     var app2 = exports = module.exports = {};
     var trustProxyDefaultSymbol = "@@symbol:trust_proxy_default";
     app2.init = function init() {
-      var router10 = null;
+      var router11 = null;
       this.cache = /* @__PURE__ */ Object.create(null);
       this.engines = /* @__PURE__ */ Object.create(null);
       this.settings = /* @__PURE__ */ Object.create(null);
@@ -21137,13 +21137,13 @@ var require_application = __commonJS({
         configurable: true,
         enumerable: true,
         get: function getrouter() {
-          if (router10 === null) {
-            router10 = new Router10({
+          if (router11 === null) {
+            router11 = new Router11({
               caseSensitive: this.enabled("case sensitive routing"),
               strict: this.enabled("strict routing")
             });
           }
-          return router10;
+          return router11;
         }
       });
     };
@@ -21214,15 +21214,15 @@ var require_application = __commonJS({
       if (fns.length === 0) {
         throw new TypeError("app.use() requires a middleware function");
       }
-      var router10 = this.router;
+      var router11 = this.router;
       fns.forEach(function(fn2) {
         if (!fn2 || !fn2.handle || !fn2.set) {
-          return router10.use(path3, fn2);
+          return router11.use(path3, fn2);
         }
         debug(".use app under %s", path3);
         fn2.mountpath = path3;
         fn2.parent = this;
-        router10.use(path3, function mounted_app(req, res, next) {
+        router11.use(path3, function mounted_app(req, res, next) {
           var orig = req.app;
           fn2.handle(req, res, function(err) {
             Object.setPrototypeOf(req, orig.request);
@@ -23731,7 +23731,7 @@ var require_express = __commonJS({
     var EventEmitter = __require("node:events").EventEmitter;
     var mixin = require_merge_descriptors();
     var proto = require_application();
-    var Router10 = require_router();
+    var Router11 = require_router();
     var req = require_request();
     var res = require_response();
     exports = module.exports = createApplication;
@@ -23753,8 +23753,8 @@ var require_express = __commonJS({
     exports.application = proto;
     exports.request = req;
     exports.response = res;
-    exports.Route = Router10.Route;
-    exports.Router = Router10;
+    exports.Route = Router11.Route;
+    exports.Router = Router11;
     exports.json = bodyParser.json;
     exports.raw = bodyParser.raw;
     exports.static = require_serve_static();
@@ -29767,7 +29767,7 @@ var require_utils5 = __commonJS({
     var nodeCrypto = __require("crypto");
     module.exports = {
       postgresMd5PasswordHash,
-      randomBytes: randomBytes4,
+      randomBytes: randomBytes5,
       deriveKey,
       sha256,
       hashByName,
@@ -29777,7 +29777,7 @@ var require_utils5 = __commonJS({
     var webCrypto = nodeCrypto.webcrypto || globalThis.crypto;
     var subtleCrypto = webCrypto.subtle;
     var textEncoder = new TextEncoder();
-    function randomBytes4(length) {
+    function randomBytes5(length) {
       return webCrypto.getRandomValues(Buffer.alloc(length));
     }
     async function md5(string4) {
@@ -34364,12 +34364,12 @@ var require_cookie_parser = __commonJS({
 });
 
 // src/app.ts
-var import_express10 = __toESM(require_express2(), 1);
+var import_express11 = __toESM(require_express2(), 1);
 var import_cors = __toESM(require_lib3(), 1);
 var import_pino_http = __toESM(require_logger(), 1);
 
 // src/routes/index.ts
-var import_express9 = __toESM(require_express2(), 1);
+var import_express10 = __toESM(require_express2(), 1);
 
 // src/routes/health.ts
 var import_express = __toESM(require_express2(), 1);
@@ -38286,7 +38286,8 @@ var GetParticipantSessionResponse = objectType({
   "user": unionType([objectType({
     "id": stringType(),
     "username": stringType(),
-    "email": stringType().email()
+    "email": stringType().email(),
+    "mustChangePassword": booleanType().optional()
   }), nullType()])
 });
 var createParticipantAccountBodyUsernameMin = 12;
@@ -38302,7 +38303,8 @@ var CreateParticipantAccountResponse = objectType({
   "user": unionType([objectType({
     "id": stringType(),
     "username": stringType(),
-    "email": stringType().email()
+    "email": stringType().email(),
+    "mustChangePassword": booleanType().optional()
   }), nullType()])
 });
 var signInParticipantBodyIdentifierMin = 3;
@@ -38315,7 +38317,23 @@ var SignInParticipantResponse = objectType({
   "user": unionType([objectType({
     "id": stringType(),
     "username": stringType(),
-    "email": stringType().email()
+    "email": stringType().email(),
+    "mustChangePassword": booleanType().optional()
+  }), nullType()])
+});
+var changeParticipantPasswordBodyCurrentPasswordMax = 128;
+var changeParticipantPasswordBodyNewPasswordMin = 12;
+var changeParticipantPasswordBodyNewPasswordMax = 128;
+var ChangeParticipantPasswordBody = objectType({
+  "currentPassword": stringType().min(1).max(changeParticipantPasswordBodyCurrentPasswordMax),
+  "newPassword": stringType().min(changeParticipantPasswordBodyNewPasswordMin).max(changeParticipantPasswordBodyNewPasswordMax)
+});
+var ChangeParticipantPasswordResponse = objectType({
+  "user": unionType([objectType({
+    "id": stringType(),
+    "username": stringType(),
+    "email": stringType().email(),
+    "mustChangePassword": booleanType().optional()
   }), nullType()])
 });
 var SignOutParticipantResponse = objectType({
@@ -38396,6 +38414,29 @@ var GetAdminRegistrationResponse = objectType({
     "lastError": stringType().nullable(),
     "nextAttemptAt": coerce.date().nullable()
   })
+});
+var GetRegistrationParticipantAccountParams = objectType({
+  "id": coerce.string().uuid()
+});
+var GetRegistrationParticipantAccountResponse = objectType({
+  "account": unionType([objectType({
+    "id": stringType().uuid(),
+    "username": stringType(),
+    "email": stringType().email(),
+    "mustChangePassword": booleanType()
+  }), nullType()])
+});
+var ResetRegistrationPasswordParams = objectType({
+  "id": coerce.string().uuid()
+});
+var ResetRegistrationPasswordBody = objectType({
+  "accountId": stringType().uuid(),
+  "confirmed": literalType(true)
+});
+var ResetRegistrationPasswordResponse = objectType({
+  "username": stringType(),
+  "temporaryPassword": stringType(),
+  "expiresAt": coerce.date()
 });
 var RetryRegistrationEmailParams = objectType({
   "id": coerce.string().uuid()
@@ -57169,6 +57210,8 @@ var participantAccountsTable = pgTable("participant_accounts", {
   username: text("username").notNull().unique(),
   email: varchar("email", { length: 254 }).notNull().unique(),
   passwordHash: text("password_hash").notNull(),
+  mustChangePassword: boolean("must_change_password").notNull().default(false),
+  temporaryPasswordExpiresAt: timestamp("temporary_password_expires_at", { withTimezone: true }),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow()
 });
 var participantSessionsTable = pgTable("participant_sessions", {
@@ -58088,8 +58131,15 @@ async function verifyPassword(password, encoded) {
 async function loadParticipant(req) {
   const token = participantToken(req);
   if (!token) return null;
-  const [row] = await db.select({ id: participantAccountsTable.id, username: participantAccountsTable.username, email: participantAccountsTable.email }).from(participantSessionsTable).innerJoin(participantAccountsTable, eq(participantAccountsTable.id, participantSessionsTable.accountId)).where(and(eq(participantSessionsTable.tokenHash, tokenHash(token)), gt(participantSessionsTable.expiresAt, /* @__PURE__ */ new Date()))).limit(1);
-  return row ? { ...row, id: `participant:${row.id}` } : null;
+  const [row] = await db.select({
+    id: participantAccountsTable.id,
+    username: participantAccountsTable.username,
+    email: participantAccountsTable.email,
+    mustChangePassword: participantAccountsTable.mustChangePassword,
+    temporaryPasswordExpiresAt: participantAccountsTable.temporaryPasswordExpiresAt
+  }).from(participantSessionsTable).innerJoin(participantAccountsTable, eq(participantAccountsTable.id, participantSessionsTable.accountId)).where(and(eq(participantSessionsTable.tokenHash, tokenHash(token)), gt(participantSessionsTable.expiresAt, /* @__PURE__ */ new Date()))).limit(1);
+  if (!row || row.mustChangePassword && (!row.temporaryPasswordExpiresAt || row.temporaryPasswordExpiresAt <= /* @__PURE__ */ new Date())) return null;
+  return { id: `participant:${row.id}`, username: row.username, email: row.email, mustChangePassword: row.mustChangePassword };
 }
 function newParticipantSession(accountId) {
   const token = randomBytes(32).toString("hex");
@@ -60266,7 +60316,7 @@ router4.get("/storage/objects/*path", async (req, res) => {
 var storage_default = router4;
 
 // src/routes/admin.ts
-var import_express5 = __toESM(require_express2(), 1);
+var import_express6 = __toESM(require_express2(), 1);
 
 // src/lib/adminAccess.ts
 function isTreasureAdmin(req) {
@@ -60309,9 +60359,72 @@ async function refreshExistingRegistrationDocuments() {
   });
 }
 
-// src/routes/admin.ts
+// src/routes/participantRecovery.ts
+var import_express5 = __toESM(require_express2(), 1);
+import { randomBytes as randomBytes3 } from "node:crypto";
 var router5 = (0, import_express5.Router)();
-router5.use("/admin", (req, res, next) => {
+var accountProjection = { id: participantAccountsTable.id, username: participantAccountsTable.username, email: participantAccountsTable.email, mustChangePassword: participantAccountsTable.mustChangePassword };
+var linkedOwner = eq(teamRegistrationsTable.ownerId, sql`'participant:' || ${participantAccountsTable.id}::text`);
+router5.get("/admin/registrations/:id/participant-account", async (req, res) => {
+  const parsed = GetRegistrationParticipantAccountParams.safeParse(req.params);
+  if (!parsed.success) {
+    res.status(400).json({ error: "Invalid registration reference." });
+    return;
+  }
+  try {
+    const [registration] = await db.select({ id: teamRegistrationsTable.id }).from(teamRegistrationsTable).where(eq(teamRegistrationsTable.id, parsed.data.id)).limit(1);
+    if (!registration) {
+      res.status(404).json({ error: "Registration not found." });
+      return;
+    }
+    const [account] = await db.select(accountProjection).from(teamRegistrationsTable).innerJoin(participantAccountsTable, linkedOwner).where(eq(teamRegistrationsTable.id, parsed.data.id)).limit(1);
+    res.json(GetRegistrationParticipantAccountResponse.parse({ account: account ?? null }));
+  } catch {
+    req.log.error("Unable to load linked participant account");
+    res.status(503).json({ error: "Participant account could not be loaded. Please retry." });
+  }
+});
+router5.post("/admin/registrations/:id/reset-password", async (req, res) => {
+  const params = ResetRegistrationPasswordParams.safeParse(req.params);
+  const body = ResetRegistrationPasswordBody.safeParse(req.body);
+  if (!params.success || !body.success) {
+    res.status(400).json({ error: "Confirm the linked participant account before resetting its password." });
+    return;
+  }
+  try {
+    if (!await limitAuthentication(req, `organizer-reset:${req.organizer?.id}`)) {
+      res.setHeader("Retry-After", "900");
+      res.status(429).json({ error: "Too many reset attempts. Try again in 15 minutes." });
+      return;
+    }
+    const temporaryPassword = randomBytes3(18).toString("base64url");
+    const passwordHash = await hashPassword(temporaryPassword);
+    const expiresAt = new Date(Date.now() + 24 * 60 * 6e4);
+    const result = await db.transaction(async (tx) => {
+      const [account] = await tx.select(accountProjection).from(participantAccountsTable).where(eq(participantAccountsTable.id, body.data.accountId)).for("update");
+      if (!account) return null;
+      const [registration] = await tx.select({ ownerId: teamRegistrationsTable.ownerId }).from(teamRegistrationsTable).where(eq(teamRegistrationsTable.id, params.data.id)).for("update");
+      if (registration?.ownerId !== `participant:${account.id}`) return null;
+      await tx.update(participantAccountsTable).set({ passwordHash, mustChangePassword: true, temporaryPasswordExpiresAt: expiresAt }).where(eq(participantAccountsTable.id, account.id));
+      await tx.delete(participantSessionsTable).where(eq(participantSessionsTable.accountId, account.id));
+      return account;
+    });
+    if (!result) {
+      res.status(409).json({ error: "This participant account is no longer linked to the selected team. Reload the record." });
+      return;
+    }
+    req.log.info({ registrationId: params.data.id, organizerId: req.organizer?.id }, "Organizer reset a participant password");
+    res.json(ResetRegistrationPasswordResponse.parse({ username: result.username, temporaryPassword, expiresAt: expiresAt.toISOString() }));
+  } catch (error40) {
+    req.log.error("Participant password reset failed");
+    res.status(503).json({ error: error40 instanceof AuthBusyError ? error40.message : "Reset could not be confirmed. Reload the account before trying a new reset; a previous password may already be invalid." });
+  }
+});
+var participantRecovery_default = router5;
+
+// src/routes/admin.ts
+var router6 = (0, import_express6.Router)();
+router6.use("/admin", (req, res, next) => {
   res.setHeader("Cache-Control", "private, no-store");
   if (!sameSiteRequest(req)) {
     res.status(403).json({ error: "This action must be performed from the organizer dashboard." });
@@ -60319,7 +60432,7 @@ router5.use("/admin", (req, res, next) => {
   }
   next();
 });
-router5.get("/admin/access", (req, res) => {
+router6.get("/admin/access", (req, res) => {
   res.setHeader("Cache-Control", "private, no-store");
   if (!req.organizer) {
     res.status(401).json({ error: "Please sign in." });
@@ -60327,7 +60440,7 @@ router5.get("/admin/access", (req, res) => {
   }
   res.json(GetAdminAccessResponse.parse({ isAdmin: isTreasureAdmin(req) }));
 });
-router5.use("/admin", (req, res, next) => {
+router6.use("/admin", (req, res, next) => {
   res.setHeader("Cache-Control", "private, no-store");
   if (!req.organizer) {
     res.status(401).json({ error: "Please sign in." });
@@ -60339,7 +60452,8 @@ router5.use("/admin", (req, res, next) => {
   }
   next();
 });
-router5.post("/admin/spreadsheet-sync/refresh-documents", async (req, res) => {
+router6.use(participantRecovery_default);
+router6.post("/admin/spreadsheet-sync/refresh-documents", async (req, res) => {
   if (process.env.RUNTIME_HOST !== "cpanel" || process.env.GOOGLE_DRIVE_SYNC_ENABLED !== "true") {
     res.status(503).json({ error: "Enable private Google Drive sync on live hosting after updating the Apps Script deployment." });
     return;
@@ -60352,7 +60466,7 @@ router5.post("/admin/spreadsheet-sync/refresh-documents", async (req, res) => {
     res.status(500).json({ error: "The private document refresh could not be queued. Please retry." });
   }
 });
-router5.post("/admin/spreadsheet-sync/backfill", async (req, res) => {
+router6.post("/admin/spreadsheet-sync/backfill", async (req, res) => {
   if (process.env.RUNTIME_HOST !== "cpanel") {
     res.status(503).json({ error: "Queue existing registrations from the live IDwebhost organizer dashboard, not the Replit preview." });
     return;
@@ -60380,7 +60494,7 @@ var projection = {
   memberCount: sql`(SELECT count(*)::integer FROM team_registration_members WHERE registration_id = "team_registrations"."id")`,
   notificationStatus: sql`COALESCE((SELECT status FROM registration_notifications WHERE registration_id = "team_registrations"."id"), 'not_requested')`
 };
-router5.get("/admin/registrations", async (req, res) => {
+router6.get("/admin/registrations", async (req, res) => {
   const parsed = ListAdminRegistrationsQueryParams.safeParse(req.query);
   if (!parsed.success || parsed.data.page > 1e5) {
     res.status(400).json({ error: "Invalid page or search." });
@@ -60412,7 +60526,7 @@ router5.get("/admin/registrations", async (req, res) => {
     res.status(500).json({ error: "Registrations could not be loaded. Please retry." });
   }
 });
-router5.get("/admin/registrations/:id", async (req, res) => {
+router6.get("/admin/registrations/:id", async (req, res) => {
   const parsed = GetAdminRegistrationParams.safeParse(req.params);
   if (!parsed.success) {
     res.status(400).json({ error: "Invalid registration reference." });
@@ -60467,7 +60581,7 @@ router5.get("/admin/registrations/:id", async (req, res) => {
     res.status(500).json({ error: "Registration details could not be loaded. Please retry." });
   }
 });
-router5.post("/admin/registrations/:id/retry-email", async (req, res) => {
+router6.post("/admin/registrations/:id/retry-email", async (req, res) => {
   const parsed = RetryRegistrationEmailParams.safeParse(req.params);
   if (!parsed.success) {
     res.status(400).json({ error: "Invalid registration reference." });
@@ -60496,7 +60610,7 @@ router5.post("/admin/registrations/:id/retry-email", async (req, res) => {
     res.status(500).json({ error: "The email could not be queued. Please retry." });
   }
 });
-router5.get("/admin/registrations/:id/documents/:uploadId", async (req, res) => {
+router6.get("/admin/registrations/:id/documents/:uploadId", async (req, res) => {
   const parsed = DownloadAdminRegistrationDocumentParams.safeParse(req.params);
   if (!parsed.success) {
     res.status(400).json({ error: "Invalid document reference." });
@@ -60517,12 +60631,12 @@ router5.get("/admin/registrations/:id/documents/:uploadId", async (req, res) => 
     res.status(404).json({ error: "Document not found." });
   }
 });
-var admin_default = router5;
+var admin_default = router6;
 
 // src/routes/participantAuth.ts
-var import_express6 = __toESM(require_express2(), 1);
-var router6 = (0, import_express6.Router)();
-router6.use("/participant-auth", (req, res, next) => {
+var import_express7 = __toESM(require_express2(), 1);
+var router7 = (0, import_express7.Router)();
+router7.use("/participant-auth", (req, res, next) => {
   res.setHeader("Cache-Control", "private, no-store");
   if (!sameSiteRequest(req)) {
     res.status(403).json({ error: "Please use the TREASURE registration page." });
@@ -60530,10 +60644,10 @@ router6.use("/participant-auth", (req, res, next) => {
   }
   next();
 });
-router6.get("/participant-auth/me", (req, res) => {
+router7.get("/participant-auth/me", (req, res) => {
   res.json(GetParticipantSessionResponse.parse({ user: req.participant ?? null }));
 });
-router6.post("/participant-auth/signup", async (req, res) => {
+router7.post("/participant-auth/signup", async (req, res) => {
   if (isRegistrationClosed()) {
     res.status(410).json({ error: registrationClosedMessage });
     return;
@@ -60586,7 +60700,7 @@ router6.post("/participant-auth/signup", async (req, res) => {
     res.status(503).json({ error: error40 instanceof AuthBusyError ? error40.message : "Your account could not be created. Please retry shortly." });
   }
 });
-router6.post("/participant-auth/signin", async (req, res) => {
+router7.post("/participant-auth/signin", async (req, res) => {
   const parsed = SignInParticipantBody.safeParse({
     ...req.body,
     identifier: typeof req.body?.identifier === "string" ? req.body.identifier.trim().toLowerCase() : req.body?.identifier
@@ -60607,20 +60721,79 @@ router6.post("/participant-auth/signin", async (req, res) => {
       res.status(401).json({ error: "The username/email or password is incorrect." });
       return;
     }
+    if (account.mustChangePassword && (!account.temporaryPasswordExpiresAt || account.temporaryPasswordExpiresAt <= /* @__PURE__ */ new Date())) {
+      res.status(401).json({ error: "Your temporary password has expired. Ask the organizer to reset it again." });
+      return;
+    }
     const session = newParticipantSession(account.id);
-    await db.transaction(async (tx) => {
+    const signedIn = await db.transaction(async (tx) => {
+      const [current] = await tx.select().from(participantAccountsTable).where(eq(participantAccountsTable.id, account.id)).for("update");
+      if (!current || current.passwordHash !== account.passwordHash || current.mustChangePassword && (!current.temporaryPasswordExpiresAt || current.temporaryPasswordExpiresAt <= /* @__PURE__ */ new Date())) return false;
       const oldToken = participantToken(req);
       if (oldToken) await tx.delete(participantSessionsTable).where(eq(participantSessionsTable.tokenHash, tokenHash(oldToken)));
       await tx.insert(participantSessionsTable).values(session.row);
+      return true;
     });
+    if (!signedIn) {
+      res.status(401).json({ error: "Your password changed. Sign in again with your latest password." });
+      return;
+    }
     setParticipantCookie(req, res, session.token);
-    res.json(SignInParticipantResponse.parse({ user: { id: `participant:${account.id}`, username: account.username, email: account.email } }));
+    res.json(SignInParticipantResponse.parse({ user: { id: `participant:${account.id}`, username: account.username, email: account.email, mustChangePassword: account.mustChangePassword } }));
   } catch (error40) {
     req.log.error("Participant sign-in failed");
     res.status(503).json({ error: error40 instanceof AuthBusyError ? error40.message : "Sign-in is temporarily unavailable. Please retry shortly." });
   }
 });
-router6.post("/participant-auth/signout", async (req, res) => {
+router7.post("/participant-auth/change-password", async (req, res) => {
+  const parsed = ChangeParticipantPasswordBody.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: "Enter your current password and a new password with 12\u2013128 characters." });
+    return;
+  }
+  const token = participantToken(req);
+  if (!req.participant || !token) {
+    res.status(401).json({ error: "Please sign in again." });
+    return;
+  }
+  if (parsed.data.currentPassword === parsed.data.newPassword) {
+    res.status(400).json({ error: "Choose a new password different from your current password." });
+    return;
+  }
+  try {
+    if (!await limitAuthentication(req, `password-change:${req.participant.id}`)) {
+      res.setHeader("Retry-After", "900");
+      res.status(429).json({ error: "Too many attempts. Try again in 15 minutes." });
+      return;
+    }
+    const accountId = req.participant.id.replace(/^participant:/, "");
+    const passwordHash = await hashPassword(parsed.data.newPassword);
+    const result = await db.transaction(async (tx) => {
+      const [account] = await tx.select().from(participantAccountsTable).where(eq(participantAccountsTable.id, accountId)).for("update");
+      const [active] = await tx.select().from(participantSessionsTable).where(and(
+        eq(participantSessionsTable.accountId, accountId),
+        eq(participantSessionsTable.tokenHash, tokenHash(token)),
+        gt(participantSessionsTable.expiresAt, /* @__PURE__ */ new Date())
+      )).limit(1);
+      if (!account || !active || account.mustChangePassword && (!account.temporaryPasswordExpiresAt || account.temporaryPasswordExpiresAt <= /* @__PURE__ */ new Date()) || !await verifyPassword(parsed.data.currentPassword, account.passwordHash)) return null;
+      await tx.update(participantAccountsTable).set({ passwordHash, mustChangePassword: false, temporaryPasswordExpiresAt: null }).where(eq(participantAccountsTable.id, accountId));
+      await tx.delete(participantSessionsTable).where(eq(participantSessionsTable.accountId, accountId));
+      const session = newParticipantSession(accountId);
+      await tx.insert(participantSessionsTable).values(session.row);
+      return { token: session.token, user: { id: `participant:${accountId}`, username: account.username, email: account.email, mustChangePassword: false } };
+    });
+    if (!result) {
+      res.status(401).json({ error: "Your current password or session is no longer valid. Sign in again if the organizer reset your password." });
+      return;
+    }
+    setParticipantCookie(req, res, result.token);
+    res.json(ChangeParticipantPasswordResponse.parse({ user: result.user }));
+  } catch (error40) {
+    req.log.error("Participant password change failed");
+    res.status(503).json({ error: error40 instanceof AuthBusyError ? error40.message : "Password change could not be confirmed. Try signing in with your new password before retrying." });
+  }
+});
+router7.post("/participant-auth/signout", async (req, res) => {
   try {
     const token = participantToken(req);
     if (token) await db.delete(participantSessionsTable).where(eq(participantSessionsTable.tokenHash, tokenHash(token)));
@@ -60630,13 +60803,13 @@ router6.post("/participant-auth/signout", async (req, res) => {
     res.status(503).json({ error: "Sign-out could not be completed. Please retry." });
   }
 });
-var participantAuth_default = router6;
+var participantAuth_default = router7;
 
 // src/routes/organizerAuth.ts
-var import_express7 = __toESM(require_express2(), 1);
+var import_express8 = __toESM(require_express2(), 1);
 
 // src/lib/organizerAuth.ts
-import { randomBytes as randomBytes3 } from "node:crypto";
+import { randomBytes as randomBytes4 } from "node:crypto";
 var ORGANIZER_COOKIE = "treasure_organizer_session";
 var SESSION_TTL3 = 8 * 60 * 6e4;
 var OrganizerSetupError = class extends Error {
@@ -60696,7 +60869,7 @@ async function loadOrganizer(req) {
   return session ? { id: `organizer:${session.id}`, username: session.username } : null;
 }
 async function createOrganizerSession(req, account) {
-  const token = randomBytes3(32).toString("hex");
+  const token = randomBytes4(32).toString("hex");
   await db.transaction(async (tx) => {
     const [current] = await tx.select({ hash: organizerAccountsTable.passwordHash }).from(organizerAccountsTable).where(eq(organizerAccountsTable.id, account.id)).for("update").limit(1);
     if (current?.hash !== account.passwordHash) throw new Error("Organizer credentials changed. Restart required.");
@@ -60713,8 +60886,8 @@ async function createOrganizerSession(req, account) {
 }
 
 // src/routes/organizerAuth.ts
-var router7 = (0, import_express7.Router)();
-router7.use("/organizer-auth", (req, res, next) => {
+var router8 = (0, import_express8.Router)();
+router8.use("/organizer-auth", (req, res, next) => {
   res.setHeader("Cache-Control", "private, no-store");
   if (!sameSiteRequest(req)) {
     res.status(403).json({ error: "Please use the organizer dashboard." });
@@ -60722,10 +60895,10 @@ router7.use("/organizer-auth", (req, res, next) => {
   }
   next();
 });
-router7.get("/organizer-auth/me", (req, res) => {
+router8.get("/organizer-auth/me", (req, res) => {
   res.json(GetOrganizerSessionResponse.parse({ user: req.organizer ?? null }));
 });
-router7.post("/organizer-auth/signin", async (req, res) => {
+router8.post("/organizer-auth/signin", async (req, res) => {
   const parsed = SignInOrganizerBody.safeParse({
     ...req.body,
     username: typeof req.body?.username === "string" ? req.body.username.trim().toLowerCase() : req.body?.username
@@ -60755,7 +60928,7 @@ router7.post("/organizer-auth/signin", async (req, res) => {
     res.status(503).json({ error: error40 instanceof AuthBusyError || error40 instanceof OrganizerSetupError ? error40.message : "Organizer sign-in is temporarily unavailable. Please retry shortly." });
   }
 });
-router7.post("/organizer-auth/signout", async (req, res) => {
+router8.post("/organizer-auth/signout", async (req, res) => {
   try {
     const token = organizerToken(req);
     if (token) await db.delete(organizerSessionsTable).where(eq(organizerSessionsTable.tokenHash, tokenHash(token)));
@@ -60765,11 +60938,11 @@ router7.post("/organizer-auth/signout", async (req, res) => {
     res.status(503).json({ error: "Sign-out could not be completed. Please retry." });
   }
 });
-var organizerAuth_default = router7;
+var organizerAuth_default = router8;
 
 // src/routes/participantRegistrations.ts
-var import_express8 = __toESM(require_express2(), 1);
-var router8 = (0, import_express8.Router)();
+var import_express9 = __toESM(require_express2(), 1);
+var router9 = (0, import_express9.Router)();
 function studentIdFor(position, firstPosition, files, registration) {
   const linked = files.find((file2) => file2.purpose === "student_id" && file2.memberPosition === position);
   if (linked || position !== firstPosition) return linked;
@@ -60801,7 +60974,7 @@ async function detail(registration) {
     spreadsheetStatus: job?.status ?? "not_requested"
   };
 }
-router8.use("/participant-registrations", (req, res, next) => {
+router9.use("/participant-registrations", (req, res, next) => {
   res.setHeader("Cache-Control", "private, no-store");
   if (!sameSiteRequest(req)) {
     res.status(403).json({ error: "Use the TREASURE participant page." });
@@ -60813,7 +60986,7 @@ router8.use("/participant-registrations", (req, res, next) => {
   }
   next();
 });
-router8.get("/participant-registrations", async (req, res) => {
+router9.get("/participant-registrations", async (req, res) => {
   try {
     const own = await db.select().from(teamRegistrationsTable).where(eq(teamRegistrationsTable.ownerId, registrationOwner(req)));
     res.json(ListParticipantRegistrationsResponse.parse({ items: await Promise.all(own.map(detail)) }));
@@ -60822,7 +60995,7 @@ router8.get("/participant-registrations", async (req, res) => {
     res.status(500).json({ error: "Your registrations could not be loaded. Please retry." });
   }
 });
-router8.post("/participant-registrations/:id/complete", async (req, res) => {
+router9.post("/participant-registrations/:id/complete", async (req, res) => {
   const params = CompleteParticipantRegistrationParams.safeParse(req.params);
   const parsed = CompleteParticipantRegistrationBody.safeParse({
     ...req.body,
@@ -60908,19 +61081,19 @@ router8.post("/participant-registrations/:id/complete", async (req, res) => {
     }
   }
 });
-var participantRegistrations_default = router8;
+var participantRegistrations_default = router9;
 
 // src/routes/index.ts
-var router9 = (0, import_express9.Router)();
-router9.use(health_default);
-if (process.env.AUTH_REPLIT_ENABLED !== "false") router9.use(auth_default);
-router9.use(storage_default);
-router9.use(registrations_default);
-router9.use(admin_default);
-router9.use(participantAuth_default);
-router9.use(participantRegistrations_default);
-router9.use(organizerAuth_default);
-var routes_default = router9;
+var router10 = (0, import_express10.Router)();
+router10.use(health_default);
+if (process.env.AUTH_REPLIT_ENABLED !== "false") router10.use(auth_default);
+router10.use(storage_default);
+router10.use(registrations_default);
+router10.use(admin_default);
+router10.use(participantAuth_default);
+router10.use(participantRegistrations_default);
+router10.use(organizerAuth_default);
+var routes_default = router10;
 
 // src/app.ts
 var import_cookie_parser = __toESM(require_cookie_parser(), 1);
@@ -60980,6 +61153,11 @@ async function participantMiddleware(req, res, next) {
   try {
     req.participant = await loadParticipant(req) ?? void 0;
     if (!req.participant) clearParticipantCookie(req, res);
+    if (req.participant?.mustChangePassword && /^\/api\/(?:participant-registrations|registrations|storage)(?:\/|$)/.test(req.path)) {
+      res.setHeader("Cache-Control", "private, no-store");
+      res.status(403).json({ error: "Change your temporary password before accessing registration data.", code: "PASSWORD_CHANGE_REQUIRED" });
+      return;
+    }
     next();
   } catch {
     req.log.error("Participant session could not be verified");
@@ -61009,7 +61187,7 @@ async function organizerMiddleware(req, res, next) {
 
 // src/app.ts
 import path2 from "node:path";
-var app = (0, import_express10.default)();
+var app = (0, import_express11.default)();
 if (process.env.RUNTIME_HOST === "cpanel") app.set("trust proxy", 1);
 app.use(
   (0, import_pino_http.default)({
@@ -61032,8 +61210,8 @@ app.use(
 );
 app.use((0, import_cors.default)({ credentials: true, origin: process.env.PUBLIC_APP_ORIGIN || true }));
 app.use((0, import_cookie_parser.default)());
-app.use(import_express10.default.json());
-app.use(import_express10.default.urlencoded({ extended: true }));
+app.use(import_express11.default.json());
+app.use(import_express11.default.urlencoded({ extended: true }));
 app.use(authMiddleware);
 app.use(participantMiddleware);
 app.use(["/api/admin", "/api/organizer-auth"], organizerMiddleware);
@@ -61051,7 +61229,7 @@ app.use("/api", (_req, res) => {
 });
 if (process.env.STATIC_SITE_DIR) {
   const site = path2.resolve(process.env.STATIC_SITE_DIR);
-  app.use(import_express10.default.static(site, { index: false, dotfiles: "deny" }));
+  app.use(import_express11.default.static(site, { index: false, dotfiles: "deny" }));
   app.get(["/", "/register", "/admin", "/archive/2025"], (_req, res) => {
     res.setHeader("Cache-Control", "no-store");
     res.sendFile(path2.join(site, "index.html"));

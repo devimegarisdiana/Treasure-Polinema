@@ -103,6 +103,8 @@ CREATE TABLE "participant_accounts" (
 	"username" text NOT NULL,
 	"email" varchar(254) NOT NULL,
 	"password_hash" text NOT NULL,
+	"must_change_password" boolean DEFAULT false NOT NULL,
+	"temporary_password_expires_at" timestamp with time zone,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
 	CONSTRAINT "participant_accounts_username_unique" UNIQUE("username"),
 	CONSTRAINT "participant_accounts_email_unique" UNIQUE("email")
