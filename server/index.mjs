@@ -20724,27 +20724,27 @@ var require_router = __commonJS({
     var slice = Array.prototype.slice;
     var flatten = Array.prototype.flat;
     var methods = METHODS.map((method) => method.toLowerCase());
-    module.exports = Router11;
+    module.exports = Router12;
     module.exports.Route = Route;
-    function Router11(options) {
-      if (!(this instanceof Router11)) {
-        return new Router11(options);
+    function Router12(options) {
+      if (!(this instanceof Router12)) {
+        return new Router12(options);
       }
       const opts = options || {};
-      function router11(req, res, next) {
-        router11.handle(req, res, next);
+      function router12(req, res, next) {
+        router12.handle(req, res, next);
       }
-      Object.setPrototypeOf(router11, this);
-      router11.caseSensitive = opts.caseSensitive;
-      router11.mergeParams = opts.mergeParams;
-      router11.params = {};
-      router11.strict = opts.strict;
-      router11.stack = [];
-      return router11;
+      Object.setPrototypeOf(router12, this);
+      router12.caseSensitive = opts.caseSensitive;
+      router12.mergeParams = opts.mergeParams;
+      router12.params = {};
+      router12.strict = opts.strict;
+      router12.stack = [];
+      return router12;
     }
-    Router11.prototype = function() {
+    Router12.prototype = function() {
     };
-    Router11.prototype.param = function param(name, fn) {
+    Router12.prototype.param = function param(name, fn) {
       if (!name) {
         throw new TypeError("argument name is required");
       }
@@ -20764,7 +20764,7 @@ var require_router = __commonJS({
       params.push(fn);
       return this;
     };
-    Router11.prototype.handle = function handle(req, res, callback) {
+    Router12.prototype.handle = function handle(req, res, callback) {
       if (!callback) {
         throw new TypeError("argument callback is required");
       }
@@ -20891,7 +20891,7 @@ var require_router = __commonJS({
         }
       }
     };
-    Router11.prototype.use = function use(handler) {
+    Router12.prototype.use = function use(handler) {
       let offset = 0;
       let path3 = "/";
       if (typeof handler !== "function") {
@@ -20924,7 +20924,7 @@ var require_router = __commonJS({
       }
       return this;
     };
-    Router11.prototype.route = function route(path3) {
+    Router12.prototype.route = function route(path3) {
       const route2 = new Route(path3);
       const layer = new Layer(path3, {
         sensitive: this.caseSensitive,
@@ -20939,7 +20939,7 @@ var require_router = __commonJS({
       return route2;
     };
     methods.concat("all").forEach(function(method) {
-      Router11.prototype[method] = function(path3) {
+      Router12.prototype[method] = function(path3) {
         const route = this.route(path3);
         route[method].apply(route, slice.call(arguments, 1));
         return this;
@@ -21122,13 +21122,13 @@ var require_application = __commonJS({
     var compileTrust = require_utils3().compileTrust;
     var resolve = __require("node:path").resolve;
     var once = require_once();
-    var Router11 = require_router();
+    var Router12 = require_router();
     var slice = Array.prototype.slice;
     var flatten = Array.prototype.flat;
     var app2 = exports = module.exports = {};
     var trustProxyDefaultSymbol = "@@symbol:trust_proxy_default";
     app2.init = function init() {
-      var router11 = null;
+      var router12 = null;
       this.cache = /* @__PURE__ */ Object.create(null);
       this.engines = /* @__PURE__ */ Object.create(null);
       this.settings = /* @__PURE__ */ Object.create(null);
@@ -21137,13 +21137,13 @@ var require_application = __commonJS({
         configurable: true,
         enumerable: true,
         get: function getrouter() {
-          if (router11 === null) {
-            router11 = new Router11({
+          if (router12 === null) {
+            router12 = new Router12({
               caseSensitive: this.enabled("case sensitive routing"),
               strict: this.enabled("strict routing")
             });
           }
-          return router11;
+          return router12;
         }
       });
     };
@@ -21214,15 +21214,15 @@ var require_application = __commonJS({
       if (fns.length === 0) {
         throw new TypeError("app.use() requires a middleware function");
       }
-      var router11 = this.router;
+      var router12 = this.router;
       fns.forEach(function(fn2) {
         if (!fn2 || !fn2.handle || !fn2.set) {
-          return router11.use(path3, fn2);
+          return router12.use(path3, fn2);
         }
         debug(".use app under %s", path3);
         fn2.mountpath = path3;
         fn2.parent = this;
-        router11.use(path3, function mounted_app(req, res, next) {
+        router12.use(path3, function mounted_app(req, res, next) {
           var orig = req.app;
           fn2.handle(req, res, function(err) {
             Object.setPrototypeOf(req, orig.request);
@@ -23731,7 +23731,7 @@ var require_express = __commonJS({
     var EventEmitter = __require("node:events").EventEmitter;
     var mixin = require_merge_descriptors();
     var proto = require_application();
-    var Router11 = require_router();
+    var Router12 = require_router();
     var req = require_request();
     var res = require_response();
     exports = module.exports = createApplication;
@@ -23753,8 +23753,8 @@ var require_express = __commonJS({
     exports.application = proto;
     exports.request = req;
     exports.response = res;
-    exports.Route = Router11.Route;
-    exports.Router = Router11;
+    exports.Route = Router12.Route;
+    exports.Router = Router12;
     exports.json = bodyParser.json;
     exports.raw = bodyParser.raw;
     exports.static = require_serve_static();
@@ -34364,12 +34364,12 @@ var require_cookie_parser = __commonJS({
 });
 
 // src/app.ts
-var import_express11 = __toESM(require_express2(), 1);
+var import_express12 = __toESM(require_express2(), 1);
 var import_cors = __toESM(require_lib3(), 1);
 var import_pino_http = __toESM(require_logger(), 1);
 
 // src/routes/index.ts
-var import_express10 = __toESM(require_express2(), 1);
+var import_express11 = __toESM(require_express2(), 1);
 
 // src/routes/health.ts
 var import_express = __toESM(require_express2(), 1);
@@ -38374,6 +38374,7 @@ var GetAdminRegistrationParams = objectType({
   "id": coerce.string().uuid()
 });
 var GetAdminRegistrationResponse = objectType({
+  "revision": numberType().int(),
   "registration": objectType({
     "id": stringType().uuid(),
     "referenceCode": stringType(),
@@ -38414,6 +38415,47 @@ var GetAdminRegistrationResponse = objectType({
     "lastError": stringType().nullable(),
     "nextAttemptAt": coerce.date().nullable()
   })
+});
+var UpdateAdminRegistrationMembersParams = objectType({
+  "id": coerce.string().uuid()
+});
+var updateAdminRegistrationMembersBodyRevisionMin = 0;
+var updateAdminRegistrationMembersBodyTeamNameMin = 2;
+var updateAdminRegistrationMembersBodyTeamNameMax = 120;
+var updateAdminRegistrationMembersBodyMembersItemPositionMin = 0;
+var updateAdminRegistrationMembersBodyMembersItemFullNameMax = 160;
+var UpdateAdminRegistrationMembersBody = objectType({
+  "revision": numberType().int().min(updateAdminRegistrationMembersBodyRevisionMin),
+  "submissionKey": stringType().uuid(),
+  "teamName": stringType().min(updateAdminRegistrationMembersBodyTeamNameMin).max(updateAdminRegistrationMembersBodyTeamNameMax),
+  "members": arrayType(objectType({
+    "position": numberType().int().min(updateAdminRegistrationMembersBodyMembersItemPositionMin),
+    "fullName": stringType().min(1).max(updateAdminRegistrationMembersBodyMembersItemFullNameMax),
+    "action": enumType(["correction", "replacement"]),
+    "studentIdUploadId": stringType().uuid().optional()
+  })).min(1),
+  "confirmed": literalType(true)
+});
+var UpdateAdminRegistrationMembersResponse = objectType({
+  "revision": numberType().int(),
+  "status": enumType(["saved"])
+});
+var RequestAdminMemberUploadParams = objectType({
+  "id": coerce.string().uuid()
+});
+var requestAdminMemberUploadBodyMemberPositionMin = 0;
+var requestAdminMemberUploadBodyNameMax = 200;
+var requestAdminMemberUploadBodySizeMax = 10485760;
+var RequestAdminMemberUploadBody = objectType({
+  "submissionKey": stringType().uuid(),
+  "memberPosition": numberType().int().min(requestAdminMemberUploadBodyMemberPositionMin),
+  "name": stringType().min(1).max(requestAdminMemberUploadBodyNameMax),
+  "size": numberType().int().min(1).max(requestAdminMemberUploadBodySizeMax),
+  "contentType": enumType(["application/pdf", "image/jpeg", "image/png", "image/webp"])
+});
+var RequestAdminMemberUploadResponse = objectType({
+  "uploadId": stringType().uuid(),
+  "uploadURL": stringType().url()
 });
 var GetRegistrationParticipantAccountParams = objectType({
   "id": coerce.string().uuid()
@@ -58013,6 +58055,10 @@ async function processRegistrationSpreadsheetSync() {
         const people = await db.select({ name: teamRegistrationMembersTable.fullName, position: teamRegistrationMembersTable.position }).from(teamRegistrationMembersTable).where(eq(teamRegistrationMembersTable.registrationId, registration.id)).orderBy(teamRegistrationMembersTable.position);
         const documentsSynced = process.env.GOOGLE_DRIVE_SYNC_ENABLED === "true" && job.include_documents;
         const documents = documentsSynced ? await syncPrivateDriveDocuments(registration.id, registration.referenceCode) : [];
+        const [latest] = await db.select({ revision: teamRegistrationsTable.detailsRevision }).from(teamRegistrationsTable).where(eq(teamRegistrationsTable.id, registration.id)).limit(1);
+        if (!latest || latest.revision !== registration.detailsRevision) {
+          throw new Error("Team details changed while preparing the spreadsheet update.");
+        }
         const legacyStudentIds = documents.filter((file2) => file2.purpose === "student_id" && file2.memberPosition === null);
         const studentIds = people.map((person) => {
           const doc = documents.find((file2) => file2.purpose === "student_id" && file2.memberPosition === person.position) ?? (person.position === people[0]?.position ? documents.find((file2) => file2.purpose === "student_id" && file2.uploadId === registration.studentIdUploadId) ?? (legacyStudentIds.length === 1 ? legacyStudentIds[0] : void 0) : void 0);
@@ -60148,10 +60194,17 @@ var auth_default = router3;
 // src/routes/storage.ts
 var import_express4 = __toESM(require_express2(), 1);
 import { Readable as Readable2 } from "node:stream";
+
+// src/lib/adminAccess.ts
+function isTreasureAdmin(req) {
+  return !!req.organizer;
+}
+
+// src/routes/storage.ts
 var registrationStorage = new ObjectStorageService();
 var router4 = (0, import_express4.Router)();
 router4.put(
-  "/storage/local-uploads/:id",
+  ["/storage/local-uploads/:id", "/admin/member-local-uploads/:id"],
   async (req, res, next) => {
     res.setHeader("Cache-Control", "no-store");
     if (!localStorageEnabled()) {
@@ -60162,7 +60215,7 @@ router4.put(
       res.sendStatus(403);
       return;
     }
-    const ownerId = registrationOwner(req);
+    const ownerId = req.path.startsWith("/admin/") ? req.organizer && isTreasureAdmin(req) ? `organizer:${req.organizer.id}` : null : registrationOwner(req);
     if (!ownerId) {
       res.status(401).json({ error: "Login required" });
       return;
@@ -60316,12 +60369,7 @@ router4.get("/storage/objects/*path", async (req, res) => {
 var storage_default = router4;
 
 // src/routes/admin.ts
-var import_express6 = __toESM(require_express2(), 1);
-
-// src/lib/adminAccess.ts
-function isTreasureAdmin(req) {
-  return !!req.organizer;
-}
+var import_express7 = __toESM(require_express2(), 1);
 
 // src/lib/registrationSpreadsheetBackfill.ts
 async function queueExistingRegistrationSpreadsheets() {
@@ -60422,9 +60470,155 @@ router5.post("/admin/registrations/:id/reset-password", async (req, res) => {
 });
 var participantRecovery_default = router5;
 
-// src/routes/admin.ts
+// src/routes/adminTeamEditing.ts
+var import_express6 = __toESM(require_express2(), 1);
 var router6 = (0, import_express6.Router)();
-router6.use("/admin", (req, res, next) => {
+var organizerUploadOwner = (id) => `organizer:${id}`;
+router6.post("/admin/registrations/:id/member-uploads", async (req, res) => {
+  const params = RequestAdminMemberUploadParams.safeParse(req.params);
+  const body = RequestAdminMemberUploadBody.safeParse(req.body);
+  if (!params.success || !body.success) {
+    res.status(400).json({ error: "Select a JPG, PNG, WebP or PDF up to 10 MB for an existing member." });
+    return;
+  }
+  try {
+    const [person] = await db.select({ id: teamRegistrationMembersTable.id }).from(teamRegistrationMembersTable).where(and(
+      eq(teamRegistrationMembersTable.registrationId, params.data.id),
+      eq(teamRegistrationMembersTable.position, body.data.memberPosition)
+    )).limit(1);
+    if (!person) {
+      res.status(404).json({ error: "Team member not found. Reload the registration." });
+      return;
+    }
+    const signedURL = await registrationStorage.getObjectEntityUploadURL();
+    const uploadURL = localStorageEnabled() ? signedURL.replace("/api/storage/local-uploads/", "/api/admin/member-local-uploads/") : signedURL;
+    const [upload] = await db.insert(registrationUploadsTable).values({
+      ownerId: organizerUploadOwner(req.organizer.id),
+      submissionKey: body.data.submissionKey,
+      purpose: "student_id",
+      completionRegistrationId: params.data.id,
+      memberPosition: body.data.memberPosition,
+      objectPath: registrationStorage.normalizeObjectEntityPath(signedURL),
+      fileName: body.data.name,
+      contentType: body.data.contentType,
+      fileSize: body.data.size
+    }).returning({ id: registrationUploadsTable.id });
+    res.json(RequestAdminMemberUploadResponse.parse({ uploadId: upload.id, uploadURL }));
+  } catch {
+    req.log.error("Unable to prepare organizer member upload");
+    res.status(503).json({ error: "The upload could not be started. Please retry." });
+  }
+});
+router6.patch("/admin/registrations/:id/members", async (req, res) => {
+  const params = UpdateAdminRegistrationMembersParams.safeParse(req.params);
+  const body = UpdateAdminRegistrationMembersBody.safeParse(req.body);
+  if (!params.success || !body.success) {
+    res.status(400).json({ error: "Check the team name, member names and confirmation." });
+    return;
+  }
+  const data = body.data;
+  data.teamName = data.teamName.trim();
+  data.members.forEach((person) => {
+    person.fullName = person.fullName.trim();
+  });
+  if (data.teamName.length < 2 || data.members.some((person) => !person.fullName || person.action === "replacement" && !person.studentIdUploadId || person.action === "correction" && !!person.studentIdUploadId)) {
+    res.status(400).json({ error: "Each replacement needs a new student ID. Name corrections keep the existing document." });
+    return;
+  }
+  const id = params.data.id;
+  const frozen = [];
+  try {
+    const result = await db.transaction(async (tx) => {
+      await tx.execute(sql`SELECT pg_advisory_xact_lock(${advisoryLockKey(`complete:${id}`)}::bigint)`);
+      const [registration] = await tx.select().from(teamRegistrationsTable).where(eq(teamRegistrationsTable.id, id)).for("update");
+      if (!registration) return { status: 404, error: "Registration not found." };
+      const people = await tx.select().from(teamRegistrationMembersTable).where(eq(teamRegistrationMembersTable.registrationId, id)).orderBy(teamRegistrationMembersTable.position);
+      const files = await tx.select().from(registrationUploadsTable).where(eq(registrationUploadsTable.registrationId, id));
+      if (people.length !== data.members.length || new Set(data.members.map((person) => person.position)).size !== people.length || data.members.some((person) => !people.some((saved) => saved.position === person.position))) {
+        return { status: 400, error: "Keep the existing member positions and team size. Reload the team." };
+      }
+      const replacements = data.members.filter((person) => person.action === "replacement");
+      const ids = replacements.map((person) => person.studentIdUploadId);
+      if (new Set(ids).size !== ids.length) return { status: 400, error: "Upload a separate student ID for each replacement." };
+      if (registration.detailsRevision === data.revision + 1 && registration.teamName === data.teamName && data.members.every((person) => people.some((saved) => saved.position === person.position && saved.fullName === person.fullName)) && replacements.every((person) => files.some((file2) => file2.id === person.studentIdUploadId && file2.memberPosition === person.position && file2.submissionKey === data.submissionKey))) {
+        return { status: 200, revision: registration.detailsRevision };
+      }
+      if (registration.detailsRevision !== data.revision) return { status: 409, error: "This team changed in another session. Reload its latest details before editing." };
+      const drafts = ids.length ? await tx.select().from(registrationUploadsTable).where(and(
+        inArray(registrationUploadsTable.id, ids),
+        eq(registrationUploadsTable.ownerId, organizerUploadOwner(req.organizer.id)),
+        eq(registrationUploadsTable.completionRegistrationId, id),
+        eq(registrationUploadsTable.submissionKey, data.submissionKey)
+      )) : [];
+      for (const person of replacements) {
+        const draft = drafts.find((file2) => file2.id === person.studentIdUploadId && file2.purpose === "student_id" && file2.memberPosition === person.position && !file2.registrationId && file2.objectPath.startsWith("/objects/uploads/"));
+        if (!draft) return { status: 400, error: "A replacement document belongs to another team, member or editing session. Select it again." };
+      }
+      for (const person of replacements) frozen.push(await freezeDocument(drafts.find((file2) => file2.id === person.studentIdUploadId)));
+      let leaderUploadId = registration.studentIdUploadId;
+      for (const [index2, person] of replacements.entries()) {
+        const legacy = files.filter((file2) => file2.purpose === "student_id" && file2.memberPosition === null);
+        const old = files.filter((file2) => file2.purpose === "student_id" && (file2.memberPosition === person.position || person.position === people[0].position && file2.memberPosition === null && (file2.id === registration.studentIdUploadId || legacy.length === 1)));
+        for (const file2 of old) await tx.update(registrationUploadsTable).set({ registrationId: null, completionRegistrationId: id }).where(eq(registrationUploadsTable.id, file2.id));
+        await tx.update(registrationUploadsTable).set({
+          registrationId: id,
+          ownerId: registration.ownerId ?? organizerUploadOwner(req.organizer.id),
+          objectPath: frozen[index2].objectPath,
+          memberPosition: person.position
+        }).where(eq(registrationUploadsTable.id, person.studentIdUploadId));
+        if (person.position === people[0].position) leaderUploadId = person.studentIdUploadId;
+      }
+      for (const person of data.members) await tx.update(teamRegistrationMembersTable).set({
+        fullName: person.fullName,
+        ...person.action === "replacement" ? { institution: null, studyProgram: null, educationLevel: null, feeCategory: null } : {}
+      }).where(and(eq(teamRegistrationMembersTable.registrationId, id), eq(teamRegistrationMembersTable.position, person.position)));
+      await tx.update(teamRegistrationsTable).set({
+        teamName: data.teamName,
+        studentIdUploadId: leaderUploadId,
+        detailsRevision: registration.detailsRevision + 1
+      }).where(eq(teamRegistrationsTable.id, id));
+      await tx.insert(registrationSpreadsheetSyncTable).values({ registrationId: id, includeDocuments: true }).onConflictDoUpdate({
+        target: registrationSpreadsheetSyncTable.registrationId,
+        set: {
+          revision: sql`${registrationSpreadsheetSyncTable.revision} + 1`,
+          status: sql`CASE WHEN ${registrationSpreadsheetSyncTable.status} = 'processing' THEN 'processing' ELSE 'pending' END`,
+          includeDocuments: true,
+          attempts: 0,
+          lastError: null,
+          nextAttemptAt: /* @__PURE__ */ new Date()
+        }
+      });
+      return { status: 200, revision: registration.detailsRevision + 1 };
+    });
+    if (result.status !== 200) {
+      res.status(result.status).json({ error: result.error });
+      return;
+    }
+    req.log.info({ registrationId: id, organizerId: req.organizer.id }, "Organizer updated team member details");
+    res.json(UpdateAdminRegistrationMembersResponse.parse({ status: "saved", revision: result.revision }));
+    void processRegistrationSpreadsheetSync();
+  } catch (error40) {
+    if (error40 instanceof RegistrationDocumentError) {
+      res.status(400).json({ error: error40.message });
+      return;
+    }
+    req.log.error("Unable to confirm organizer team edit");
+    res.status(503).json({ error: "The update could not be confirmed. Retry the same form or reload the team to check its latest details." });
+  } finally {
+    for (const file2 of frozen) {
+      try {
+        const [saved] = await db.select({ id: registrationUploadsTable.id }).from(registrationUploadsTable).where(eq(registrationUploadsTable.objectPath, file2.objectPath)).limit(1);
+        if (!saved) await file2.file.delete({ ignoreNotFound: true });
+      } catch {
+      }
+    }
+  }
+});
+var adminTeamEditing_default = router6;
+
+// src/routes/admin.ts
+var router7 = (0, import_express7.Router)();
+router7.use("/admin", (req, res, next) => {
   res.setHeader("Cache-Control", "private, no-store");
   if (!sameSiteRequest(req)) {
     res.status(403).json({ error: "This action must be performed from the organizer dashboard." });
@@ -60432,7 +60626,7 @@ router6.use("/admin", (req, res, next) => {
   }
   next();
 });
-router6.get("/admin/access", (req, res) => {
+router7.get("/admin/access", (req, res) => {
   res.setHeader("Cache-Control", "private, no-store");
   if (!req.organizer) {
     res.status(401).json({ error: "Please sign in." });
@@ -60440,7 +60634,7 @@ router6.get("/admin/access", (req, res) => {
   }
   res.json(GetAdminAccessResponse.parse({ isAdmin: isTreasureAdmin(req) }));
 });
-router6.use("/admin", (req, res, next) => {
+router7.use("/admin", (req, res, next) => {
   res.setHeader("Cache-Control", "private, no-store");
   if (!req.organizer) {
     res.status(401).json({ error: "Please sign in." });
@@ -60452,8 +60646,9 @@ router6.use("/admin", (req, res, next) => {
   }
   next();
 });
-router6.use(participantRecovery_default);
-router6.post("/admin/spreadsheet-sync/refresh-documents", async (req, res) => {
+router7.use(participantRecovery_default);
+router7.use(adminTeamEditing_default);
+router7.post("/admin/spreadsheet-sync/refresh-documents", async (req, res) => {
   if (process.env.RUNTIME_HOST !== "cpanel" || process.env.GOOGLE_DRIVE_SYNC_ENABLED !== "true") {
     res.status(503).json({ error: "Enable private Google Drive sync on live hosting after updating the Apps Script deployment." });
     return;
@@ -60466,7 +60661,7 @@ router6.post("/admin/spreadsheet-sync/refresh-documents", async (req, res) => {
     res.status(500).json({ error: "The private document refresh could not be queued. Please retry." });
   }
 });
-router6.post("/admin/spreadsheet-sync/backfill", async (req, res) => {
+router7.post("/admin/spreadsheet-sync/backfill", async (req, res) => {
   if (process.env.RUNTIME_HOST !== "cpanel") {
     res.status(503).json({ error: "Queue existing registrations from the live IDwebhost organizer dashboard, not the Replit preview." });
     return;
@@ -60494,7 +60689,7 @@ var projection = {
   memberCount: sql`(SELECT count(*)::integer FROM team_registration_members WHERE registration_id = "team_registrations"."id")`,
   notificationStatus: sql`COALESCE((SELECT status FROM registration_notifications WHERE registration_id = "team_registrations"."id"), 'not_requested')`
 };
-router6.get("/admin/registrations", async (req, res) => {
+router7.get("/admin/registrations", async (req, res) => {
   const parsed = ListAdminRegistrationsQueryParams.safeParse(req.query);
   if (!parsed.success || parsed.data.page > 1e5) {
     res.status(400).json({ error: "Invalid page or search." });
@@ -60526,7 +60721,7 @@ router6.get("/admin/registrations", async (req, res) => {
     res.status(500).json({ error: "Registrations could not be loaded. Please retry." });
   }
 });
-router6.get("/admin/registrations/:id", async (req, res) => {
+router7.get("/admin/registrations/:id", async (req, res) => {
   const parsed = GetAdminRegistrationParams.safeParse(req.params);
   if (!parsed.success) {
     res.status(400).json({ error: "Invalid registration reference." });
@@ -60534,54 +60729,59 @@ router6.get("/admin/registrations/:id", async (req, res) => {
   }
   try {
     const id = parsed.data.id;
-    const [registration] = await db.select(projection).from(teamRegistrationsTable).where(eq(teamRegistrationsTable.id, id)).limit(1);
-    if (!registration) {
+    const payload = await db.transaction(async (tx) => {
+      const [registration] = await tx.select({ ...projection, revision: teamRegistrationsTable.detailsRevision }).from(teamRegistrationsTable).where(eq(teamRegistrationsTable.id, id)).limit(1);
+      if (!registration) return null;
+      const [[contact], team, documents, [notification]] = await Promise.all([
+        tx.select({
+          email: teamRegistrationsTable.contactEmail,
+          phone: teamRegistrationsTable.contactPhone,
+          alternativePhone: teamRegistrationsTable.alternativePhone,
+          facultyDepartment: teamRegistrationsTable.facultyDepartment,
+          hasEdugateTraining: teamRegistrationsTable.hasEdugateTraining
+        }).from(teamRegistrationsTable).where(eq(teamRegistrationsTable.id, id)).limit(1),
+        tx.select({ position: teamRegistrationMembersTable.position, fullName: teamRegistrationMembersTable.fullName }).from(teamRegistrationMembersTable).where(eq(teamRegistrationMembersTable.registrationId, id)).orderBy(teamRegistrationMembersTable.position),
+        tx.select().from(registrationUploadsTable).where(eq(registrationUploadsTable.registrationId, id)),
+        tx.select().from(registrationNotificationsTable).where(eq(registrationNotificationsTable.registrationId, id)).limit(1)
+      ]);
+      return GetAdminRegistrationResponse.parse({
+        revision: registration.revision,
+        registration: { ...registration, createdAt: registration.createdAt.toISOString() },
+        contact,
+        members: team,
+        documents: documents.map((document2) => {
+          const member = document2.purpose === "student_id" ? document2.memberPosition == null ? team[0] : team.find((person) => person.position === document2.memberPosition) : void 0;
+          return {
+            id: document2.id,
+            purpose: document2.purpose,
+            fileName: document2.fileName,
+            memberPosition: document2.purpose === "student_id" ? document2.memberPosition ?? member?.position ?? null : null,
+            memberName: member?.fullName ?? null,
+            contentType: document2.contentType,
+            size: document2.fileSize,
+            url: `/api/admin/registrations/${id}/documents/${document2.id}`
+          };
+        }),
+        notification: {
+          status: notification?.status ?? "not_requested",
+          attempts: notification?.attempts ?? 0,
+          sentAt: notification?.sentAt?.toISOString() ?? null,
+          lastError: notification?.lastError ?? null,
+          nextAttemptAt: notification && notification.status !== "sent" ? notification.nextAttemptAt.toISOString() : null
+        }
+      });
+    }, { isolationLevel: "repeatable read" });
+    if (!payload) {
       res.status(404).json({ error: "Registration not found." });
       return;
     }
-    const [[contact], team, documents, [notification]] = await Promise.all([
-      db.select({
-        email: teamRegistrationsTable.contactEmail,
-        phone: teamRegistrationsTable.contactPhone,
-        alternativePhone: teamRegistrationsTable.alternativePhone,
-        facultyDepartment: teamRegistrationsTable.facultyDepartment,
-        hasEdugateTraining: teamRegistrationsTable.hasEdugateTraining
-      }).from(teamRegistrationsTable).where(eq(teamRegistrationsTable.id, id)).limit(1),
-      db.select({ position: teamRegistrationMembersTable.position, fullName: teamRegistrationMembersTable.fullName }).from(teamRegistrationMembersTable).where(eq(teamRegistrationMembersTable.registrationId, id)).orderBy(teamRegistrationMembersTable.position),
-      db.select().from(registrationUploadsTable).where(eq(registrationUploadsTable.registrationId, id)),
-      db.select().from(registrationNotificationsTable).where(eq(registrationNotificationsTable.registrationId, id)).limit(1)
-    ]);
-    res.json(GetAdminRegistrationResponse.parse({
-      registration: { ...registration, createdAt: registration.createdAt.toISOString() },
-      contact,
-      members: team,
-      documents: documents.map((document2) => {
-        const member = document2.purpose === "student_id" ? document2.memberPosition == null ? team[0] : team.find((person) => person.position === document2.memberPosition) : void 0;
-        return {
-          id: document2.id,
-          purpose: document2.purpose,
-          fileName: document2.fileName,
-          memberPosition: document2.purpose === "student_id" ? document2.memberPosition ?? member?.position ?? null : null,
-          memberName: member?.fullName ?? null,
-          contentType: document2.contentType,
-          size: document2.fileSize,
-          url: `/api/admin/registrations/${id}/documents/${document2.id}`
-        };
-      }),
-      notification: {
-        status: notification?.status ?? "not_requested",
-        attempts: notification?.attempts ?? 0,
-        sentAt: notification?.sentAt?.toISOString() ?? null,
-        lastError: notification?.lastError ?? null,
-        nextAttemptAt: notification && notification.status !== "sent" ? notification.nextAttemptAt.toISOString() : null
-      }
-    }));
+    res.json(payload);
   } catch {
     req.log.error("Unable to load a private registration detail");
     res.status(500).json({ error: "Registration details could not be loaded. Please retry." });
   }
 });
-router6.post("/admin/registrations/:id/retry-email", async (req, res) => {
+router7.post("/admin/registrations/:id/retry-email", async (req, res) => {
   const parsed = RetryRegistrationEmailParams.safeParse(req.params);
   if (!parsed.success) {
     res.status(400).json({ error: "Invalid registration reference." });
@@ -60610,7 +60810,7 @@ router6.post("/admin/registrations/:id/retry-email", async (req, res) => {
     res.status(500).json({ error: "The email could not be queued. Please retry." });
   }
 });
-router6.get("/admin/registrations/:id/documents/:uploadId", async (req, res) => {
+router7.get("/admin/registrations/:id/documents/:uploadId", async (req, res) => {
   const parsed = DownloadAdminRegistrationDocumentParams.safeParse(req.params);
   if (!parsed.success) {
     res.status(400).json({ error: "Invalid document reference." });
@@ -60631,12 +60831,12 @@ router6.get("/admin/registrations/:id/documents/:uploadId", async (req, res) => 
     res.status(404).json({ error: "Document not found." });
   }
 });
-var admin_default = router6;
+var admin_default = router7;
 
 // src/routes/participantAuth.ts
-var import_express7 = __toESM(require_express2(), 1);
-var router7 = (0, import_express7.Router)();
-router7.use("/participant-auth", (req, res, next) => {
+var import_express8 = __toESM(require_express2(), 1);
+var router8 = (0, import_express8.Router)();
+router8.use("/participant-auth", (req, res, next) => {
   res.setHeader("Cache-Control", "private, no-store");
   if (!sameSiteRequest(req)) {
     res.status(403).json({ error: "Please use the TREASURE registration page." });
@@ -60644,10 +60844,10 @@ router7.use("/participant-auth", (req, res, next) => {
   }
   next();
 });
-router7.get("/participant-auth/me", (req, res) => {
+router8.get("/participant-auth/me", (req, res) => {
   res.json(GetParticipantSessionResponse.parse({ user: req.participant ?? null }));
 });
-router7.post("/participant-auth/signup", async (req, res) => {
+router8.post("/participant-auth/signup", async (req, res) => {
   if (isRegistrationClosed()) {
     res.status(410).json({ error: registrationClosedMessage });
     return;
@@ -60700,7 +60900,7 @@ router7.post("/participant-auth/signup", async (req, res) => {
     res.status(503).json({ error: error40 instanceof AuthBusyError ? error40.message : "Your account could not be created. Please retry shortly." });
   }
 });
-router7.post("/participant-auth/signin", async (req, res) => {
+router8.post("/participant-auth/signin", async (req, res) => {
   const parsed = SignInParticipantBody.safeParse({
     ...req.body,
     identifier: typeof req.body?.identifier === "string" ? req.body.identifier.trim().toLowerCase() : req.body?.identifier
@@ -60745,7 +60945,7 @@ router7.post("/participant-auth/signin", async (req, res) => {
     res.status(503).json({ error: error40 instanceof AuthBusyError ? error40.message : "Sign-in is temporarily unavailable. Please retry shortly." });
   }
 });
-router7.post("/participant-auth/change-password", async (req, res) => {
+router8.post("/participant-auth/change-password", async (req, res) => {
   const parsed = ChangeParticipantPasswordBody.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: "Enter your current password and a new password with 12\u2013128 characters." });
@@ -60793,7 +60993,7 @@ router7.post("/participant-auth/change-password", async (req, res) => {
     res.status(503).json({ error: error40 instanceof AuthBusyError ? error40.message : "Password change could not be confirmed. Try signing in with your new password before retrying." });
   }
 });
-router7.post("/participant-auth/signout", async (req, res) => {
+router8.post("/participant-auth/signout", async (req, res) => {
   try {
     const token = participantToken(req);
     if (token) await db.delete(participantSessionsTable).where(eq(participantSessionsTable.tokenHash, tokenHash(token)));
@@ -60803,10 +61003,10 @@ router7.post("/participant-auth/signout", async (req, res) => {
     res.status(503).json({ error: "Sign-out could not be completed. Please retry." });
   }
 });
-var participantAuth_default = router7;
+var participantAuth_default = router8;
 
 // src/routes/organizerAuth.ts
-var import_express8 = __toESM(require_express2(), 1);
+var import_express9 = __toESM(require_express2(), 1);
 
 // src/lib/organizerAuth.ts
 import { randomBytes as randomBytes4 } from "node:crypto";
@@ -60886,8 +61086,8 @@ async function createOrganizerSession(req, account) {
 }
 
 // src/routes/organizerAuth.ts
-var router8 = (0, import_express8.Router)();
-router8.use("/organizer-auth", (req, res, next) => {
+var router9 = (0, import_express9.Router)();
+router9.use("/organizer-auth", (req, res, next) => {
   res.setHeader("Cache-Control", "private, no-store");
   if (!sameSiteRequest(req)) {
     res.status(403).json({ error: "Please use the organizer dashboard." });
@@ -60895,10 +61095,10 @@ router8.use("/organizer-auth", (req, res, next) => {
   }
   next();
 });
-router8.get("/organizer-auth/me", (req, res) => {
+router9.get("/organizer-auth/me", (req, res) => {
   res.json(GetOrganizerSessionResponse.parse({ user: req.organizer ?? null }));
 });
-router8.post("/organizer-auth/signin", async (req, res) => {
+router9.post("/organizer-auth/signin", async (req, res) => {
   const parsed = SignInOrganizerBody.safeParse({
     ...req.body,
     username: typeof req.body?.username === "string" ? req.body.username.trim().toLowerCase() : req.body?.username
@@ -60928,7 +61128,7 @@ router8.post("/organizer-auth/signin", async (req, res) => {
     res.status(503).json({ error: error40 instanceof AuthBusyError || error40 instanceof OrganizerSetupError ? error40.message : "Organizer sign-in is temporarily unavailable. Please retry shortly." });
   }
 });
-router8.post("/organizer-auth/signout", async (req, res) => {
+router9.post("/organizer-auth/signout", async (req, res) => {
   try {
     const token = organizerToken(req);
     if (token) await db.delete(organizerSessionsTable).where(eq(organizerSessionsTable.tokenHash, tokenHash(token)));
@@ -60938,11 +61138,11 @@ router8.post("/organizer-auth/signout", async (req, res) => {
     res.status(503).json({ error: "Sign-out could not be completed. Please retry." });
   }
 });
-var organizerAuth_default = router8;
+var organizerAuth_default = router9;
 
 // src/routes/participantRegistrations.ts
-var import_express9 = __toESM(require_express2(), 1);
-var router9 = (0, import_express9.Router)();
+var import_express10 = __toESM(require_express2(), 1);
+var router10 = (0, import_express10.Router)();
 function studentIdFor(position, firstPosition, files, registration) {
   const linked = files.find((file2) => file2.purpose === "student_id" && file2.memberPosition === position);
   if (linked || position !== firstPosition) return linked;
@@ -60974,7 +61174,7 @@ async function detail(registration) {
     spreadsheetStatus: job?.status ?? "not_requested"
   };
 }
-router9.use("/participant-registrations", (req, res, next) => {
+router10.use("/participant-registrations", (req, res, next) => {
   res.setHeader("Cache-Control", "private, no-store");
   if (!sameSiteRequest(req)) {
     res.status(403).json({ error: "Use the TREASURE participant page." });
@@ -60986,7 +61186,7 @@ router9.use("/participant-registrations", (req, res, next) => {
   }
   next();
 });
-router9.get("/participant-registrations", async (req, res) => {
+router10.get("/participant-registrations", async (req, res) => {
   try {
     const own = await db.select().from(teamRegistrationsTable).where(eq(teamRegistrationsTable.ownerId, registrationOwner(req)));
     res.json(ListParticipantRegistrationsResponse.parse({ items: await Promise.all(own.map(detail)) }));
@@ -60995,7 +61195,7 @@ router9.get("/participant-registrations", async (req, res) => {
     res.status(500).json({ error: "Your registrations could not be loaded. Please retry." });
   }
 });
-router9.post("/participant-registrations/:id/complete", async (req, res) => {
+router10.post("/participant-registrations/:id/complete", async (req, res) => {
   const params = CompleteParticipantRegistrationParams.safeParse(req.params);
   const parsed = CompleteParticipantRegistrationBody.safeParse({
     ...req.body,
@@ -61081,19 +61281,19 @@ router9.post("/participant-registrations/:id/complete", async (req, res) => {
     }
   }
 });
-var participantRegistrations_default = router9;
+var participantRegistrations_default = router10;
 
 // src/routes/index.ts
-var router10 = (0, import_express10.Router)();
-router10.use(health_default);
-if (process.env.AUTH_REPLIT_ENABLED !== "false") router10.use(auth_default);
-router10.use(storage_default);
-router10.use(registrations_default);
-router10.use(admin_default);
-router10.use(participantAuth_default);
-router10.use(participantRegistrations_default);
-router10.use(organizerAuth_default);
-var routes_default = router10;
+var router11 = (0, import_express11.Router)();
+router11.use(health_default);
+if (process.env.AUTH_REPLIT_ENABLED !== "false") router11.use(auth_default);
+router11.use(storage_default);
+router11.use(registrations_default);
+router11.use(admin_default);
+router11.use(participantAuth_default);
+router11.use(participantRegistrations_default);
+router11.use(organizerAuth_default);
+var routes_default = router11;
 
 // src/app.ts
 var import_cookie_parser = __toESM(require_cookie_parser(), 1);
@@ -61187,7 +61387,7 @@ async function organizerMiddleware(req, res, next) {
 
 // src/app.ts
 import path2 from "node:path";
-var app = (0, import_express11.default)();
+var app = (0, import_express12.default)();
 if (process.env.RUNTIME_HOST === "cpanel") app.set("trust proxy", 1);
 app.use(
   (0, import_pino_http.default)({
@@ -61210,8 +61410,8 @@ app.use(
 );
 app.use((0, import_cors.default)({ credentials: true, origin: process.env.PUBLIC_APP_ORIGIN || true }));
 app.use((0, import_cookie_parser.default)());
-app.use(import_express11.default.json());
-app.use(import_express11.default.urlencoded({ extended: true }));
+app.use(import_express12.default.json());
+app.use(import_express12.default.urlencoded({ extended: true }));
 app.use(authMiddleware);
 app.use(participantMiddleware);
 app.use(["/api/admin", "/api/organizer-auth"], organizerMiddleware);
@@ -61229,7 +61429,7 @@ app.use("/api", (_req, res) => {
 });
 if (process.env.STATIC_SITE_DIR) {
   const site = path2.resolve(process.env.STATIC_SITE_DIR);
-  app.use(import_express11.default.static(site, { index: false, dotfiles: "deny" }));
+  app.use(import_express12.default.static(site, { index: false, dotfiles: "deny" }));
   app.get(["/", "/register", "/admin", "/archive/2025"], (_req, res) => {
     res.setHeader("Cache-Control", "no-store");
     res.sendFile(path2.join(site, "index.html"));

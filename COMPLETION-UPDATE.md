@@ -1,5 +1,28 @@
 # Closed registration and returning-participant update
 
+## Organizer corrections and member substitutions
+
+Open a team in the admin dashboard and choose **Edit names / substitute**.
+The editor reloads the latest team and allows its team name and existing
+members' names (including the leader) to be corrected.
+
+- **Spelling correction** keeps that person's existing student ID.
+- **Replace person** requires a fresh, separate student ID (KTM), even if the
+  new person has the same name. Review the summary and confirm that the change
+  was verified with the team and supporting documents.
+- Team size and member positions stay fixed. This does not reopen registration.
+- Reference code, account ownership, payment proof and registration email are
+  preserved. Replacing a leader does **not** transfer the participant account.
+- The previous person's document is retained privately but removed from the
+  current roster; it is never relabeled as the new person's KTM.
+- Concurrent edits are rejected until the organizer reloads the latest record.
+  If a save response is lost, retry the same form rather than starting over.
+- The same Google Sheets row is queued for refresh. Queued does not mean
+  delivered, and private document links still require the separate Drive setup.
+
+Install the complete latest code package as below. No new database tables or
+dependencies are needed for this editor. Never reset/import participant data.
+
 ## Organizer-assisted participant password recovery
 
 In a team's admin details, **Participant account** displays the native username
