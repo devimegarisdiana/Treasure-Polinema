@@ -8,6 +8,7 @@ import { ObjectStorageService } from "../lib/objectStorage";
 import { registrationOwner, sameSiteRequest } from "../lib/participantAuth";
 import { LocalFile, localStorageEnabled, validLocalUploadSignature } from "../lib/localObjectStorage";
 import { isTreasureAdmin } from "../lib/adminAccess";
+import { attachmentDisposition, documentDownloadName } from "../lib/documentDownloadName";
 
 export const registrationStorage = new ObjectStorageService();
 const router: IRouter = Router();
@@ -109,13 +110,13 @@ router.post("/storage/uploads/request-url", async (req, res): Promise<void> => {
   }
 });
 
-export async function streamFile(response: globalThis.Response, res: Response, privateDocument = false) {
+export async function streamFile(response: globalThis.Response, res: Response, privateDocument = false, downloadName?: string) {
   res.status(response.status);
   response.headers.forEach((value, key) => res.setHeader(key, value));
   res.setHeader("X-Content-Type-Options", "nosniff");
   if (privateDocument) {
     res.setHeader("Cache-Control", "private, no-store");
-    res.setHeader("Content-Disposition", "attachment");
+    res.setHeader("Content-Disposition", downloadName ? attachmentDisposition(downloadName) : "attachment");
   }
   if (response.body) {
     Readable.fromWeb(response.body as ReadableStream<Uint8Array>).pipe(res);
@@ -148,7 +149,7 @@ router.get("/storage/objects/*path", async (req, res): Promise<void> => {
     const file = await registrationStorage.getObjectEntityFile(upload.objectPath);
     const response = await registrationStorage.downloadObject(file, 0);
     // Private documents are never cached or displayed as executable content.
-    await streamFile(response, res, true);
+    await streamFile(response, res, true, await documentDownloadName(upload));
   } catch {
     res.status(404).json({ error: "File not found" });
   }

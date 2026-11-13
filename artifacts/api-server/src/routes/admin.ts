@@ -18,6 +18,7 @@ import { queueExistingRegistrationSpreadsheets, refreshExistingRegistrationDocum
 import { processRegistrationSpreadsheetSync } from "../lib/registrationSpreadsheetSync";
 import participantRecoveryRouter from "./participantRecovery";
 import adminTeamEditingRouter from "./adminTeamEditing";
+import { documentDownloadName } from "../lib/documentDownloadName";
 
 const router: IRouter = Router();
 
@@ -197,7 +198,7 @@ router.get("/admin/registrations/:id/documents/:uploadId", async (req, res) => {
     )).limit(1);
     if (!document) { res.status(404).json({ error: "Document not found." }); return; }
     const file = await registrationStorage.getObjectEntityFile(document.objectPath);
-    await streamFile(await registrationStorage.downloadObject(file, 0), res, true);
+    await streamFile(await registrationStorage.downloadObject(file, 0), res, true, await documentDownloadName(document));
   } catch {
     res.status(404).json({ error: "Document not found." });
   }

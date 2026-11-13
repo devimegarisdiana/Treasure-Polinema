@@ -13,8 +13,26 @@ import { hashPassword } from "../src/lib/participantAuth";
 import { LocalFile } from "../src/lib/localObjectStorage";
 import { setTestRegistrationClosed } from "./fixtures/registrationPolicy";
 import app from "../src/app";
+import { attachmentDisposition, formatDocumentDownloadName } from "../src/lib/documentDownloadName";
 import { GetAdminRegistrationResponse, ListParticipantRegistrationsResponse,
   RequestAdminMemberUploadResponse, UpdateAdminRegistrationMembersResponse } from "@workspace/api-zod";
+
+test("document filenames preserve formats and international names without unsafe paths or headers", () => {
+  const name = formatDocumentDownloadName({ purpose: "student_id", participantName: "José / 李明\r\n",
+    institution: "Campus: A\\B", contentType: "image/png" });
+  assert.equal(name, "KTM - José 李明 - Campus A B.png");
+  const header = attachmentDisposition(name);
+  assert.match(header, /^attachment; filename="/);
+  assert.doesNotMatch(header, /[\r\n]/);
+  assert.equal(decodeURIComponent(header.split("filename*=UTF-8''")[1]), name);
+  for (const [type, ext] of [["image/jpeg", ".jpg"], ["image/webp", ".webp"], ["application/pdf", ".pdf"]]) {
+    assert.ok(formatDocumentDownloadName({ purpose: "payment_proof", teamName: "Team Blue", institution: "Campus A", contentType: type }).endsWith(ext));
+  }
+  const long = formatDocumentDownloadName({ purpose: "student_id", participantName: "李".repeat(160), institution: "校".repeat(200), contentType: "application/pdf" });
+  assert.ok(Buffer.byteLength(long, "utf8") < 240);
+  assert.equal(formatDocumentDownloadName({ purpose: "payment_proof", teamName: "Team Blue", contentType: "application/pdf" }),
+    "Payment Proof - Team Blue - Campus not provided.pdf");
+});
 
 test("organizer corrections and substitutions preserve ownership, payment and per-person IDs", { timeout: 90_000 }, async () => {
   const temporary = await mkdtemp(path.join(tmpdir(), "treasure-team-edit-"));
@@ -27,7 +45,7 @@ test("organizer corrections and substitutions preserve ownership, payment and pe
   await db.insert(accounts).values({ id: accountId, username: "synthetic-edit-team", email: "edit@example.invalid", passwordHash: await hashPassword("Synthetic-participant-password-2026") });
   for (const teamId of [id, otherId]) {
     await db.insert(registrations).values({ id: teamId, ownerId, referenceCode: `TR26-${teamId.slice(0, 8)}`,
-      submissionKey: randomUUID(), teamName: "Synthetic Before", contactEmail: "edit@example.invalid", contactPhone: "+6200000000" });
+      submissionKey: randomUUID(), teamName: "Synthetic Before", institution: "Synthetic Campus", contactEmail: "edit@example.invalid", contactPhone: "+6200000000" });
     await db.insert(members).values([{ registrationId: teamId, position: 0, fullName: "Original Leader" },
       { registrationId: teamId, position: 1, fullName: "Original Member", institution: "Old personal institution" }]);
   }
@@ -55,6 +73,18 @@ test("organizer corrections and substitutions preserve ownership, payment and pe
     assert.equal(adminLogin.status, 200);
     const admin = cookieOf(adminLogin);
     const participant = cookieOf(await request("/api/participant-auth/signin", "", { identifier: "synthetic-edit-team", password: "Synthetic-participant-password-2026" }));
+    const downloadName = (response: Response) => decodeURIComponent((response.headers.get("content-disposition") || "").split("filename*=UTF-8''")[1] || "");
+    const adminDocument = (uploadId: string) => `/api/admin/registrations/${id}/documents/${uploadId}`;
+    const initialId = await request(adminDocument(oldId), admin);
+    assert.equal(initialId.status, 200);
+    assert.equal(downloadName(initialId), "KTM - Original Leader - Synthetic Campus.pdf", "Legacy leader ID must use the leader's name");
+    assert.equal(downloadName(await request(adminDocument(memberId), admin)), "KTM - Original Member - Old personal institution.pdf");
+    const initialPayment = await request(adminDocument(paymentId), admin);
+    assert.equal(downloadName(initialPayment), "Payment Proof - Synthetic Before - Synthetic Campus.pdf");
+    assert.match(initialPayment.headers.get("cache-control") || "", /private.*no-store/);
+    const denied = await request(adminDocument(oldId), participant);
+    assert.equal(denied.status, 401);
+    assert.equal(denied.headers.get("content-disposition"), null);
     const endpoint = `/api/admin/registrations/${id}/members`;
     const body = { revision: 0, submissionKey: randomUUID(), teamName: "Synthetic Corrected",
       confirmed: true, members: [{ position: 0, fullName: "Corrected Leader", action: "correction" },
@@ -68,6 +98,7 @@ test("organizer corrections and substitutions preserve ownership, payment and pe
     assert.equal(UpdateAdminRegistrationMembersResponse.parse(await response.json()).revision, 1);
     assert.equal((await request(endpoint, admin, body, "PATCH")).status, 200, "Retry a lost correction response");
     assert.equal((await db.select().from(uploads).where(eq(uploads.id, oldId)))[0].registrationId, id);
+    assert.equal(downloadName(await request(adminDocument(oldId), admin)), "KTM - Corrected Leader - Synthetic Campus.pdf");
     const replacement = { ...body, revision: 1, submissionKey: randomUUID(), members: [
       { position: 0, fullName: "New Leader", action: "replacement", studentIdUploadId: "" },
       { position: 1, fullName: "Original Member", action: "correction" },
@@ -116,7 +147,15 @@ test("organizer corrections and substitutions preserve ownership, payment and pe
     const participantView = ListParticipantRegistrationsResponse.parse(await (await request("/api/participant-registrations", participant)).json());
     const mine = participantView.items.find((team: { id: string }) => team.id === id);
     assert.equal(mine?.members[0].fullName, "New Leader");
-    assert.equal((await request(mine!.members[0].studentIdUrl!, participant)).status, 200, "New file is readable by team owner");
+    const ownId = await request(mine!.members[0].studentIdUrl!, participant);
+    assert.equal(ownId.status, 200, "New file is readable by team owner");
+    assert.equal(downloadName(ownId), "KTM - New Leader - Synthetic Campus.pdf");
+    assert.equal(downloadName(await request(adminDocument(newId), admin)), downloadName(ownId));
+    const ownPayment = await request(mine!.paymentProofUrl!, participant);
+    assert.equal(downloadName(ownPayment), "Payment Proof - Synthetic Corrected - Synthetic Campus.pdf");
+    assert.equal(downloadName(await request(adminDocument(paymentId), admin)), downloadName(ownPayment));
+    const [storedDocument] = await db.select().from(uploads).where(eq(uploads.id, newId));
+    assert.equal(storedDocument.fileName, "replacement.pdf", "Download naming must not rename stored files");
     const [saved] = await db.select().from(registrations).where(eq(registrations.id, id));
     assert.equal(saved.detailsRevision, 2, "Retries must not advance revision");
     assert.equal(saved.studentIdUploadId, newId);
