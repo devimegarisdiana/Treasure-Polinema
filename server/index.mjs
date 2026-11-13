@@ -15254,14 +15254,14 @@ var require_mime_types = __commonJS({
       }
       return exports.types[extension2] || false;
     }
-    function populateMaps(extensions, types3) {
+    function populateMaps(extensions2, types3) {
       Object.keys(db2).forEach(function forEachMimeType(type) {
         var mime = db2[type];
         var exts = mime.extensions;
         if (!exts || !exts.length) {
           return;
         }
-        extensions[type] = exts;
+        extensions2[type] = exts;
         for (var i = 0; i < exts.length; i++) {
           var extension2 = exts[i];
           types3[extension2] = _preferredType(extension2, types3[extension2], type);
@@ -60200,6 +60200,60 @@ function isTreasureAdmin(req) {
   return !!req.organizer;
 }
 
+// src/lib/documentDownloadName.ts
+var extensions = {
+  "image/jpeg": ".jpg",
+  "image/png": ".png",
+  "image/webp": ".webp",
+  "application/pdf": ".pdf"
+};
+function filenamePart(value, fallback) {
+  const clean = (value ?? "").normalize("NFC").replace(/[\u0000-\u001f\u007f-\u009f<>:"/\\|?*\u202a-\u202e\u2066-\u2069]/g, " ").replace(/\s+/g, " ").trim().replace(/[. ]+$/g, "");
+  let result = "";
+  for (const char2 of [...clean || fallback].slice(0, 70)) {
+    if (Buffer.byteLength(result + char2, "utf8") > 90) break;
+    result += char2;
+  }
+  return result.trim();
+}
+function formatDocumentDownloadName(input) {
+  const identity = input.purpose === "student_id" ? filenamePart(input.participantName, "Participant not identified") : filenamePart(input.teamName, "Unnamed team");
+  return `${input.purpose === "student_id" ? "KTM" : "Payment Proof"} - ${identity} - ${filenamePart(input.institution, "Campus not provided")}${extensions[input.contentType] ?? ".bin"}`;
+}
+function attachmentDisposition(filename) {
+  const safe = filename.replace(/[\u0000-\u001f\u007f]/g, " ").replace(/["\\/]/g, "-");
+  const ascii = safe.normalize("NFKD").replace(/[^\x20-\x7e]/g, "_");
+  const encoded = encodeURIComponent(safe).replace(/[!'()*]/g, (char2) => `%${char2.charCodeAt(0).toString(16).toUpperCase()}`);
+  return `attachment; filename="${ascii}"; filename*=UTF-8''${encoded}`;
+}
+async function documentDownloadName(document2) {
+  return db.transaction(async (tx) => {
+    const [linked] = await tx.select({ registration: teamRegistrationsTable, position: registrationUploadsTable.memberPosition }).from(registrationUploadsTable).innerJoin(teamRegistrationsTable, eq(registrationUploadsTable.registrationId, teamRegistrationsTable.id)).where(eq(registrationUploadsTable.id, document2.id)).limit(1);
+    if (!linked) {
+      return formatDocumentDownloadName({ purpose: document2.purpose, contentType: document2.contentType });
+    }
+    const registration = linked.registration;
+    let person;
+    if (document2.purpose === "student_id") {
+      const people = await tx.select({ position: teamRegistrationMembersTable.position, fullName: teamRegistrationMembersTable.fullName, institution: teamRegistrationMembersTable.institution }).from(teamRegistrationMembersTable).where(eq(teamRegistrationMembersTable.registrationId, registration.id)).orderBy(teamRegistrationMembersTable.position);
+      if (linked.position !== null) person = people.find((member) => member.position === linked.position);
+      else if (people.length) {
+        const files = await tx.select({ id: registrationUploadsTable.id, purpose: registrationUploadsTable.purpose, position: registrationUploadsTable.memberPosition }).from(registrationUploadsTable).where(eq(registrationUploadsTable.registrationId, registration.id));
+        const legacy = files.filter((file2) => file2.purpose === "student_id" && file2.position === null);
+        const leaderHasExplicitId = files.some((file2) => file2.purpose === "student_id" && file2.position === people[0].position);
+        if (!leaderHasExplicitId && (document2.id === registration.studentIdUploadId || legacy.length === 1)) person = people[0];
+      }
+    }
+    return formatDocumentDownloadName({
+      purpose: document2.purpose,
+      contentType: document2.contentType,
+      participantName: person?.fullName,
+      teamName: registration.teamName,
+      institution: person?.institution?.trim() || registration.institution
+    });
+  }, { isolationLevel: "repeatable read" });
+}
+
 // src/routes/storage.ts
 var registrationStorage = new ObjectStorageService();
 var router4 = (0, import_express4.Router)();
@@ -60313,13 +60367,13 @@ router4.post("/storage/uploads/request-url", async (req, res) => {
     res.status(500).json({ error: "The upload could not be started. Please try again." });
   }
 });
-async function streamFile(response, res, privateDocument = false) {
+async function streamFile(response, res, privateDocument = false, downloadName) {
   res.status(response.status);
   response.headers.forEach((value, key) => res.setHeader(key, value));
   res.setHeader("X-Content-Type-Options", "nosniff");
   if (privateDocument) {
     res.setHeader("Cache-Control", "private, no-store");
-    res.setHeader("Content-Disposition", "attachment");
+    res.setHeader("Content-Disposition", downloadName ? attachmentDisposition(downloadName) : "attachment");
   }
   if (response.body) {
     Readable2.fromWeb(response.body).pipe(res);
@@ -60361,7 +60415,7 @@ router4.get("/storage/objects/*path", async (req, res) => {
   try {
     const file2 = await registrationStorage.getObjectEntityFile(upload.objectPath);
     const response = await registrationStorage.downloadObject(file2, 0);
-    await streamFile(response, res, true);
+    await streamFile(response, res, true, await documentDownloadName(upload));
   } catch {
     res.status(404).json({ error: "File not found" });
   }
@@ -60826,7 +60880,7 @@ router7.get("/admin/registrations/:id/documents/:uploadId", async (req, res) => 
       return;
     }
     const file2 = await registrationStorage.getObjectEntityFile(document2.objectPath);
-    await streamFile(await registrationStorage.downloadObject(file2, 0), res, true);
+    await streamFile(await registrationStorage.downloadObject(file2, 0), res, true, await documentDownloadName(document2));
   } catch {
     res.status(404).json({ error: "Document not found." });
   }

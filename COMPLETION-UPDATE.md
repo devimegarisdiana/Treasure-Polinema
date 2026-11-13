@@ -1,5 +1,19 @@
 # Closed registration and returning-participant update
 
+## Names of downloaded private documents
+
+Downloads from the organizer dashboard and participant portal now use:
+
+- `KTM - Participant Name - Campus.pdf` (or the stored image format).
+- `Payment Proof - Team Name - Campus.pdf` (or the stored image format).
+
+Names are based on the current associated participant/team, not the uploader's
+original filename. Member-specific institution data is used when present,
+otherwise the team's institution is used. Missing institution data is labeled
+`Campus not provided` rather than invented. International names are supported;
+unsafe path/header characters are removed. Stored files and their original
+metadata are not renamed. Existing access restrictions remain in place.
+
 ## Organizer corrections and member substitutions
 
 Open a team in the admin dashboard and choose **Edit names / substitute**.
