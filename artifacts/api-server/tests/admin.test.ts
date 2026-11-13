@@ -173,7 +173,8 @@ test("correlated projections: details preserve contacts, ordered members, docume
     const response = await request<AdminRegistrationDetail>(`/admin/registrations/${id(n)}`);
     assert.equal(response.status, 200);
     assert(GetAdminRegistrationResponse.safeParse(response.body).success);
-    assert.deepEqual(Object.keys(response.body).sort(), ["contact", "documents", "members", "notification", "registration"]);
+    assert.deepEqual(Object.keys(response.body).sort(), ["contact", "documents", "members", "notification", "registration", "revision"]);
+    assert.equal(response.body.revision, 0);
     assertSummary(response.body.registration, n);
     assert.deepEqual(response.body.contact, {
       email: `team${n}@example.invalid`, phone: "synthetic-phone",

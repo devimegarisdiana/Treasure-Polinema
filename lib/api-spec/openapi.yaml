@@ -161,6 +161,53 @@ paths:
         "401": { description: Sign in required }
         "403": { description: Administrator access required }
         "404": { description: Registration not found }
+  /admin/registrations/{id}/members:
+    patch:
+      operationId: updateAdminRegistrationMembers
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/AdminTeamUpdate" }
+      responses:
+        "200":
+          description: Team updated; spreadsheet refresh queued
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AdminTeamSaved" }
+        "400": { description: Invalid member or document }
+        "401": { description: Sign in required }
+        "403": { description: Organizer access required }
+        "404": { description: Registration not found }
+        "409": { description: Reload latest team details }
+  /admin/registrations/{id}/member-uploads:
+    post:
+      operationId: requestAdminMemberUpload
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/AdminMemberUploadInput" }
+      responses:
+        "200":
+          description: Private upload URL for one member of this team
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/UploadUrlResponse" }
+        "400": { description: Invalid document }
+        "401": { description: Sign in required }
+        "403": { description: Organizer access required }
+        "404": { description: Team or member not found }
   /admin/registrations/{id}/participant-account:
     get:
       operationId: getRegistrationParticipantAccount
@@ -798,10 +845,46 @@ components:
         sentAt: { type: [string, "null"], format: date-time }
         lastError: { type: [string, "null"] }
         nextAttemptAt: { type: [string, "null"], format: date-time }
+    AdminMemberUploadInput:
+      type: object
+      required: [submissionKey, memberPosition, name, size, contentType]
+      properties:
+        submissionKey: { type: string, format: uuid }
+        memberPosition: { type: integer, minimum: 0 }
+        name: { type: string, minLength: 1, maxLength: 200 }
+        size: { type: integer, minimum: 1, maximum: 10485760 }
+        contentType: { type: string, enum: [application/pdf, image/jpeg, image/png, image/webp] }
+    AdminMemberUpdate:
+      type: object
+      required: [position, fullName, action]
+      properties:
+        position: { type: integer, minimum: 0 }
+        fullName: { type: string, minLength: 1, maxLength: 160 }
+        action: { type: string, enum: [correction, replacement] }
+        studentIdUploadId: { type: string, format: uuid }
+    AdminTeamUpdate:
+      type: object
+      required: [revision, submissionKey, teamName, members, confirmed]
+      properties:
+        revision: { type: integer, minimum: 0 }
+        submissionKey: { type: string, format: uuid }
+        teamName: { type: string, minLength: 2, maxLength: 120 }
+        members:
+          type: array
+          minItems: 1
+          items: { $ref: "#/components/schemas/AdminMemberUpdate" }
+        confirmed: { type: boolean, enum: [true] }
+    AdminTeamSaved:
+      type: object
+      required: [revision, status]
+      properties:
+        revision: { type: integer }
+        status: { type: string, enum: [saved] }
     AdminRegistrationDetail:
       type: object
-      required: [registration, contact, members, documents, notification]
+      required: [registration, contact, members, documents, notification, revision]
       properties:
+        revision: { type: integer }
         registration: { $ref: "#/components/schemas/AdminRegistrationSummary" }
         contact: { $ref: "#/components/schemas/AdminRegistrationContact" }
         members:

@@ -35,6 +35,13 @@ export async function processRegistrationSpreadsheetSync(): Promise<void> {
           .where(eq(members.registrationId, registration.id)).orderBy(members.position);
         const documentsSynced = process.env.GOOGLE_DRIVE_SYNC_ENABLED === "true" && job.include_documents;
         const documents = documentsSynced ? await syncPrivateDriveDocuments(registration.id, registration.referenceCode) : [];
+        // Member substitutions can occur during slow Drive copies. Never pair
+        // an old name snapshot with a new person's document in the spreadsheet.
+        const [latest] = await db.select({ revision: registrations.detailsRevision }).from(registrations)
+          .where(eq(registrations.id, registration.id)).limit(1);
+        if (!latest || latest.revision !== registration.detailsRevision) {
+          throw new Error("Team details changed while preparing the spreadsheet update.");
+        }
         const legacyStudentIds = documents.filter((file) => file.purpose === "student_id" && file.memberPosition === null);
         const studentIds = people.map((person) => {
           const doc = documents.find((file) => file.purpose === "student_id" && file.memberPosition === person.position)

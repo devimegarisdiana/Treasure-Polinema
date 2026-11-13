@@ -17,6 +17,7 @@ import { sameSiteRequest } from "../lib/participantAuth";
 import { queueExistingRegistrationSpreadsheets, refreshExistingRegistrationDocuments } from "../lib/registrationSpreadsheetBackfill";
 import { processRegistrationSpreadsheetSync } from "../lib/registrationSpreadsheetSync";
 import participantRecoveryRouter from "./participantRecovery";
+import adminTeamEditingRouter from "./adminTeamEditing";
 
 const router: IRouter = Router();
 
@@ -40,6 +41,7 @@ router.use("/admin", (req, res, next) => {
 });
 
 router.use(participantRecoveryRouter);
+router.use(adminTeamEditingRouter);
 
 router.post("/admin/spreadsheet-sync/refresh-documents", async (req, res) => {
   if (process.env.RUNTIME_HOST !== "cpanel" || process.env.GOOGLE_DRIVE_SYNC_ENABLED !== "true") {
@@ -119,20 +121,22 @@ router.get("/admin/registrations/:id", async (req, res) => {
   if (!parsed.success) { res.status(400).json({ error: "Invalid registration reference." }); return; }
   try {
     const id = parsed.data.id;
-    const [registration] = await db.select(projection).from(registrations).where(eq(registrations.id, id)).limit(1);
-    if (!registration) { res.status(404).json({ error: "Registration not found." }); return; }
+    const payload = await db.transaction(async tx => {
+    const [registration] = await tx.select({ ...projection, revision: registrations.detailsRevision }).from(registrations).where(eq(registrations.id, id)).limit(1);
+    if (!registration) return null;
     const [[contact], team, documents, [notification]] = await Promise.all([
-      db.select({
+      tx.select({
         email: registrations.contactEmail, phone: registrations.contactPhone,
         alternativePhone: registrations.alternativePhone, facultyDepartment: registrations.facultyDepartment,
         hasEdugateTraining: registrations.hasEdugateTraining,
       }).from(registrations).where(eq(registrations.id, id)).limit(1),
-      db.select({ position: members.position, fullName: members.fullName }).from(members)
+      tx.select({ position: members.position, fullName: members.fullName }).from(members)
         .where(eq(members.registrationId, id)).orderBy(members.position),
-      db.select().from(uploads).where(eq(uploads.registrationId, id)),
-      db.select().from(notifications).where(eq(notifications.registrationId, id)).limit(1),
+      tx.select().from(uploads).where(eq(uploads.registrationId, id)),
+      tx.select().from(notifications).where(eq(notifications.registrationId, id)).limit(1),
     ]);
-    res.json(GetAdminRegistrationResponse.parse({
+    return GetAdminRegistrationResponse.parse({
+      revision: registration.revision,
       registration: { ...registration, createdAt: registration.createdAt.toISOString() },
       contact, members: team,
       documents: documents.map((document) => {
@@ -152,7 +156,10 @@ router.get("/admin/registrations/:id", async (req, res) => {
         sentAt: notification?.sentAt?.toISOString() ?? null, lastError: notification?.lastError ?? null,
         nextAttemptAt: notification && notification.status !== "sent" ? notification.nextAttemptAt.toISOString() : null,
       },
-    }));
+    });
+    }, { isolationLevel: "repeatable read" });
+    if (!payload) { res.status(404).json({ error: "Registration not found." }); return; }
+    res.json(payload);
   } catch {
     req.log.error("Unable to load a private registration detail");
     res.status(500).json({ error: "Registration details could not be loaded. Please retry." });

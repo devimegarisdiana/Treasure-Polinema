@@ -15,3 +15,5 @@ export const registrationStorage = {
   downloadObject: forbidden,
 };
 export const streamFile = forbidden;
+export const freezeDocument = forbidden;
+export class RegistrationDocumentError extends Error {}

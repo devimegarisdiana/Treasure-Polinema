@@ -103,3 +103,18 @@
 .member-student-filename{color:#77737a}
 .member-student-missing{color:#975354}
 @media(max-width:650px){.admin-login-gate{margin:24px auto;padding:28px 20px 23px}.admin-login-gate h2{font-size:27px}}
+/* Organizer team editor */
+.team-editor-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:6px}.team-editor-head h3{margin:0}
+.team-editor.is-open{background:rgba(235,239,241,.35)}.team-editor-saved{display:flex;gap:7px;align-items:flex-start}
+.te-label{display:block;margin:6px 0 5px;color:#67646b;font:10px var(--app-font-mono);letter-spacing:.06em;text-transform:uppercase}
+.te-input{width:100%;min-height:38px;padding:0 10px;border:1px solid #dedbd8;background:#fbfaf8;color:#41434a;font:12px var(--app-font-sans);box-sizing:border-box}.te-input:focus{outline:2px solid #9baabb;outline-offset:1px}.te-input[aria-invalid]{border-color:#c99a9d}
+.te-err{display:block;margin-top:5px;color:#94545a;font-size:10px;line-height:1.5}.te-hint,.te-was{display:block;margin-top:5px;color:#89848a;font-size:10px;line-height:1.5}.te-was{margin:0 0 5px;font-family:var(--app-font-mono)}
+.te-members{list-style:none;padding:0;margin:14px 0 0;display:grid;gap:10px}.te-members li{padding:11px;border:1px solid #e5e1dd;background:#faf8f5}
+.te-member-top{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:6px}.te-pos{color:#a96570;font:10px var(--app-font-mono);display:flex;gap:7px;align-items:center}.te-pos em{font-style:normal;color:#5d7087;background:#e9eef1;padding:2px 6px}
+.te-modes{display:inline-flex;border:1px solid #cfd6dd}.te-modes button{border:0;background:#f7f5f2;color:#6b7b90;font:9px var(--app-font-mono);padding:6px 8px;cursor:pointer}.te-modes button+button{border-left:1px solid #cfd6dd}.te-modes button.on{background:#61758e;color:#fbfaf8}.te-modes button:disabled{opacity:.55;cursor:not-allowed}
+.te-upload{margin-top:8px}.te-drop{display:inline-flex;align-items:center;gap:6px;padding:7px 9px;border:1px dashed #a9b6c4;color:#586c84;background:#eff3f6;font-size:11px;cursor:pointer;overflow-wrap:anywhere}.te-drop.done{border-style:solid;border-color:#a9bfb3;color:#557267;background:#e9efeb}.te-file{position:absolute;width:1px;height:1px;opacity:0}.te-file:focus-visible+div,.te-upload:focus-within .te-drop{outline:2px solid #73869d;outline-offset:2px}
+.te-upstate{display:flex;align-items:center;gap:9px;flex-wrap:wrap;margin-top:4px}.te-bar{width:90px;height:3px;background:#e2e5e8;overflow:hidden}.te-bar i{display:block;width:40%;height:100%;background:#61758e;animation:te-slide 1.1s ease-in-out infinite}@keyframes te-slide{from{transform:translateX(-100%)}to{transform:translateX(250%)}}
+.te-link{padding:0;border:0;background:none;color:#5e738d;text-decoration:underline;font:10px var(--app-font-mono);cursor:pointer}
+.te-confirm{margin-top:14px;padding:12px;border:1px solid #c5ccd5;border-left:3px solid #a96570;background:#f7f5f2;font-size:11px;color:#48464d}.te-confirm ul{margin:8px 0;padding-left:17px;line-height:1.6}.te-confirm p{color:#77737a;margin:6px 0 10px}.te-check{display:flex;gap:8px;align-items:flex-start;line-height:1.5;cursor:pointer}
+.te-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:14px;flex-wrap:wrap}.te-actions .admin-primary,.te-actions .admin-secondary{min-height:38px}.te-actions button:disabled{opacity:.5;cursor:not-allowed}
+@media(max-width:650px){.te-actions>button{flex:1}}

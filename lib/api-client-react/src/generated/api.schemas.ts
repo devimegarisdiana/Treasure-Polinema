@@ -414,7 +414,81 @@ export interface AdminNotification {
   nextAttemptAt: string | null;
 }
 
+export type AdminMemberUploadInputContentType = typeof AdminMemberUploadInputContentType[keyof typeof AdminMemberUploadInputContentType];
+
+
+export const AdminMemberUploadInputContentType = {
+  'application/pdf': 'application/pdf',
+  'image/jpeg': 'image/jpeg',
+  'image/png': 'image/png',
+  'image/webp': 'image/webp',
+} as const;
+
+export interface AdminMemberUploadInput {
+  submissionKey: string;
+  /** @minimum 0 */
+  memberPosition: number;
+  /**
+     * @minLength 1
+     * @maxLength 200
+     */
+  name: string;
+  /**
+     * @minimum 1
+     * @maximum 10485760
+     */
+  size: number;
+  contentType: AdminMemberUploadInputContentType;
+}
+
+export type AdminMemberUpdateAction = typeof AdminMemberUpdateAction[keyof typeof AdminMemberUpdateAction];
+
+
+export const AdminMemberUpdateAction = {
+  correction: 'correction',
+  replacement: 'replacement',
+} as const;
+
+export interface AdminMemberUpdate {
+  /** @minimum 0 */
+  position: number;
+  /**
+     * @minLength 1
+     * @maxLength 160
+     */
+  fullName: string;
+  action: AdminMemberUpdateAction;
+  studentIdUploadId?: string;
+}
+
+export interface AdminTeamUpdate {
+  /** @minimum 0 */
+  revision: number;
+  submissionKey: string;
+  /**
+     * @minLength 2
+     * @maxLength 120
+     */
+  teamName: string;
+  /** @minItems 1 */
+  members: AdminMemberUpdate[];
+  confirmed: true;
+}
+
+export type AdminTeamSavedStatus = typeof AdminTeamSavedStatus[keyof typeof AdminTeamSavedStatus];
+
+
+export const AdminTeamSavedStatus = {
+  saved: 'saved',
+} as const;
+
+export interface AdminTeamSaved {
+  revision: number;
+  status: AdminTeamSavedStatus;
+}
+
 export interface AdminRegistrationDetail {
+  revision: number;
   registration: AdminRegistrationSummary;
   contact: AdminRegistrationContact;
   members: AdminRegistrationMember[];

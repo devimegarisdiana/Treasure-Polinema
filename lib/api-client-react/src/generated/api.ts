@@ -21,8 +21,11 @@ import type {
 
 import type {
   AdminAccess,
+  AdminMemberUploadInput,
   AdminRegistrationDetail,
   AdminRegistrationList,
+  AdminTeamSaved,
+  AdminTeamUpdate,
   AuthUserEnvelope,
   ErrorResponse,
   HealthStatus,
@@ -902,6 +905,172 @@ export function useGetAdminRegistration<TData = Awaited<ReturnType<typeof getAdm
 
 
 
+
+export const getUpdateAdminRegistrationMembersUrl = (id: string,) => {
+
+
+
+
+  return `/api/admin/registrations/${id}/members`
+}
+
+export const updateAdminRegistrationMembers = async (id: string,
+    adminTeamUpdate: AdminTeamUpdate, options?: Parameters<typeof customFetch>[1]): Promise<AdminTeamSaved> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<AdminTeamSaved>(getUpdateAdminRegistrationMembersUrl(id),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(adminTeamUpdate)
+  }
+);}
+
+
+
+
+
+export const getUpdateAdminRegistrationMembersMutationKey = () => ['updateAdminRegistrationMembers'] as const;
+
+export const getUpdateAdminRegistrationMembersMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateAdminRegistrationMembers>>, TError,UpdateAdminRegistrationMembersMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updateAdminRegistrationMembers>>, TError,UpdateAdminRegistrationMembersMutationVariables, TContext> => {
+
+const mutationKey = getUpdateAdminRegistrationMembersMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateAdminRegistrationMembers>>, UpdateAdminRegistrationMembersMutationVariables> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  updateAdminRegistrationMembers(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateAdminRegistrationMembersMutationResult = NonNullable<Awaited<ReturnType<typeof updateAdminRegistrationMembers>>>
+    export type UpdateAdminRegistrationMembersMutationBody = BodyType<AdminTeamUpdate>
+    export type UpdateAdminRegistrationMembersMutationError = ErrorType<void>
+    export type UpdateAdminRegistrationMembersMutationVariables = {id: string;data: BodyType<AdminTeamUpdate>}
+
+    export const useUpdateAdminRegistrationMembers = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateAdminRegistrationMembers>>, TError,UpdateAdminRegistrationMembersMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof updateAdminRegistrationMembers>>,
+        TError,
+        UpdateAdminRegistrationMembersMutationVariables,
+        TContext
+      > => {
+      return useMutation(getUpdateAdminRegistrationMembersMutationOptions(options));
+    }
+
+export const getRequestAdminMemberUploadUrl = (id: string,) => {
+
+
+
+
+  return `/api/admin/registrations/${id}/member-uploads`
+}
+
+export const requestAdminMemberUpload = async (id: string,
+    adminMemberUploadInput: AdminMemberUploadInput, options?: Parameters<typeof customFetch>[1]): Promise<UploadUrlResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<UploadUrlResponse>(getRequestAdminMemberUploadUrl(id),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(adminMemberUploadInput)
+  }
+);}
+
+
+
+
+
+export const getRequestAdminMemberUploadMutationKey = () => ['requestAdminMemberUpload'] as const;
+
+export const getRequestAdminMemberUploadMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof requestAdminMemberUpload>>, TError,RequestAdminMemberUploadMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof requestAdminMemberUpload>>, TError,RequestAdminMemberUploadMutationVariables, TContext> => {
+
+const mutationKey = getRequestAdminMemberUploadMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof requestAdminMemberUpload>>, RequestAdminMemberUploadMutationVariables> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  requestAdminMemberUpload(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type RequestAdminMemberUploadMutationResult = NonNullable<Awaited<ReturnType<typeof requestAdminMemberUpload>>>
+    export type RequestAdminMemberUploadMutationBody = BodyType<AdminMemberUploadInput>
+    export type RequestAdminMemberUploadMutationError = ErrorType<void>
+    export type RequestAdminMemberUploadMutationVariables = {id: string;data: BodyType<AdminMemberUploadInput>}
+
+    export const useRequestAdminMemberUpload = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof requestAdminMemberUpload>>, TError,RequestAdminMemberUploadMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof requestAdminMemberUpload>>,
+        TError,
+        RequestAdminMemberUploadMutationVariables,
+        TContext
+      > => {
+      return useMutation(getRequestAdminMemberUploadMutationOptions(options));
+    }
 
 export const getGetRegistrationParticipantAccountUrl = (id: string,) => {
 

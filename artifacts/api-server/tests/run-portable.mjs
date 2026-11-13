@@ -11,7 +11,7 @@ const dbRequire = createRequire(join(root, "../../lib/db/package.json"));
 try {
   const outfile = join(temporary, "portable.test.cjs");
   const bundle = await build({
-    absWorkingDir: root, entryPoints: [process.argv.includes("--password-recovery") ? "tests/password-recovery.test.ts" : "tests/portable.test.ts"], outfile,
+    absWorkingDir: root, entryPoints: [process.argv.includes("--team-editing") ? "tests/team-editing.test.ts" : process.argv.includes("--password-recovery") ? "tests/password-recovery.test.ts" : "tests/portable.test.ts"], outfile,
     bundle: true, platform: "node", format: "cjs", packages: "external", metafile: true,
     // The migration CLI guard is intentionally inactive inside the test bundle.
     define: { "import.meta.url": '"file:///isolated-test-module"' },

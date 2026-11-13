@@ -12,6 +12,7 @@ import type { AdminRegistrationMember } from './adminRegistrationMember';
 import type { AdminRegistrationSummary } from './adminRegistrationSummary';
 
 export interface AdminRegistrationDetail {
+  revision: number;
   registration: AdminRegistrationSummary;
   contact: AdminRegistrationContact;
   members: AdminRegistrationMember[];

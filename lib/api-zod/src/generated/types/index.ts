@@ -7,6 +7,10 @@
  */
 
 export * from './adminAccess';
+export * from './adminMemberUpdate';
+export * from './adminMemberUpdateAction';
+export * from './adminMemberUploadInput';
+export * from './adminMemberUploadInputContentType';
 export * from './adminNotification';
 export * from './adminRegistrationContact';
 export * from './adminRegistrationDetail';
@@ -15,6 +19,9 @@ export * from './adminRegistrationDocumentPurpose';
 export * from './adminRegistrationList';
 export * from './adminRegistrationMember';
 export * from './adminRegistrationSummary';
+export * from './adminTeamSaved';
+export * from './adminTeamSavedStatus';
+export * from './adminTeamUpdate';
 export * from './authUser';
 export * from './authUserEnvelope';
 export * from './errorResponse';

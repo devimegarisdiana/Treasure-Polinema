@@ -7,16 +7,19 @@ import { RequestUploadUrlBody, RequestUploadUrlResponse } from "@workspace/api-z
 import { ObjectStorageService } from "../lib/objectStorage";
 import { registrationOwner, sameSiteRequest } from "../lib/participantAuth";
 import { LocalFile, localStorageEnabled, validLocalUploadSignature } from "../lib/localObjectStorage";
+import { isTreasureAdmin } from "../lib/adminAccess";
 
 export const registrationStorage = new ObjectStorageService();
 const router: IRouter = Router();
 
 // Signed upload transport: the frontend uses the existing uploadURL contract.
-router.put("/storage/local-uploads/:id", async (req, res, next): Promise<void> => {
+router.put(["/storage/local-uploads/:id", "/admin/member-local-uploads/:id"], async (req, res, next): Promise<void> => {
   res.setHeader("Cache-Control", "no-store");
   if (!localStorageEnabled()) { res.sendStatus(404); return; }
   if (!sameSiteRequest(req)) { res.sendStatus(403); return; }
-  const ownerId = registrationOwner(req);
+  const ownerId = req.path.startsWith("/admin/")
+    ? req.organizer && isTreasureAdmin(req) ? `organizer:${req.organizer.id}` : null
+    : registrationOwner(req);
   if (!ownerId) { res.status(401).json({ error: "Login required" }); return; }
   try {
     if (!validLocalUploadSignature(String(req.params.id), req.query.expires, req.query.signature)) {

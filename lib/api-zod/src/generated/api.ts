@@ -168,6 +168,7 @@ export const GetAdminRegistrationParams = zod.object({
 })
 
 export const GetAdminRegistrationResponse = zod.object({
+  "revision": zod.number().int(),
   "registration": zod.object({
   "id": zod.string().uuid(),
   "referenceCode": zod.string(),
@@ -208,6 +209,67 @@ export const GetAdminRegistrationResponse = zod.object({
   "lastError": zod.string().nullable(),
   "nextAttemptAt": zod.coerce.date().nullable()
 })
+})
+
+
+export const UpdateAdminRegistrationMembersParams = zod.object({
+  "id": zod.coerce.string().uuid()
+})
+
+export const updateAdminRegistrationMembersBodyRevisionMin = 0;
+
+export const updateAdminRegistrationMembersBodyTeamNameMin = 2;
+export const updateAdminRegistrationMembersBodyTeamNameMax = 120;
+
+export const updateAdminRegistrationMembersBodyMembersItemPositionMin = 0;
+
+export const updateAdminRegistrationMembersBodyMembersItemFullNameMax = 160;
+
+
+
+
+export const UpdateAdminRegistrationMembersBody = zod.object({
+  "revision": zod.number().int().min(updateAdminRegistrationMembersBodyRevisionMin),
+  "submissionKey": zod.string().uuid(),
+  "teamName": zod.string().min(updateAdminRegistrationMembersBodyTeamNameMin).max(updateAdminRegistrationMembersBodyTeamNameMax),
+  "members": zod.array(zod.object({
+  "position": zod.number().int().min(updateAdminRegistrationMembersBodyMembersItemPositionMin),
+  "fullName": zod.string().min(1).max(updateAdminRegistrationMembersBodyMembersItemFullNameMax),
+  "action": zod.enum(['correction', 'replacement']),
+  "studentIdUploadId": zod.string().uuid().optional()
+})).min(1),
+  "confirmed": zod.literal(true)
+})
+
+export const UpdateAdminRegistrationMembersResponse = zod.object({
+  "revision": zod.number().int(),
+  "status": zod.enum(['saved'])
+})
+
+
+export const RequestAdminMemberUploadParams = zod.object({
+  "id": zod.coerce.string().uuid()
+})
+
+export const requestAdminMemberUploadBodyMemberPositionMin = 0;
+
+export const requestAdminMemberUploadBodyNameMax = 200;
+
+export const requestAdminMemberUploadBodySizeMax = 10485760;
+
+
+
+export const RequestAdminMemberUploadBody = zod.object({
+  "submissionKey": zod.string().uuid(),
+  "memberPosition": zod.number().int().min(requestAdminMemberUploadBodyMemberPositionMin),
+  "name": zod.string().min(1).max(requestAdminMemberUploadBodyNameMax),
+  "size": zod.number().int().min(1).max(requestAdminMemberUploadBodySizeMax),
+  "contentType": zod.enum(['application/pdf', 'image/jpeg', 'image/png', 'image/webp'])
+})
+
+export const RequestAdminMemberUploadResponse = zod.object({
+  "uploadId": zod.string().uuid(),
+  "uploadURL": zod.string().url()
 })
 
 
